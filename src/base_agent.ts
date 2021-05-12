@@ -78,7 +78,7 @@ export class Output {
     this.channel.publish(
       defaultExchange.name,
       this.definition.routingKey,
-      Buffer.from(content),
+      content,
       {
         ...options,
         contentType: "application/msgpack",

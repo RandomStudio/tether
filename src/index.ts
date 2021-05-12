@@ -20,12 +20,21 @@ const msgpack = MsgPack();
   const sender = await agent.createOutput("DummyData");
   console.log("got sender!");
 
-  // setInterval(() => {
-  //   const msg = { from: "nodeJS", hello: "world" };
-  //   const encoded =
-  //   // console.log("sending");
-  //   sender.publish(Buffer.from( msg));
-  // }, 3000);
+  let i = 0;
+
+  setInterval(() => {
+    const msg = {
+      from: "nodeJS",
+      hello: "world",
+      someNumber: i,
+      isEven: i % 2 === 0,
+    };
+    const encoded = msgpack.encode(msg);
+    i++;
+    console.log("sending", { msg, encoded, mType: typeof encoded });
+    // @ts-ignore
+    sender.publish(Buffer.from(encoded));
+  }, 3000);
 
   agent.createInput(
     "BrowserMessages",

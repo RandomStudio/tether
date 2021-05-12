@@ -10,8 +10,8 @@ interface ConnectionProps {
 
 interface ConnectionState {
   connected: boolean;
-  sent: Buffer[];
-  received: Buffer[];
+  sent: any[];
+  received: any[];
   nextMessage: string;
 }
 
@@ -48,8 +48,15 @@ class Connection extends React.Component<ConnectionProps, ConnectionState> {
 
     client.on("message", (topic, message) => {
       // message is Buffer
-      console.log("received message:", message.toString());
-      this.setState({ received: [...this.state.received, message] });
+      const decoded = msgpack.decode(message);
+      console.log("received message:", {
+        raw: message.toString(),
+        decoded,
+        mType: typeof decoded,
+      });
+      this.setState({
+        received: [...this.state.received, decoded],
+      });
       // client?.end()
     });
   }
@@ -122,7 +129,7 @@ class Connection extends React.Component<ConnectionProps, ConnectionState> {
           <h3>Messages received</h3>
           <ul>
             {this.state.received.map((m, index) => (
-              <li key={`received-${index}`}>{m.toString()}</li>
+              <li key={`received-${index}`}>{JSON.stringify(m)}</li>
             ))}
           </ul>
         </div>
