@@ -1,6 +1,9 @@
 const defaults = {
-  foo: "bar",
-  loglevel: "debug",
+  loglevel: "info",
+  rabbit: {
+    host: "localhost",
+    port: 15672,
+  },
 };
 
 export default defaults;

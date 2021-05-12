@@ -32,19 +32,21 @@ class Connection extends React.Component<ConnectionProps, ConnectionState> {
     client.on("connect", () => {
       console.log("connected!");
       this.setState({ connected: true });
-      client?.subscribe("presence", (err) => {
+      client?.subscribe("#", (err) => {
         if (!err) {
           const dummyMessage = "Hello mqtt";
-          client?.publish("presence", dummyMessage);
+          client?.publish("dummy.explorer.DummyData", dummyMessage);
           const msgBuffer = Buffer.from(dummyMessage);
           this.setState({ sent: [...this.state.sent, msgBuffer] });
+        } else {
+          console.error("error subscribing", err);
         }
       });
     });
 
     client.on("message", (topic, message) => {
       // message is Buffer
-      console.log({ message });
+      console.log("received message:", message.toString());
       this.setState({ received: [...this.state.received, message] });
       // client?.end()
     });
