@@ -34,10 +34,7 @@ class Connection extends React.Component<ConnectionProps, ConnectionState> {
       this.setState({ connected: true });
       client?.subscribe("#", (err) => {
         if (!err) {
-          const dummyMessage = "Hello mqtt";
-          client?.publish("dummy.explorer.DummyData", dummyMessage);
-          const msgBuffer = Buffer.from(dummyMessage);
-          this.setState({ sent: [...this.state.sent, msgBuffer] });
+          console.info("subscribed to all topics OK");
         } else {
           console.error("error subscribing", err);
         }
@@ -76,6 +73,21 @@ class Connection extends React.Component<ConnectionProps, ConnectionState> {
               2
             )}
           </code>
+        </div>
+
+        <div>
+          <h3>Send</h3>
+          {/* <input type="text"></input> */}
+          <button
+            onClick={() => {
+              client?.publish(
+                "dummy.browser.DummyData",
+                "hello from the browser"
+              );
+            }}
+          >
+            send
+          </button>
         </div>
 
         <div>
