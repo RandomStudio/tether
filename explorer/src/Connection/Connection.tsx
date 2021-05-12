@@ -117,7 +117,7 @@ class Connection extends React.Component<ConnectionProps, ConnectionState> {
                   }
                 );
               } catch (e) {
-                console.log("not valid JSONg:", e);
+                console.log("not valid JSON:", e);
               }
             }}
           >

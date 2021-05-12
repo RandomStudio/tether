@@ -23,15 +23,23 @@ const msgpack = MsgPack();
   let i = 0;
 
   setInterval(() => {
+    const randomArray = [Math.random(), Math.random(), Math.random()];
     const msg = {
       from: "nodeJS",
       hello: "world",
       someNumber: i,
       isEven: i % 2 === 0,
+      randomArray,
     };
     const encoded = msgpack.encode(msg);
     i++;
-    console.log("sending", { msg, encoded, mType: typeof encoded });
+    console.log("sending", {
+      msg,
+      encoded,
+      mType: typeof encoded,
+      size: encoded.length,
+    });
+    // need to figure out why TS complains here!
     // @ts-ignore
     sender.publish(Buffer.from(encoded));
   }, 3000);
