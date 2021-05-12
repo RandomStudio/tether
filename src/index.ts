@@ -14,21 +14,25 @@ logger.level = config.loglevel;
 logger.info("started with config", config);
 
 const agent = new TetherAgent("dummy", "nodejs_dummy");
+const msgpack = MsgPack();
 
 (async () => {
   const sender = await agent.createOutput("DummyData");
   console.log("got sender!");
 
-  setInterval(() => {
-    const msg = "yo from nodeJS";
-    // console.log("sending");
-    sender.publish(Buffer.from(msg));
-  }, 3000);
+  // setInterval(() => {
+  //   const msg = { from: "nodeJS", hello: "world" };
+  //   const encoded =
+  //   // console.log("sending");
+  //   sender.publish(Buffer.from( msg));
+  // }, 3000);
 
   agent.createInput(
     "BrowserMessages",
     (msg) => {
       console.log("got message from browser:", msg);
+      const decoded = msgpack.decode(msg.content);
+      console.log({ decoded });
     },
     "dummy.browser.*"
   );

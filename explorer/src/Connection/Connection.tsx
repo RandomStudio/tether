@@ -1,4 +1,5 @@
 import * as React from "react";
+import MsgPack from "msgpack5";
 import mqtt, { MqttClient } from "mqtt";
 
 interface ConnectionProps {
@@ -16,6 +17,8 @@ interface ConnectionState {
 
 let client: MqttClient | null = null;
 
+const msgpack = MsgPack();
+
 class Connection extends React.Component<ConnectionProps, ConnectionState> {
   constructor(props: ConnectionProps) {
     super(props);
@@ -23,7 +26,7 @@ class Connection extends React.Component<ConnectionProps, ConnectionState> {
       connected: false,
       sent: [],
       received: [],
-      nextMessage: "",
+      nextMessage: `{ "hello": "world" }`,
     };
   }
 
@@ -88,13 +91,27 @@ class Connection extends React.Component<ConnectionProps, ConnectionState> {
           ></input>
           <button
             onClick={() => {
-              client?.publish(
-                "dummy.browser.DummyData",
-                this.state.nextMessage,
-                () => {
-                  this.setState({ nextMessage: "" });
-                }
-              );
+              try {
+                const json = JSON.parse(this.state.nextMessage);
+                const encodedMessage = Buffer.from(msgpack.encode(json));
+                console.log("sending", {
+                  json,
+                  mType: typeof json,
+                  encodedMessage,
+                  toStr: encodedMessage.toString(),
+                  altStr: msgpack.encode(json).toString,
+                  toBuffer: msgpack.encode(json),
+                });
+                client?.publish(
+                  "dummy.browser.DummyData",
+                  encodedMessage,
+                  () => {
+                    this.setState({ nextMessage: "" });
+                  }
+                );
+              } catch (e) {
+                console.log("not valid JSONg:", e);
+              }
             }}
           >
             send
