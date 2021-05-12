@@ -24,6 +24,14 @@ const agent = new TetherAgent("dummy", "nodejs_dummy");
     // console.log("sending");
     sender.publish(Buffer.from(msg));
   }, 3000);
+
+  agent.createInput(
+    "BrowserMessages",
+    (msg) => {
+      console.log("got message from browser:", msg);
+    },
+    "dummy.browser.*"
+  );
 })();
 
 // const msgpack = MsgPack();
