@@ -9,8 +9,8 @@ interface ConnectionProps {
 
 interface ConnectionState {
   connected: boolean;
-  sent: number;
-  received: number;
+  sent: Buffer[];
+  received: Buffer[];
 }
 
 let client: MqttClient | null = null;
@@ -20,8 +20,8 @@ class Connection extends React.Component<ConnectionProps, ConnectionState> {
     super(props);
     this.state = {
       connected: false,
-      sent: 0,
-      received: 0,
+      sent: [],
+      received: [],
     };
   }
 
@@ -34,21 +34,25 @@ class Connection extends React.Component<ConnectionProps, ConnectionState> {
       this.setState({ connected: true });
       client?.subscribe("presence", (err) => {
         if (!err) {
-          client?.publish("presence", "Hello mqtt");
-          this.setState({ sent: this.state.sent + 1 });
+          const dummyMessage = "Hello mqtt";
+          client?.publish("presence", dummyMessage);
+          const msgBuffer = Buffer.from(dummyMessage);
+          this.setState({ sent: [...this.state.sent, msgBuffer] });
         }
       });
     });
 
     client.on("message", (topic, message) => {
       // message is Buffer
-      console.log(message.toString());
-      this.setState({ received: this.state.received + 1 });
+      console.log({ message });
+      this.setState({ received: [...this.state.received, message] });
       // client?.end()
     });
   }
 
   render() {
+    const { connected, sent, received } = this.state;
+
     return (
       <div>
         <h2>RabbitMQ Connection</h2>
@@ -58,8 +62,27 @@ class Connection extends React.Component<ConnectionProps, ConnectionState> {
         </div>
 
         <div>
-          <h3>State</h3>
-          <code>{JSON.stringify(this.state, null, 2)}</code>
+          <h3>Stats</h3>
+          <code>
+            {JSON.stringify(
+              {
+                connected,
+                sentCount: sent.length,
+                receivedCount: received.length,
+              },
+              null,
+              2
+            )}
+          </code>
+        </div>
+
+        <div>
+          <h3>Messages received</h3>
+          <ul>
+            {this.state.received.map((m, index) => (
+              <li key={`received-${index}`}>{m.toString()}</li>
+            ))}
+          </ul>
         </div>
       </div>
     );
