@@ -11,6 +11,7 @@ interface ConnectionState {
   connected: boolean;
   sent: Buffer[];
   received: Buffer[];
+  nextMessage: string;
 }
 
 let client: MqttClient | null = null;
@@ -22,6 +23,7 @@ class Connection extends React.Component<ConnectionProps, ConnectionState> {
       connected: false,
       sent: [],
       received: [],
+      nextMessage: "",
     };
   }
 
@@ -77,12 +79,21 @@ class Connection extends React.Component<ConnectionProps, ConnectionState> {
 
         <div>
           <h3>Send</h3>
-          {/* <input type="text"></input> */}
+          <input
+            type="text"
+            value={this.state.nextMessage}
+            onChange={(event) => {
+              this.setState({ nextMessage: event.target.value });
+            }}
+          ></input>
           <button
             onClick={() => {
               client?.publish(
                 "dummy.browser.DummyData",
-                "hello from the browser"
+                this.state.nextMessage,
+                () => {
+                  this.setState({ nextMessage: "" });
+                }
               );
             }}
           >
