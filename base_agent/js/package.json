@@ -1,0 +1,19 @@
+{
+  "name": "tether",
+  "version": "2.0.0",
+  "description": "",
+  "main": "dist/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "npx tsc",
+    "prepare": "npm run build"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "async-mqtt": "^2.6.1"
+  },
+  "devDependencies": {
+    "@types/node": "^15.0.3"
+  }
+}

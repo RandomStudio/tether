@@ -1,5 +1,4 @@
 const defaults = {
-  loglevel: "info",
   broker: {
     protocol: "tcp",
     host: "localhost",

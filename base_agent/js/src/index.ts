@@ -44,7 +44,7 @@ export class Output extends Plug {
   };
 }
 
-export default class TetherAgent {
+export class TetherAgent {
   private agentType: string = null;
   private agentID: string = null;
 
@@ -145,3 +145,5 @@ export default class TetherAgent {
 
 const topicHasPlugName = (topic: string, plugName: string) =>
   topic.split(`/`)[2] === plugName;
+
+export default TetherAgent;
