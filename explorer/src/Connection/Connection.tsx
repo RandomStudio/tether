@@ -50,6 +50,7 @@ class Connection extends React.Component<ConnectionProps, ConnectionState> {
       // message is Buffer
       const decoded = msgpack.decode(message);
       console.log("received message:", {
+        topic,
         raw: message.toString(),
         decoded,
         mType: typeof decoded,
@@ -110,10 +111,10 @@ class Connection extends React.Component<ConnectionProps, ConnectionState> {
                   toBuffer: msgpack.encode(json),
                 });
                 client?.publish(
-                  "dummy.browser.DummyData",
+                  "dummy.browser.BrowserData",
                   encodedMessage,
                   () => {
-                    this.setState({ nextMessage: "" });
+                    // this.setState({ nextMessage: "" });
                   }
                 );
               } catch (e) {

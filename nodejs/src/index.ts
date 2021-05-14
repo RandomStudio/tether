@@ -24,9 +24,10 @@ const msgpack = MsgPack();
     process.exit(1);
   }
 
-  const input = await agent.createInput("BrowserMessages");
+  const input = await agent.createInput("BrowserData");
   input.on("message", (topic: string, message: Buffer) => {
-    console.log("received message:", { topic, message });
+    const decoded = msgpack.decode(message);
+    console.log("received message:", { topic, message, decoded });
   });
 
   const sender = await agent.createOutput("DummyData");

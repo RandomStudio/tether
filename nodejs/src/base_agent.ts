@@ -130,10 +130,12 @@ export default class TetherAgent {
     // Create a new Input
     const definition: PlugDefinition = {
       name,
-      routingKey: `#.${name}`,
+      routingKey: `+/+/${name}`,
       flowDirection: "in",
     };
     const input = new Input(this.client, definition);
+
+    input.subscribe();
 
     this.inputs.push(input);
 
@@ -142,4 +144,4 @@ export default class TetherAgent {
 }
 
 const topicHasPlugName = (topic: string, plugName: string) =>
-  topic.split(".")[2] === plugName;
+  topic.split(`/`)[2] === plugName;

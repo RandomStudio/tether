@@ -13,6 +13,7 @@ It's important to note some key differences from Tether 1
 - Protocol is MQTT (simplified compared to AMQP which is RabbitMQ specific) This in turn means:
   - Exchange is set to default `amq.topic`. A different default exchange has to be configured in the mqtt plugin, and cannot be specified on the client side.
   - The NodeJS base agent can/should actually use `mqtt` library (same as browser), rather than `amqplib`
+  - MQTT uses / not . separators, and wildcards are different (see https://www.hivemq.com/blog/mqtt-essentials-part-5-mqtt-topics-best-practices/), e.g. `+` not `*` and `#` may only appear at the _end_ of topic/routing key
 
 ## TODOs
 
