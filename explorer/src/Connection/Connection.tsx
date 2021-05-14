@@ -1,6 +1,6 @@
 import * as React from "react";
 import MsgPack from "msgpack5";
-import TetherAgent, { Output } from "tether";
+import TetherAgent, { Input, Output } from "tether";
 
 interface ConnectionProps {
   path: string;
@@ -40,21 +40,23 @@ class Connection extends React.Component<ConnectionProps, ConnectionState> {
       console.info("connected!");
       const sender = await agent.createOutput("browserData");
       this.setState({ sender });
+
+      const receiver = await agent.createInput("dummyData");
+      receiver.on("message", (topic, message) => {
+        const decoded = msgpack.decode(message);
+        console.log("received message:", {
+          topic,
+          raw: message.toString(),
+          decoded,
+          mType: typeof decoded,
+        });
+        this.setState({
+          received: [...this.state.received, decoded],
+        });
+      });
     } catch (e) {
       console.error("error connecting Tether:", e);
     }
-
-    // client.on("connect", () => {
-    //   console.log("connected!");
-    //   this.setState({ connected: true });
-    //   client?.subscribe("#", (err) => {
-    //     if (!err) {
-    //       console.info("subscribed to all topics OK");
-    //     } else {
-    //       console.error("error subscribing", err);
-    //     }
-    //   });
-    // });
 
     // client.on("message", (topic, message) => {
     //   // message is Buffer
