@@ -17,6 +17,18 @@ const agent = new TetherAgent("dummy", "nodejs_dummy");
 const msgpack = MsgPack();
 
 (async () => {
+  try {
+    await agent.connect();
+  } catch (e) {
+    console.error("failed to connect:", e);
+    process.exit(1);
+  }
+
+  const input = await agent.createInput("BrowserMessages");
+  input.on("message", (topic: string, message: Buffer) => {
+    console.log("received message:", { topic, message });
+  });
+
   const sender = await agent.createOutput("DummyData");
   console.log("got sender!");
 
@@ -33,26 +45,16 @@ const msgpack = MsgPack();
     };
     const encoded = msgpack.encode(msg);
     i++;
-    console.log("sending", {
-      msg,
-      encoded,
-      mType: typeof encoded,
-      size: encoded.length,
-    });
+    // console.log("sending", {
+    //   msg,
+    //   encoded,
+    //   mType: typeof encoded,
+    //   size: encoded.length,
+    // });
     // need to figure out why TS complains here!
     // @ts-ignore
     sender.publish(Buffer.from(encoded));
   }, 3000);
-
-  agent.createInput(
-    "BrowserMessages",
-    (msg) => {
-      console.log("got message from browser:", msg);
-      const decoded = msgpack.decode(msg.content);
-      console.log({ decoded });
-    },
-    "dummy.browser.*"
-  );
 })();
 
 // const msgpack = MsgPack();

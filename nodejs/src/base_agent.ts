@@ -1,104 +1,54 @@
-import { Connection, Channel, connect, Options, ConsumeMessage } from "amqplib";
+import mqtt, { AsyncMqttClient } from "async-mqtt";
+import { EventEmitter } from "events";
+import defaults from "./defaults";
 
-interface SubscriptionInfo {
-  queue: string;
-  consumerTag: string;
-}
-
-export interface InputDefinition {
+export interface PlugDefinition {
   name: string;
   routingKey: string;
-}
-
-export interface OutputDefinition {
-  name: string;
-  routingKey: string;
+  flowDirection: "in" | "out";
 }
 
 export interface AgentInfo {
   agentType: string;
   agentID: string;
-  inputs: InputDefinition[];
-  outputs: OutputDefinition[];
+  inputs: PlugDefinition[];
+  outputs: PlugDefinition[];
 }
 
-interface Exchange {
-  name: string;
-  type: string;
-  options?: Options.AssertExchange;
-}
+class Plug extends EventEmitter {
+  protected definition: PlugDefinition;
+  protected client: AsyncMqttClient | null;
 
-const defaultExchange: Exchange = {
-  name: "amq.topic",
-  type: "topic",
-  // options: {
-  //   durable: false,
-  //   autoDelete: false,
-  // },
-};
-
-export class Input {
-  private subscription: SubscriptionInfo;
-  private definition: InputDefinition;
-
-  constructor(definition: InputDefinition) {
+  constructor(client: AsyncMqttClient, definition: PlugDefinition) {
+    super();
+    this.client = client;
     this.definition = definition;
-    console.log("created Input:", definition);
   }
-
-  public setSubscription = (subscription: SubscriptionInfo) => {
-    this.subscription = subscription;
-  };
-
-  public getSubscription = () => this.subscription;
 
   public getDefinition = () => this.definition;
 }
-
-export class Output {
-  private channel: Channel;
-  private definition: OutputDefinition;
-  private agentType: string;
-  private agentID: string;
-
-  constructor(
-    channel: Channel,
-    definition: OutputDefinition,
-    agentType: string,
-    agentID: string
-  ) {
-    this.definition = definition;
-    console.log("created Output:", definition);
-    this.agentType = agentType;
-    this.agentID = agentID;
-    this.channel = channel;
-  }
-
-  public publish = async (content: Buffer, options?: Options.Publish) => {
-    this.channel.publish(
-      defaultExchange.name,
-      this.definition.routingKey,
-      content,
-      {
-        ...options,
-        contentType: "application/msgpack",
-        headers: {
-          agentID: this.agentID,
-          agentType: this.agentType,
-        },
-      }
-    );
+export class Input extends Plug {
+  subscribe = async () => {
+    await this.client.subscribe(this.definition.routingKey);
+    console.log("subscribed to topic", this.definition.routingKey);
   };
+}
 
-  public getDefinition = () => this.definition;
+export class Output extends Plug {
+  publish = async (content: Buffer) => {
+    if (this.client === null) {
+      console.error("trying to send without connection!");
+    } else {
+      this.client.publish(this.definition.routingKey, content);
+    }
+  };
 }
 
 export default class TetherAgent {
   private agentType: string = null;
   private agentID: string = null;
 
-  private connection: Connection = null;
-  private channel: Channel | null;
+  private client: AsyncMqttClient | null;
 
   private inputs: Input[] = [];
   private outputs: Output[] = [];
@@ -107,34 +57,49 @@ export default class TetherAgent {
     this.agentType = agentType;
     this.agentID = agentID;
 
-    this.channel = null;
+    this.client = null;
   }
 
-  private getConnection = async () =>
-    this.connection || (await connect("amqp://localhost:5672"));
+  public connect = async (
+    overrideProtocol?: string,
+    overrideAddress?: string,
+    overridePort?: number
+  ) => {
+    const protocol = overrideProtocol || defaults.broker.protocol;
+    const address = overrideAddress || defaults.broker.host;
+    const port = overridePort || defaults.broker.port;
 
-  private getChannel = async () => {
-    if (this.channel) {
-      return this.channel;
-    } else {
-      this.connection = await this.getConnection();
+    const url = `${protocol}://${address}:${port}`;
 
-      const channel = await this.connection.createChannel();
-      console.log("channel OK");
+    console.log("Connecting to MQTT broker @", url);
 
-      // Create default exchange
-      await channel.assertExchange(
-        defaultExchange.name,
-        defaultExchange.type,
-        defaultExchange.options
-      );
-      console.log("exchange OK");
-
-      this.channel = channel; // save so next call will return immediately
-
-      return channel;
+    try {
+      this.client = await mqtt.connectAsync(url);
+      console.info("Connected OK");
+      this.listenForIncoming();
+    } catch (error) {
+      console.error("Error connecting to MQTT broker:", { error, url });
+      throw error;
     }
   };
+
+  private listenForIncoming = () => {
+    this.client.on("message", (topic, payload) => {
+      const matchingInputPlug = this.inputs.find((p) =>
+        topicHasPlugName(topic, p.getDefinition().name)
+      );
+      if (matchingInputPlug) {
+        matchingInputPlug.emit("message", topic, payload);
+      } else {
+        console.log("message received but cannot match to Input Plug:", {
+          topic,
+          payload,
+        });
+      }
+    });
+  };
+
+  public getIsConnected = () => this.client !== null;
 
   /**
    * Define an output to indicate the data that this agent produces. Define an output, and call
@@ -142,19 +107,14 @@ export default class TetherAgent {
    * When sending, the name of the output will be prefixed with the agent type and id, to create a unique routing key.
    * @param {output} output
    */
-  createOutput = async (name: string, routingKey?: string) => {
-    const definition: OutputDefinition = {
+  createOutput = async (name: string) => {
+    const definition: PlugDefinition = {
       name,
-      routingKey: routingKey || `${this.agentType}.${this.agentID}.${name}`,
+      routingKey: `${this.agentType}.${this.agentID}.${name}`,
+      flowDirection: "out",
     };
 
-    const channel = await this.getChannel();
-    const output = new Output(
-      channel,
-      definition,
-      this.agentType,
-      this.agentID
-    );
+    const output = new Output(this.client, definition);
     this.outputs.push(output);
 
     return output;
@@ -166,48 +126,20 @@ export default class TetherAgent {
    * @param {string} bindingKey The binding key to subscribe to.
    * @param {string} inputName The name of the input to use for this. Note that this input must be defined before subscribing.
    */
-  createInput = async (
-    name: string,
-    onMessage: (msg: ConsumeMessage, ...args: any) => void,
-    routingKey?: string
-  ) => {
-    try {
-      // Create a new Input
-      const definition: InputDefinition = {
-        name,
-        routingKey: routingKey || `#.${name}`,
-      };
-      const input = new Input(definition);
+  createInput = async (name: string) => {
+    // Create a new Input
+    const definition: PlugDefinition = {
+      name,
+      routingKey: `#.${name}`,
+      flowDirection: "in",
+    };
+    const input = new Input(this.client, definition);
 
-      // Create an exclusive queue for the Subscription.
-      const channel = await this.getChannel();
-      const qResult = await channel.assertQueue("", { exclusive: true });
-      const { queue } = qResult;
+    this.inputs.push(input);
 
-      // Bind the queue to the exchange.
-      await this.channel.bindQueue(
-        queue,
-        defaultExchange.name,
-        definition.routingKey
-      );
-
-      // Start consuming, using the callback defined in the input.
-      const channelResult = await this.channel.consume(queue, onMessage, {
-        noAck: true,
-      });
-
-      const { consumerTag } = channelResult;
-      const subscription: SubscriptionInfo = {
-        queue,
-        consumerTag,
-      };
-      // Associate subscription info (including consumerTag to allow stopping consumption) with Input
-      input.setSubscription(subscription);
-
-      // Store the Input
-      this.inputs.push(input);
-    } catch (err) {
-      console.error(err);
-    }
+    return input;
   };
 }
+
+const topicHasPlugName = (topic: string, plugName: string) =>
+  topic.split(".")[2] === plugName;

@@ -1,8 +1,9 @@
 const defaults = {
   loglevel: "info",
-  rabbit: {
+  broker: {
+    protocol: "tcp",
     host: "localhost",
-    port: 15672,
+    port: 1883,
   },
 };
 

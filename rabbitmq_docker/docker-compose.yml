@@ -3,6 +3,7 @@ services:
   rabbitmq:
     build: .
     ports:
-      - "5672:5672" # Standard TCP
+      - "5672:5672" # Standard TCP for AMQP
       - "8080:15672" # Standard Web Management
+      - "1883:1883" # Standard TCP for MQTT
       - "15675:15675" # Standard MQTT-over-WebSocket
