@@ -16,11 +16,17 @@ const msgpack = MsgPack();
   const input = await agent.createInput("browserData");
   input.on("message", (topic, message) => {
     const decoded = msgpack.decode(message);
-    console.log("received message:", { topic, message, decoded });
+    console.log("received message on plug level:", { topic, message, decoded });
   });
 
-  const sender = await agent.createOutput("dummyData");
-  console.log("got sender!");
+  const [sender1, sender2] = await Promise.all([
+    agent.createOutput("dummyData"),
+    agent.createOutput("someOtherData"),
+  ]);
+  console.log("got senders!", {
+    sender1: sender1.getDefinition(),
+    sender2: sender2.getDefinition(),
+  });
 
   let i = 0;
 
@@ -33,15 +39,12 @@ const msgpack = MsgPack();
       isEven: i % 2 === 0,
       randomArray,
     };
-    const encoded = msgpack.encode(msg);
+    const encoded1 = msgpack.encode(msg);
     i++;
-    // console.log("sending", {
-    //   msg,
-    //   encoded,
-    //   mType: typeof encoded,
-    //   size: encoded.length,
-    // });
 
-    sender.publish(Buffer.from(encoded));
+    sender1.publish(Buffer.from(encoded1));
+
+    const encoded2 = msgpack.encode({ hello: "boo!" });
+    sender2.publish(Buffer.from(encoded2));
   }, 3000);
 })();

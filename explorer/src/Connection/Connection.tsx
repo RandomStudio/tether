@@ -1,6 +1,6 @@
 import * as React from "react";
 import MsgPack from "msgpack5";
-import TetherAgent, { Input, Output } from "tether";
+import TetherAgent, { Output } from "tether";
 
 interface ConnectionProps {
   path: string;
@@ -10,8 +10,8 @@ interface ConnectionProps {
 
 interface ConnectionState {
   connected: boolean;
-  sent: any[];
-  received: any[];
+  receivedOnInput: any[];
+  receivedAny: any[];
   nextMessage: string;
   sender: Output | null;
 }
@@ -25,8 +25,8 @@ class Connection extends React.Component<ConnectionProps, ConnectionState> {
     super(props);
     this.state = {
       connected: false,
-      sent: [],
-      received: [],
+      receivedOnInput: [],
+      receivedAny: [],
       nextMessage: `{ "hello": "world" }`,
       sender: null,
     };
@@ -38,20 +38,40 @@ class Connection extends React.Component<ConnectionProps, ConnectionState> {
     try {
       await agent.connect({ protocol: "ws", host, port, path });
       console.info("connected!");
+      this.setState({ connected: true });
+
       const sender = await agent.createOutput("browserData");
       this.setState({ sender });
 
-      const receiver = await agent.createInput("dummyData");
-      receiver.on("message", (topic, message) => {
+      const input = await agent.createInput("dummyData");
+
+      input.on("message", (topic, message) => {
         const decoded = msgpack.decode(message);
-        console.log("received message:", {
-          topic,
-          raw: message.toString(),
-          decoded,
-          mType: typeof decoded,
-        });
+        // console.log("INPUT message:", {
+        //   topic,
+        //   raw: message.toString(),
+        //   decoded,
+        //   mType: typeof decoded,
+        // });
+        console.log("INPUT message:", topic);
         this.setState({
-          received: [...this.state.received, decoded],
+          receivedOnInput: [
+            ...this.state.receivedOnInput,
+            { topic, decoded, onInput: input.getDefinition().name },
+          ],
+        });
+      });
+
+      const client = agent.getClient();
+      client.subscribe("#");
+      client.on("message", (topic, message) => {
+        console.log("CLIENT message:", topic);
+        const decoded = msgpack.decode(message);
+        this.setState({
+          receivedAny: [
+            ...this.state.receivedAny,
+            { topic, decoded, onInput: null },
+          ],
         });
       });
     } catch (e) {
@@ -60,7 +80,7 @@ class Connection extends React.Component<ConnectionProps, ConnectionState> {
   }
 
   render() {
-    const { connected, sent, received } = this.state;
+    const { connected, receivedOnInput, receivedAny } = this.state;
 
     return (
       <div>
@@ -76,8 +96,6 @@ class Connection extends React.Component<ConnectionProps, ConnectionState> {
             {JSON.stringify(
               {
                 connected,
-                sentCount: sent.length,
-                receivedCount: received.length,
               },
               null,
               2
@@ -122,9 +140,18 @@ class Connection extends React.Component<ConnectionProps, ConnectionState> {
         </div>
 
         <div>
-          <h3>Messages received</h3>
+          <h3>Messages received on named Input ({receivedOnInput.length})</h3>
           <ul>
-            {this.state.received.map((m, index) => (
+            {receivedOnInput.map((m, index) => (
+              <li key={`received-${index}`}>{JSON.stringify(m)}</li>
+            ))}
+          </ul>
+        </div>
+
+        <div>
+          <h3>Messages received on any topic ({receivedAny.length})</h3>
+          <ul>
+            {receivedAny.map((m, index) => (
               <li key={`received-${index}`}>{JSON.stringify(m)}</li>
             ))}
           </ul>

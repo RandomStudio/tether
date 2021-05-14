@@ -84,6 +84,14 @@ export class TetherAgent {
     }
   };
 
+  /**
+   * End users can get the underlying client if they like. This allows you to bypass
+   * the "plugs" altogether and subscribe or publish on topics directly.
+   *
+   * @returns The AsyncMqttClient client instance, or null if not (yet) connected
+   */
+  public getClient = () => this.client;
+
   public getIsConnected = () => this.client !== null;
 
   public getInput = (name: string) =>
