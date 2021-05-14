@@ -8,8 +8,7 @@ const config = rc("tetherSend", {
   protocol: "tcp",
   host: "localhost",
   port: 1883,
-  topic: "tetherCli.unknown.dummy",
-  message: '{ "hello": "world" }',
+  topic: "#",
 });
 
 const msgPack = new MsgPack();
@@ -25,14 +24,15 @@ const run = async () => {
 
   console.log("...connected OK");
 
-  const { topic, message } = config;
+  const { topic } = config;
 
-  const encoded = msgPack.encode(JSON.parse(message));
-
-  client.publish(topic, Buffer.from(encoded));
-
-  // TODO: could have an input loop for new messages
-  client.end();
+  client.subscribe(topic);
+  client.on("message", (topic, message) => {
+    const decoded = msgPack.decode(message);
+    console.log(
+      `received message on topic "${topic}": ${JSON.stringify(decoded)}`
+    );
+  });
 };
 
 run();
