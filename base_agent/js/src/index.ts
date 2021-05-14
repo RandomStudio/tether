@@ -4,15 +4,8 @@ import defaults from "./defaults";
 
 export interface PlugDefinition {
   name: string;
-  routingKey: string;
+  topic: string;
   flowDirection: "in" | "out";
-}
-
-export interface AgentInfo {
-  agentType: string;
-  agentID: string;
-  inputs: PlugDefinition[];
-  outputs: PlugDefinition[];
 }
 
 class Plug extends EventEmitter {
@@ -29,17 +22,24 @@ class Plug extends EventEmitter {
 }
 export class Input extends Plug {
   subscribe = async () => {
-    await this.client.subscribe(this.definition.routingKey);
-    console.log("subscribed to topic", this.definition.routingKey);
+    if (this.client === null) {
+      console.warn(
+        "subscribing to topic before client is connected; this is allowed but you won't receive any messages until connected"
+      );
+    }
+    await this.client.subscribe(this.definition.topic);
+    console.log("subscribed to topic", this.definition.topic);
   };
 }
 
 export class Output extends Plug {
   publish = async (content: Buffer) => {
     if (this.client === null) {
-      console.error("trying to send without connection!");
+      console.error(
+        "trying to send without connection; not possible until connected"
+      );
     } else {
-      this.client.publish(this.definition.routingKey, content);
+      this.client.publish(this.definition.topic, content);
     }
   };
 }
@@ -56,7 +56,6 @@ export class TetherAgent {
   constructor(agentType: string, agentID: string) {
     this.agentType = agentType;
     this.agentID = agentID;
-
     this.client = null;
   }
 
@@ -85,6 +84,55 @@ export class TetherAgent {
     }
   };
 
+  public getIsConnected = () => this.client !== null;
+
+  public getInput = (name: string) =>
+    this.inputs.find((p) => p.getDefinition().name === name);
+
+  public getOutput = (name: string) =>
+    this.inputs.find((p) => p.getDefinition().name === name);
+
+  /**
+   * Define a named Output to indicate some data that this agent is expected to produce/send.
+   *
+   * For convenience, the topic is generated once and used for every message on this Output instance when calling its `publish` function.
+   */
+  public createOutput = async (name: string) => {
+    const definition: PlugDefinition = {
+      name,
+      topic: `${this.agentType}/${this.agentID}/${name}`,
+      flowDirection: "out",
+    };
+
+    const output = new Output(this.client, definition);
+    this.outputs.push(output);
+
+    return output;
+  };
+
+  /**
+   * Define a named Input to indicate some data this agent is expected to consume/receive.
+   *
+   * For convenience, the topic is assumed to end in the given `name`, e.g. an Input named "someTopic" will match messages on topics `foo/bar/someTopic` as well as `something/else/someTopic`.
+   *
+   * Returns an Output instance which is an EventEmitter. Events named "message" with contents (topic, message) will be emitted on this instance, but _only_ if they match the Output name.
+   */
+  public createInput = async (name: string) => {
+    // Create a new Input
+    const definition: PlugDefinition = {
+      name,
+      topic: `+/+/${name}`,
+      flowDirection: "in",
+    };
+    const input = new Input(this.client, definition);
+
+    input.subscribe();
+
+    this.inputs.push(input);
+
+    return input;
+  };
+
   private listenForIncoming = () => {
     this.client.on("message", (topic, payload) => {
       const matchingInputPlug = this.inputs.find((p) =>
@@ -99,49 +147,6 @@ export class TetherAgent {
         });
       }
     });
-  };
-
-  public getIsConnected = () => this.client !== null;
-
-  /**
-   * Define an output to indicate the data that this agent produces. Define an output, and call
-   * send(outputName, content, options) to send messages.
-   * When sending, the name of the output will be prefixed with the agent type and id, to create a unique routing key.
-   * @param {output} output
-   */
-  createOutput = async (name: string) => {
-    const definition: PlugDefinition = {
-      name,
-      routingKey: `${this.agentType}.${this.agentID}.${name}`,
-      flowDirection: "out",
-    };
-
-    const output = new Output(this.client, definition);
-    this.outputs.push(output);
-
-    return output;
-  };
-
-  /**
-   * Subscribe to messages from another agent, based on a defined input. Note that it is possible
-   * to subscribe to the same binding key multiple times, using different inputs.
-   * @param {string} bindingKey The binding key to subscribe to.
-   * @param {string} inputName The name of the input to use for this. Note that this input must be defined before subscribing.
-   */
-  createInput = async (name: string) => {
-    // Create a new Input
-    const definition: PlugDefinition = {
-      name,
-      routingKey: `+/+/${name}`,
-      flowDirection: "in",
-    };
-    const input = new Input(this.client, definition);
-
-    input.subscribe();
-
-    this.inputs.push(input);
-
-    return input;
   };
 }
 
