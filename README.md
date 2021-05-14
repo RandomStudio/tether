@@ -15,9 +15,11 @@ It's important to note some key differences from Tether 1
   - The NodeJS base agent can/should actually use `mqtt` library (same as browser), rather than `amqplib`
   - MQTT uses / not . separators, and wildcards are different (see https://www.hivemq.com/blog/mqtt-essentials-part-5-mqtt-topics-best-practices/), e.g. `+` not `*` and `#` may only appear at the _end_ of topic/routing key (or is the only symbol)
 
-Because MQTT does not specify the need for "exchanges" and "queues" (though RabbitMQ may use these internally), the subscription process is quite different. Subscription is on the level of the _client_ not the (channel+exhange+)queue. This means that it we keep the concept of a defined "Input Plug" (which seems sensible, since this can then be queried/reported elsewhere) then a little bit of extra work is done to match incoming messages with the correct Input instance, since there is no inherent link between the subscription and the messages that come in. Incoming messages include a topic (a string) - that is all that is needed to match with the Input.
+Because MQTT does not specify the need for "exchanges" and "queues" (though RabbitMQ may use these internally), the subscription process is quite different. Subscription is on the level of the _client_ not the (channel+exhange+)queue.
 
-It all means that we cannot (and probably don't need to) stop the end-user ignoring the concept of an "Input Plug" altogether, listening for incoming messages on whatever topic(s) and handling them as they see fit.
+This means that if we keep the concept of a defined "Input Plug" (which seems sensible, since this can then be queried/reported elsewhere) then a little bit of extra work is done to match incoming messages with the correct Input instance, since there is no inherent link between the subscription and the messages that come in. Incoming messages include a topic (a string) - that is all that is needed to match with the Input.
+
+It also means that we cannot (and probably don't need to) stop the end-user ignoring the concept of an "Input Plug" altogether, listening for incoming messages and then breaking up and interpreting topic strings in order to redirect/handle messages as they see fit.
 
 ## TODOs
 
