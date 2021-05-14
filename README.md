@@ -1,4 +1,4 @@
-# MessagePack experiments for Tether 2
+# MQTT+MessagePack POC for Tether 2
 
 ## Structure of this project
 
