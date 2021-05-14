@@ -6,7 +6,7 @@ function App() {
   return (
     <div className="App">
       <header className="App-header">Tether2 Explorer</header>
-      <Connection path="/ws" address="ws://localhost" port={15675} />
+      <Connection path="/ws" host="localhost" port={15675} />
     </div>
   );
 }

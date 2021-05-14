@@ -60,16 +60,18 @@ export class TetherAgent {
     this.client = null;
   }
 
-  public connect = async (
-    overrideProtocol?: string,
-    overrideAddress?: string,
-    overridePort?: number
-  ) => {
-    const protocol = overrideProtocol || defaults.broker.protocol;
-    const address = overrideAddress || defaults.broker.host;
-    const port = overridePort || defaults.broker.port;
+  public connect = async (overrides?: {
+    protocol?: string;
+    host?: string;
+    port?: number;
+    path?: string;
+  }) => {
+    const protocol = overrides?.protocol || defaults.broker.protocol;
+    const host = overrides?.host || defaults.broker.host;
+    const port = overrides?.port || defaults.broker.port;
+    const path = overrides?.path || defaults.broker.path;
 
-    const url = `${protocol}://${address}:${port}`;
+    const url = `${protocol}://${host}:${port}${path}`;
 
     console.log("Connecting to MQTT broker @", url);
 

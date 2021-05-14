@@ -13,13 +13,13 @@ const msgpack = MsgPack();
     process.exit(1);
   }
 
-  const input = await agent.createInput("BrowserData");
+  const input = await agent.createInput("browserData");
   input.on("message", (topic, message) => {
     const decoded = msgpack.decode(message);
     console.log("received message:", { topic, message, decoded });
   });
 
-  const sender = await agent.createOutput("DummyData");
+  const sender = await agent.createOutput("dummyData");
   console.log("got sender!");
 
   let i = 0;
@@ -35,12 +35,12 @@ const msgpack = MsgPack();
     };
     const encoded = msgpack.encode(msg);
     i++;
-    console.log("sending", {
-      msg,
-      encoded,
-      mType: typeof encoded,
-      size: encoded.length,
-    });
+    // console.log("sending", {
+    //   msg,
+    //   encoded,
+    //   mType: typeof encoded,
+    //   size: encoded.length,
+    // });
 
     sender.publish(Buffer.from(encoded));
   }, 3000);
