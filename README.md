@@ -1,5 +1,15 @@
 # MessagePack experiments for Tether 2
 
+## Structure of this project
+
+- `base_agent`
+  - `js`: The only base agent implemented so far. You don't even have to use this (see a few examples below).
+- `explorer`: A proof-of-concept of a browser-based agent which uses _both_ the JS base agent and pure-MQTT-client approaches to demonstrate input and output being passed via the browser
+- `examples`
+  - `cli`: Showing how little is actually needed to send and receive messages via MQTT+MsgPack
+  - `nodejs`: A demo agent that uses the same JS base agent as the "explorer". It publishes messages on two separate topics every 3 seconds, and also decodes any messages it receives on the "browserData" Input Plug.
+- `rabbitmq_docker`: A Dockerfile for building RabbitMQ with the MQTT and MQTT-web plugins enabled, and a docker-compose file to map the appropriate ports.
+
 ## Running RabbitMQ with websocket/mqtt support
 
 A `docker-compose.yml` file (and corresponding `Dockerfile`) is available in `./rabbitmq_docker`. This installs the appropriate plugins (for web/MQTT) and sets up the port mappings needed.

@@ -36,7 +36,11 @@ class Connection extends React.Component<ConnectionProps, ConnectionState> {
     const { port, path, host } = this.props;
 
     try {
+      // Note how we only need to override the protocol and port to
+      // get MQTT via websocket (for the browser) rather than TCP
+      // (for other runtimes, e.g. NodeJS)
       await agent.connect({ protocol: "ws", host, port, path });
+
       console.info("connected!");
       this.setState({ connected: true });
 
