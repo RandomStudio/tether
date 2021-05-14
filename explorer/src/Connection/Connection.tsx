@@ -57,21 +57,6 @@ class Connection extends React.Component<ConnectionProps, ConnectionState> {
     } catch (e) {
       console.error("error connecting Tether:", e);
     }
-
-    // client.on("message", (topic, message) => {
-    //   // message is Buffer
-    //   const decoded = msgpack.decode(message);
-    //   console.log("received message:", {
-    //     topic,
-    //     raw: message.toString(),
-    //     decoded,
-    //     mType: typeof decoded,
-    //   });
-    //   this.setState({
-    //     received: [...this.state.received, decoded],
-    //   });
-    //   // client?.end()
-    // });
   }
 
   render() {
@@ -127,14 +112,6 @@ class Connection extends React.Component<ConnectionProps, ConnectionState> {
                   console.log("sending");
                   sender.publish(encodedMessage);
                 }
-                // this.state.sender?();
-                // client?.publish(
-                //   "dummy.browser.BrowserData",
-                //   encodedMessage,
-                //   () => {
-                //     // this.setState({ nextMessage: "" });
-                //   }
-                // );
               } catch (e) {
                 console.log("not valid JSON:", e);
               }
