@@ -4,12 +4,13 @@ import Connection from "./Connection/Connection";
 
 function App() {
   const [host, setHost] = useState("localhost");
+  const [port, setPort] = useState(15675);
   const [ready, setReady] = useState(false);
   return (
     <div className="App">
       <header className="App-header">Tether2 Explorer</header>
       {ready ? (
-        <Connection path="/ws" host={host} port={15675} />
+        <Connection path="/ws" host={host} port={port} />
       ) : (
         <div>
           <h2>Enter host details</h2>
@@ -21,13 +22,20 @@ function App() {
                 setHost(e.target.value);
               }}
             ></input>
+            <input
+              type="number"
+              value={port}
+              onChange={(e) => {
+                setPort(parseInt(e.target.value));
+              }}
+            ></input>
           </div>
           <button
             onClick={() => {
               setReady(true);
             }}
           >
-            Connect to {`${host}...`}
+            Connect to {`${host}:${port}...`}
           </button>
         </div>
       )}
