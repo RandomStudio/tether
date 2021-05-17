@@ -8,7 +8,7 @@ const config = rc("tetherSend", {
   protocol: "tcp",
   host: "localhost",
   port: 1883,
-  topic: "tetherCli.unknown.dummy",
+  topic: `tetherCli/unknown/dummy`,
   message: '{ "hello": "world" }',
 });
 
