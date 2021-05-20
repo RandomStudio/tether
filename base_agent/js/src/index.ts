@@ -84,6 +84,15 @@ export class TetherAgent {
     }
   };
 
+  public disconnect = async () => {
+    if (this.client) {
+      await this.client.end();
+      console.log("MQTT client closed normally");
+    } else {
+      console.warn("MQTT client not available on disconnect request");
+    }
+  };
+
   /**
    * End users can get the underlying client if they like. This allows you to bypass
    * the "plugs" altogether and subscribe or publish on topics directly.
