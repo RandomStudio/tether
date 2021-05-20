@@ -1,6 +1,7 @@
 version: "3.9"
 services:
   rabbitmq:
+    restart: "unless-stopped"
     build: .
     ports:
       - "5672:5672" # Standard TCP for AMQP
