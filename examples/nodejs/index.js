@@ -7,7 +7,7 @@ const msgpack = MsgPack();
 
 (async () => {
   try {
-    await agent.connect();
+    await agent.connect({ host: "192.168.2.5" });
   } catch (e) {
     console.error("failed to connect:", e);
     process.exit(1);
@@ -30,6 +30,8 @@ const msgpack = MsgPack();
 
   let i = 0;
 
+  let remaining = 10;
+
   setInterval(() => {
     const randomArray = [Math.random(), Math.random(), Math.random()];
     const msg = {
@@ -46,5 +48,14 @@ const msgpack = MsgPack();
 
     const encoded2 = msgpack.encode({ hello: "boo!" });
     sender2.publish(Buffer.from(encoded2));
+
+    remaining--;
+    if (remaining <= 0) {
+      console.log("Done! Closing and quitting...");
+      agent.disconnect().then(() => {
+        console.log("disconnected OK");
+        process.exit(0);
+      });
+    }
   }, 3000);
 })();
