@@ -16,6 +16,12 @@ A `docker-compose.yml` file (and corresponding `Dockerfile`) is available in `./
 
 Run with `docker-compose up` (attach, keep running in this shell) or `docker-compose up -d` (daemonise).
 
+To keep it persistent (even between reboots) the following worked well:
+
+- `restart: "unless-stopped" was added to the `docker-compose.yml`
+- Made sure that Docker was enabled as a service in systemd: `sudo systemctl enable docker`
+- Started the container (once!) using `docker-compose up -d`
+
 ## MQTT vs AMQP
 
 It's important to note some key differences from Tether 1
