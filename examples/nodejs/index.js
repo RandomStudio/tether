@@ -1,29 +1,51 @@
-const MsgPack = require("msgpack5");
+const { encode, decode } = require("@msgpack/msgpack");
 const { TetherAgent } = require("tether");
 
-console.log(TetherAgent);
+// console.log(TetherAgent);
 const agent = new TetherAgent("dummy", "nodejs_dummy");
-const msgpack = MsgPack();
 
-(async () => {
+const LogType = Object.freeze({
+  Log: "log",
+  Info: "info",
+  Warn: "warn",
+  Error: "error"
+});
+
+const log = (type, ...content) => {
+  if (!Object.keys(LogType).includes(type)) {
+    type = LogType.Log;
+  }
+  console[type](`[${(new Date()).toLocaleString()}]`, ...content);
+}
+
+const MQTTConnect = async () => {
+  log(LogType.Info, "Connecting to MQTT");
   try {
     await agent.connect();
   } catch (e) {
-    console.error("failed to connect:", e);
-    process.exit(1);
+    log(LogType.Info, "Retrying connection in 5 seconds.");
+    setTimeout(MQTTConnect, 5000);
+    return;
   }
 
-  const input = await agent.createInput("browserData");
-  input.on("message", (topic, message) => {
-    const decoded = msgpack.decode(message);
-    console.log("received message on plug level:", { topic, message, decoded });
+  const inputBrowser = await agent.createInput("browserData");
+  inputBrowser.on("message", (topic, message) => {
+    const decoded = decode(message);
+    log(LogType.Info, "Received message on plug level:", { topic, message, decoded });
   });
+
+  const inputMCU = await agent.createInput("mcuData");
+  inputMCU.on("message", (topic, message) => {
+    const decoded = decode(message);
+    log(LogType.Info, "Received message on plug level:", { topic, message, decoded });
+  });
+
 
   const [sender1, sender2] = await Promise.all([
     agent.createOutput("dummyData"),
     agent.createOutput("someOtherData"),
   ]);
-  console.log("got senders!", {
+  log(LogType.Info, "got senders!", {
     sender1: sender1.getDefinition(),
     sender2: sender2.getDefinition(),
   });
@@ -39,12 +61,17 @@ const msgpack = MsgPack();
       isEven: i % 2 === 0,
       randomArray,
     };
-    const encoded1 = msgpack.encode(msg);
+    const encoded1 = encode(msg);
     i++;
 
     sender1.publish(Buffer.from(encoded1));
+    log(LogType.Info, `Sent message on topic ${sender1.getDefinition().topic}:`, msg);
 
-    const encoded2 = msgpack.encode({ hello: "boo!" });
+    const msg2 = { hello: "boo!" };
+    const encoded2 = encode(msg2);
     sender2.publish(Buffer.from(encoded2));
+    log(LogType.Info, `Sent message on topic ${sender2.getDefinition().topic}:`, msg2);
   }, 3000);
-})();
+}
+
+MQTTConnect();

@@ -9,7 +9,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "msgpack5": "^5.3.2"
+    "@msgpack/msgpack": "^2.7.0"
   },
   "devDependencies": {
     "@types/msgpack5": "^3.4.1",
