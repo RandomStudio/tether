@@ -1,21 +1,20 @@
 #include <WiFi.h>
-#include <Adafruit_MQTT_FONA.h>
-#include <Adafruit_MQTT.h>
-#include <Adafruit_MQTT_Client.h>
+#include <ArduinoMqttClient.h>
 #include <ArduinoJson.h> // ArduinoJson v6 has built-in MessagePack (de)serialization capabilities
 
 #define WLAN_SSID "MySSID"
 #define WLAN_PASS "MyPass"
+
 #define MQTT_IP "192.168.0.2"
 #define MQTT_PORT 1883
 #define MQTT_USER "guest"
 #define MQTT_PASS "guest"
 
-WiFiClient client;
-Adafruit_MQTT_Client mqtt(&client, MQTT_IP, MQTT_PORT, MQTT_USER, MQTT_PASS);
+String inputTopic = "+/+/dummyData";
+String outputTopic = "tetherduino/output/mcuData";
 
-Adafruit_MQTT_Publish output = Adafruit_MQTT_Publish(&mqtt, "tetherduino/output/mcuData");
-Adafruit_MQTT_Subscribe input = Adafruit_MQTT_Subscribe(&mqtt, "dummy/nodejs_dummy/dummyData");
+WiFiClient wifiClient;
+MqttClient mqtt(wifiClient);
 
 StaticJsonDocument<512> inputDoc;
 StaticJsonDocument<16> outputDoc;
@@ -25,7 +24,7 @@ void setup() {
   Serial.begin(115200);
   delay(10);
   connectWiFi();
-  mqtt.subscribe(&input);
+  mqtt.onMessage(onMqttMessage);
 }
 
 void loop() {
@@ -33,10 +32,10 @@ void loop() {
   MQTT_connect();
 
   // listen for incoming subscription packets
-  receive();
+  mqtt.poll();
 
-  if (!mqtt.ping()) {
-    mqtt.disconnect();
+  if (!mqtt.connected()) {
+    mqtt.stop();
   }
 }
 
@@ -63,14 +62,17 @@ void MQTT_connect() {
 
   Serial.println("Connecting to MQTT... ");
 
-  while ((ret = mqtt.connect()) != 0) { // connect will return 0 for connected
-     Serial.println(mqtt.connectErrorString(ret));
+  mqtt.unsubscribe(inputTopic);
+  mqtt.setUsernamePassword(MQTT_USER, MQTT_PASS);
+  while (!mqtt.connect(MQTT_IP, MQTT_PORT)) {
+     Serial.println(mqtt.connectError());
      Serial.println("Retrying MQTT connection in 5 seconds...");
-     mqtt.disconnect();
      delay(5000);  // wait 5 seconds
   }
 
   Serial.println("MQTT Connected!");
+
+  mqtt.subscribe(inputTopic);
 }
 
 void send(int number) {
@@ -78,21 +80,25 @@ void send(int number) {
   outputMessage = ""; // clear the output string
   serializeMsgPack(outputDoc, outputMessage); // serialize the data
   // send
-  if (output.publish(outputMessage.c_str())) {
-    Serial.println("Published number: " + String(number));
-  } else {
-    Serial.println("Could not publish number: " + String(number));
-  }
+  mqtt.beginMessage(outputTopic);
+  mqtt.print(outputMessage.c_str());
+  mqtt.endMessage();
+  Serial.println("Published number: " + String(number));
 }
 
-void receive() {
-  Adafruit_MQTT_Subscribe *subscription;
-  while ((subscription = mqtt.readSubscription(5000))) {
-    if (subscription == &input) {
-      decodeMessage(&(input.lastread[0]), input.datalen);
-      send(inputDoc["someNumber"].as<int>());
+void onMqttMessage(int len) {
+  String topic = mqtt.messageTopic();
+  Serial.println("Received message of length " + String(len) + " on topic " + topic);
+//  if (topic == inputTopic) {
+    uint8_t buf[len];
+    int i = 0;
+    while(mqtt.available()) {
+      buf[i] = mqtt.read();
+      ++i;
     }
-  }
+    decodeMessage(&(buf[0]), len);
+    send(inputDoc["someNumber"].as<int>());
+//  }
 }
 
 void decodeMessage(unsigned char* message, uint16_t len) {
