@@ -43,6 +43,6 @@ It also means that we cannot (and probably don't need to) stop the end-user igno
 - [x] use same base agent in both NodeJS and browser
 - [x] createOutput returns an Output object, but createInput does not... should be consistent?
 - [x] demonstrate a simple CLI client (send and receive)
-- [ ] demonstrate microcontroller client (Arduino): without even a base agent, and no need for Plugs
-- [ ] tether agent should be able to disconnect (clean up, unsubscribe)
+- [x] demonstrate microcontroller client (Arduino): without even a base agent, and no need for Plugs
+- [x] tether agent should be able to disconnect (clean up, unsubscribe)
 - [ ] include msgpack encoding/decoding in Tether base agent
