@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import "./App.css";
 import Connection from "./Connection/Connection";
 
@@ -6,6 +6,7 @@ function App() {
   const [host, setHost] = useState("localhost");
   const [port, setPort] = useState(15675);
   const [ready, setReady] = useState(false);
+
   return (
     <div className="App">
       <header className="App-header">Tether2 Explorer</header>
