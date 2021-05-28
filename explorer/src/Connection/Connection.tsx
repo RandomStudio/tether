@@ -1,5 +1,6 @@
-import * as React from "react";
-import MsgPack from "msgpack5";
+import React, { ChangeEvent } from "react";
+import { encode, decode } from "@msgpack/msgpack";
+import { Slider } from '@material-ui/core';
 import TetherAgent, { Output } from "tether";
 
 interface ConnectionProps {
@@ -14,11 +15,10 @@ interface ConnectionState {
   receivedAny: any[];
   nextMessage: string;
   sender: Output | null;
+  sliderValue: number;
 }
 
 let agent: TetherAgent = new TetherAgent("browser", "explorer");
-
-const msgpack = MsgPack();
 
 class Connection extends React.Component<ConnectionProps, ConnectionState> {
   constructor(props: ConnectionProps) {
@@ -29,6 +29,7 @@ class Connection extends React.Component<ConnectionProps, ConnectionState> {
       receivedAny: [],
       nextMessage: `{ "hello": "world" }`,
       sender: null,
+      sliderValue: 0,
     };
   }
 
@@ -50,7 +51,7 @@ class Connection extends React.Component<ConnectionProps, ConnectionState> {
       const input = await agent.createInput("dummyData");
 
       input.on("message", (topic, message) => {
-        const decoded = msgpack.decode(message);
+        const decoded = decode(message);
         // console.log("INPUT message:", {
         //   topic,
         //   raw: message.toString(),
@@ -70,7 +71,7 @@ class Connection extends React.Component<ConnectionProps, ConnectionState> {
       client.subscribe("#");
       client.on("message", (topic, message) => {
         console.log("CLIENT message:", topic);
-        const decoded = msgpack.decode(message);
+        const decoded = decode(message);
         this.setState({
           receivedAny: [
             ...this.state.receivedAny,
@@ -83,8 +84,41 @@ class Connection extends React.Component<ConnectionProps, ConnectionState> {
     }
   }
 
+  handleChangeSlider = (event: ChangeEvent<{}>, newValue: number | number[]) => {
+    const value = Array.isArray(newValue) ? newValue[0] : newValue;
+    if (value !== this.state.sliderValue) {
+      this.setState({ sliderValue: value });
+      this.sendMessage({ slider: value }, this.state.sender);
+    }
+  };
+
+  sendMessage = (message: object, output: Output | null) => {
+    if (!output) {
+      console.error("Cannot send on null output");
+      return;
+    }
+    try {
+      const encodedMessage = Buffer.from(encode(message));
+      console.log("attempting to send", {
+        message,
+        mType: typeof message,
+        encodedMessage,
+        toStr: encodedMessage.toString(),
+        altStr: encode(message).toString,
+        toBuffer: encode(message),
+      });
+      const { sender } = this.state;
+      if (sender) {
+        console.log("sending");
+        sender.publish(encodedMessage);
+      }
+    } catch (e) {
+      console.log("not valid JSON:", e);
+    }
+  }
+
   render() {
-    const { connected, receivedOnInput, receivedAny } = this.state;
+    const { connected, receivedOnInput, receivedAny, sliderValue } = this.state;
 
     return (
       <div>
@@ -118,29 +152,25 @@ class Connection extends React.Component<ConnectionProps, ConnectionState> {
           ></input>
           <button
             onClick={() => {
-              try {
-                const json = JSON.parse(this.state.nextMessage);
-                const encodedMessage = Buffer.from(msgpack.encode(json));
-                console.log("attempting to send", {
-                  json,
-                  mType: typeof json,
-                  encodedMessage,
-                  toStr: encodedMessage.toString(),
-                  altStr: msgpack.encode(json).toString,
-                  toBuffer: msgpack.encode(json),
-                });
-                const { sender } = this.state;
-                if (sender) {
-                  console.log("sending");
-                  sender.publish(encodedMessage);
-                }
-              } catch (e) {
-                console.log("not valid JSON:", e);
-              }
+              const json = JSON.parse(this.state.nextMessage);
+              this.sendMessage(json, this.state.sender);
             }}
           >
             send
           </button>
+        </div>
+        <div>
+          <h4>Slide to send</h4>
+          <Slider
+            value={sliderValue}
+            min={0}
+            max={255}
+            onChange={this.handleChangeSlider}
+            style={{ width: 200 , marginLeft: "1em"}}
+          />
+          <p style={{ margin: "0 0 0 1em" }}>
+            {`{ slider: ${sliderValue} }`}
+          </p>
         </div>
 
         <div>

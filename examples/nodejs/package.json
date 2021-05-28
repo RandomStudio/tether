@@ -12,7 +12,6 @@
     "@msgpack/msgpack": "^2.7.0"
   },
   "devDependencies": {
-    "@types/msgpack5": "^3.4.1",
     "prettier": "^2.2.1"
   }
 }
