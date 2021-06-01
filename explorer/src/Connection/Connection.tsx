@@ -1,7 +1,7 @@
 import React, { ChangeEvent } from "react";
 import { encode, decode } from "@msgpack/msgpack";
-import { Slider } from '@material-ui/core';
-import TetherAgent, { Output } from "tether";
+import { Slider } from "@material-ui/core";
+import TetherAgent, { Output } from "tether-agent";
 
 interface ConnectionProps {
   path: string;
@@ -84,7 +84,10 @@ class Connection extends React.Component<ConnectionProps, ConnectionState> {
     }
   }
 
-  handleChangeSlider = (event: ChangeEvent<{}>, newValue: number | number[]) => {
+  handleChangeSlider = (
+    event: ChangeEvent<{}>,
+    newValue: number | number[]
+  ) => {
     const value = Array.isArray(newValue) ? newValue[0] : newValue;
     if (value !== this.state.sliderValue) {
       this.setState({ sliderValue: value });
@@ -115,7 +118,7 @@ class Connection extends React.Component<ConnectionProps, ConnectionState> {
     } catch (e) {
       console.log("not valid JSON:", e);
     }
-  }
+  };
 
   render() {
     const { connected, receivedOnInput, receivedAny, sliderValue } = this.state;
@@ -166,11 +169,9 @@ class Connection extends React.Component<ConnectionProps, ConnectionState> {
             min={0}
             max={255}
             onChange={this.handleChangeSlider}
-            style={{ width: 200 , marginLeft: "1em"}}
+            style={{ width: 200, marginLeft: "1em" }}
           />
-          <p style={{ margin: "0 0 0 1em" }}>
-            {`{ slider: ${sliderValue} }`}
-          </p>
+          <p style={{ margin: "0 0 0 1em" }}>{`{ slider: ${sliderValue} }`}</p>
         </div>
 
         <div>
