@@ -1,6 +1,7 @@
 import mqtt, { AsyncMqttClient } from "async-mqtt";
 import { EventEmitter } from "events";
 import defaults from "./defaults";
+import { v4 as uuidv4 } from "uuid";
 
 export interface PlugDefinition {
   name: string;
@@ -53,10 +54,11 @@ export class TetherAgent {
   private inputs: Input[] = [];
   private outputs: Output[] = [];
 
-  constructor(agentType: string, agentID: string) {
+  constructor(agentType: string, agentID?: string) {
     this.agentType = agentType;
-    this.agentID = agentID;
+    this.agentID = agentID || uuidv4();
     this.client = null;
+    console.log("Tether Agent instance:", { agentType, agentId: this.agentID });
   }
 
   public connect = async (overrides?: {
