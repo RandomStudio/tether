@@ -27,10 +27,14 @@ const run = async () => {
 
   client.subscribe(topic);
   client.on("message", (topic, message) => {
-    const decoded = decode(message);
-    console.log(
-      `received message on topic "${topic}": ${JSON.stringify(decoded)}`
-    );
+    try {
+      const decoded = decode(message);
+      console.log(
+        `received message on topic "${topic}": ${JSON.stringify(decoded)}`
+      );
+    } catch (e) {
+      console.log("Could not decode message:", { message, e });
+    }
   });
 };
 
