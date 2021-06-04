@@ -1,5 +1,5 @@
 const { encode, decode } = require("@msgpack/msgpack");
-const { TetherAgent } = require("tether");
+const { TetherAgent } = require("tether-agent");
 
 // console.log(TetherAgent);
 const agent = new TetherAgent("dummy", "nodejs_dummy");
@@ -21,7 +21,7 @@ const log = (type, ...content) => {
 const MQTTConnect = async () => {
   log(LogType.Info, "Connecting to MQTT");
   try {
-    await agent.connect({ host: "192.168.2.5" });
+    await agent.connect();
   } catch (e) {
     log(LogType.Info, "Retrying connection in 5 seconds.");
     setTimeout(MQTTConnect, 5000);
@@ -40,12 +40,17 @@ const MQTTConnect = async () => {
 
   const inputMCU = await agent.createInput("mcuData");
   inputMCU.on("message", (topic, message) => {
-    const decoded = decode(message);
-    log(LogType.Info, "Received message on plug level:", {
-      topic,
-      message,
-      decoded,
-    });
+    log(LogType.Info, "Received message on mcuData");
+    try {
+      const decoded = decode(message);
+      log(LogType.Info, "Received message on plug level:", {
+        topic,
+        message,
+        decoded,
+      });
+    } catch (e) {
+      console.error("error decoding:", { e, message });
+    }
   });
 
   const [sender1, sender2] = await Promise.all([
@@ -77,7 +82,8 @@ const MQTTConnect = async () => {
     log(
       LogType.Info,
       `Sent message on topic ${sender1.getDefinition().topic}:`,
-      msg
+      msg,
+      Buffer.from(encoded1)
     );
 
     const msg2 = { hello: "boo!" };

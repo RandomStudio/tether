@@ -9,7 +9,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@msgpack/msgpack": "^2.7.0"
+    "@msgpack/msgpack": "^2.7.0",
+    "tether-agent": "^2.0.2"
   },
   "devDependencies": {
     "prettier": "^2.2.1"
