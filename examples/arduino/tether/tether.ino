@@ -2,10 +2,10 @@
 #include <ArduinoMqttClient.h>
 #include <ArduinoJson.h> // ArduinoJson v6 has built-in MessagePack (de)serialization capabilities
 
-#define WLAN_SSID "MySSID"
-#define WLAN_PASS "MyPass"
+#define WLAN_SSID "Random Wireless"
+#define WLAN_PASS "Fragile-Freedom"
 
-#define MQTT_IP "192.168.0.2"
+#define MQTT_IP "192.168.1.130"
 #define MQTT_PORT 1883
 #define MQTT_USER "guest"
 #define MQTT_PASS "guest"
@@ -81,7 +81,10 @@ void send(int number) {
   serializeMsgPack(outputDoc, outputMessage); // serialize the data
   // send
   mqtt.beginMessage(outputTopic);
-  mqtt.print(outputMessage.c_str());
+  // mqtt.print(outputMessage.c_str());
+  for (int i = 0; i < outputMessage.size(); i++) {
+    mqtt.print(outputMessage[i]);
+  }
   mqtt.endMessage();
   Serial.println("Published number: " + String(number));
 }
