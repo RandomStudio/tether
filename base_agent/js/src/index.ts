@@ -66,18 +66,22 @@ export class TetherAgent {
     host?: string;
     port?: number;
     path?: string;
+    username?: string;
+    password?: string;
   }) => {
     const protocol = overrides?.protocol || defaults.broker.protocol;
     const host = overrides?.host || defaults.broker.host;
     const port = overrides?.port || defaults.broker.port;
     const path = overrides?.path || defaults.broker.path;
+    const username = overrides?.username || defaults.broker.username;
+    const password = overrides?.password || defaults.broker.password;
 
     const url = `${protocol}://${host}:${port}${path}`;
 
     console.log("Connecting to MQTT broker @", url);
 
     try {
-      this.client = await mqtt.connectAsync(url);
+      this.client = await mqtt.connectAsync(url, { username, password });
       console.info("Connected OK");
       this.listenForIncoming();
     } catch (error) {

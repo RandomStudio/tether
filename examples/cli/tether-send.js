@@ -10,17 +10,19 @@ const config = parse(
     port: 1883,
     topic: `tetherCli/unknown/dummy`,
     message: '{ "hello": "world" }',
+    username: "tether",
+    password: "sp_ceB0ss!",
   })
 );
 
 const run = async () => {
-  const { protocol, host, port } = config;
+  const { protocol, host, port, username, password } = config;
 
   const url = `${protocol}://${host}:${port}`;
 
   console.log("Connecting to MQTT broker @", url, "...");
 
-  const client = await mqtt.connectAsync(url);
+  const client = await mqtt.connectAsync(url, { username, password });
 
   console.log("...connected OK");
 
