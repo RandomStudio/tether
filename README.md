@@ -45,4 +45,6 @@ It also means that we cannot (and probably don't need to) stop the end-user igno
 - [x] demonstrate a simple CLI client (send and receive)
 - [x] demonstrate microcontroller client (Arduino): without even a base agent, and no need for Plugs
 - [x] tether agent should be able to disconnect (clean up, unsubscribe)
-- [ ] include msgpack encoding/decoding in Tether base agent
+- [ ] allow for empty messages
+- [ ] announcement/heartbeat/ping-pong messages standard?
+- [ ] include msgpack encoding/decoding in Tether base agent?
