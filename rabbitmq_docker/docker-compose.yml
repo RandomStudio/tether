@@ -11,3 +11,4 @@ services:
       - "8080:15672" # Standard Web Management
       - "1883:1883" # Standard TCP for MQTT
       - "15675:15675" # Standard MQTT-over-WebSocket
+      - "15676:15676" # TLS MQTT-over-WebSocket
