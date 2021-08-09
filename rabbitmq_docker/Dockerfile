@@ -1,4 +1,4 @@
-FROM rabbitmq:3.8-ssl
+FROM rabbitmq:3.8-management
 RUN rabbitmq-plugins enable --offline rabbitmq_mqtt rabbitmq_web_mqtt
 # Copy certs for SSL, chown then apply config
 COPY ./cert /etc/rabbitmq/cert
