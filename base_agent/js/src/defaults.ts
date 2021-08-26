@@ -1,7 +1,7 @@
 const defaults = {
   broker: {
     protocol: "tcp",
-    host: "37.139.2.188",
+    host: "tether-io.dev",
     port: 1883,
     path: "",
     username: "tether",
