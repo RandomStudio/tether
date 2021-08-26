@@ -22,6 +22,10 @@ To keep it persistent (even between reboots) the following worked well:
 - Made sure that Docker was enabled as a service in systemd: `sudo systemctl enable docker`
 - Started the container (once!) using `docker-compose up -d`
 
+### Use with SSL
+
+Given a valid certificate generated for a particular domain, it is possible to manually copy these (e.g. during the docker-compose build step) into a known location, then connect using `wss://tether-io.dev:15676/ws` (note the `wss` protocol, domain name - not IP address! - associated with certificate, and specific port for TLS)/
+
 ## MQTT vs AMQP
 
 It's important to note some key differences from Tether 1
@@ -45,6 +49,7 @@ It also means that we cannot (and probably don't need to) stop the end-user igno
 - [x] demonstrate a simple CLI client (send and receive)
 - [x] demonstrate microcontroller client (Arduino): without even a base agent, and no need for Plugs
 - [x] tether agent should be able to disconnect (clean up, unsubscribe)
-- [ ] allow for empty messages
+- [ ] call `.publish()` with no params should send empty message (`Buffer from([])`)
+- [ ] allow client to get currently-applied Tether config
 - [ ] announcement/heartbeat/ping-pong messages standard?
 - [ ] include msgpack encoding/decoding in Tether base agent?
