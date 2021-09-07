@@ -120,10 +120,10 @@ export class TetherAgent {
    *
    * For convenience, the topic is generated once and used for every message on this Output instance when calling its `publish` function.
    */
-  public createOutput = async (name: string) => {
+  public createOutput = async (name: string, overrideTopic?: string) => {
     const definition: PlugDefinition = {
       name,
-      topic: `${this.agentType}/${this.agentID}/${name}`,
+      topic: overrideTopic || `${this.agentType}/${this.agentID}/${name}`,
       flowDirection: "out",
     };
 
@@ -140,11 +140,11 @@ export class TetherAgent {
    *
    * Returns an Output instance which is an EventEmitter. Events named "message" with contents (topic, message) will be emitted on this instance, but _only_ if they match the Output name.
    */
-  public createInput = async (name: string) => {
+  public createInput = async (name: string, overrideTopic?: string) => {
     // Create a new Input
     const definition: PlugDefinition = {
       name,
-      topic: `+/+/${name}`,
+      topic: overrideTopic || `+/+/${name}`,
       flowDirection: "in",
     };
     const input = new Input(this.client, definition);
