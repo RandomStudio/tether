@@ -11,13 +11,14 @@ const config = parse(
     topic: "#",
     username: "tether",
     password: "sp_ceB0ss!",
+    path: "",
   })
 );
 
 const run = async () => {
-  const { protocol, host, port, username, password } = config;
+  const { protocol, host, port, username, password, path } = config;
 
-  const url = `${protocol}://${host}:${port}`;
+  const url = `${protocol}://${host}:${port}${path}`;
 
   console.log("Connecting to MQTT broker @", url, "...");
 
