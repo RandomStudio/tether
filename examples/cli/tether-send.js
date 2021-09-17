@@ -28,9 +28,13 @@ const run = async () => {
 
   const { topic, message } = config;
 
-  const encoded = encode(JSON.parse(message));
+  const parsedMessage = JSON.parse(message);
+
+  const encoded = encode(parsedMessage);
 
   client.publish(topic, Buffer.from(encoded));
+
+  console.log("sent", parsedMessage, "on topic", topic);
 
   // TODO: could have an input loop for new messages
   client.end();
