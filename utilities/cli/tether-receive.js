@@ -35,7 +35,7 @@ logger.debug(
 );
 
 const setupSubsription = (client, topic) => {
-  logger.debug(`Subscribing to topic "${topic}"`);
+  logger.info(`Subscribing to topic "${topic}"`);
   client.subscribe(topic);
   if (config.json.enabled && config.json.enclosingBrackets) {
     console.log("[");
