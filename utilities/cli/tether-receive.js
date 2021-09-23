@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 const mqtt = require("async-mqtt");
 const rc = require("rc");
 const parse = require("parse-strings-in-object");
