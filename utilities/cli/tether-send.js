@@ -50,11 +50,24 @@ const sendFromJson = async (client, filePath) => {
   const json = JSON.parse(res);
   logger.trace({ json });
   logger.info("Read array from JSON of length", json.length);
-  json.forEach((entry) => {
-    const { topic } = entry;
-    const encoded = encode(entry);
-    client.publish(topic, Buffer.from(encoded));
-  });
+
+  let previousTime = json[0].timestamp;
+
+  await Promise.all(
+    json.map(
+      (entry, index) =>
+        new Promise((resolve, reject) => {
+          const { topic, timestamp, ...rest } = entry;
+          const delay = timestamp - previousTime;
+          setTimeout(() => {
+            const encoded = encode(rest);
+            logger.debug("send", { rest, delay });
+            client.publish(topic, Buffer.from(encoded));
+            resolve();
+          }, delay);
+        })
+    )
+  );
 };
 
 const main = async () => {

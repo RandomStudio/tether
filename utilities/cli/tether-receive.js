@@ -20,8 +20,7 @@ const config = parse(
       commaSeparated: true,
       enclosingBrackets: true,
       includeTopics: true,
-      includeElapsedTime: true,
-      includeTimestamps: false,
+      includeTimestamps: true,
     },
   })
 );
@@ -49,8 +48,7 @@ const setupSubsription = (client, topic) => {
     messageCount++;
     try {
       const decoded = decode(message);
-      const { enabled, includeTopics, includeElapsedTime, includeTimestamps } =
-        config.json;
+      const { enabled, includeTopics, includeTimestamps } = config.json;
       if (enabled) {
         if (messageCount > 1) {
           process.stdout.write(",\n");
@@ -58,7 +56,6 @@ const setupSubsription = (client, topic) => {
         const jsonString = {
           ...decoded,
           topic: includeTopics ? topic : undefined,
-          elapsedTime: includeElapsedTime ? Date.now() - startTime : undefined,
           timestamp: includeTimestamps ? Date.now() : undefined,
         };
         process.stdout.write(JSON.stringify(jsonString));
