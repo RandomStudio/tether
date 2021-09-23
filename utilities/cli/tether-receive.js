@@ -19,6 +19,9 @@ const config = parse(
       enabled: false,
       commaSeparated: true,
       enclosingBrackets: true,
+      includeTopics: true,
+      includeDeltaTime: true,
+      includeTimestamps: false,
     },
   })
 );
@@ -38,15 +41,24 @@ const setupSubsription = (client, topic) => {
     console.log("[");
   }
   let messageCount = 0;
+  let startTime = Date.now();
   client.on("message", (topic, message) => {
     messageCount++;
     try {
       const decoded = decode(message);
-      if (config.json.enabled) {
+      const { enabled, includeTopics, includeDeltaTime, includeTimestamps } =
+        config.json;
+      if (enabled) {
         if (messageCount > 1) {
           process.stdout.write(",\n");
         }
-        process.stdout.write(JSON.stringify(decoded));
+        const jsonString = {
+          ...decoded,
+          topic: includeTopics ? topic : undefined,
+          deltaTime: includeDeltaTime ? Date.now() - startTime : undefined,
+          timestamp: includeTimestamps ? Date.now() : undefined,
+        };
+        process.stdout.write(JSON.stringify(jsonString));
       }
       logger.info(`received on topic "${topic}": \n${JSON.stringify(decoded)}`);
     } catch (error) {
