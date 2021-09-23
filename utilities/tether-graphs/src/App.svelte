@@ -9,27 +9,80 @@
     console.log("file", files);
   }
 
-  function drawGraph(jsonString) {
-    const json = JSON.parse(jsonString);
+  const findTopics = (jsonArray) => {
+    let topics = [];
+    jsonArray.forEach((entry) => {
+      if (!topics.includes(entry.topic)) {
+        topics.push(entry.topic);
+      }
+    });
+    return topics;
+  };
 
-    const labels = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul"];
+  const findLabels = (filteredArray) => {
+    let labels = [];
+    filteredArray.forEach((entry) => {
+      if (!labels.includes(entry.timestamp)) {
+        labels.push(entry.timestamp);
+      }
+    });
+    return labels;
+  };
+
+  function drawGraph(jsonString, valueKey) {
+    const jsonArray = JSON.parse(jsonString).filter(
+      (e) => e[valueKey] !== undefined
+    );
+
+    const topics = findTopics(jsonArray);
+    console.log({ jsonArray, topics });
+
     const data = {
-      labels: labels,
-      datasets: [
-        {
-          label: "My First Dataset",
-          data: [65, 59, 80, 81, 56, 55, 40],
-          fill: false,
-          borderColor: "rgb(75, 192, 192)",
-          tension: 0.1,
-        },
-      ],
+      datasets: topics.map((topic) => ({
+        label: topic,
+        data: jsonArray
+          .filter((e) => e.topic === topic)
+          .map((e) => ({
+            x: e.timestamp,
+            y: e[valueKey],
+          })),
+      })),
+      // [
+      //   {
+      //     label: "incoming",
+      //     data: jsonData.map((e) => e.incomingValue),
+      //   },
+      //   {
+      //     label: "filtered",
+      //     data: jsonData.map((e) => e.filteredValue),
+      //     borderColor: "rgb(75, 192, 192)",
+      //   },
+      // ],
+      labels: findLabels(jsonArray),
     };
 
     const config = {
       type: "line",
-      data: data,
+      data,
+      options: {
+        scales: {
+          y: {
+            title: {
+              display: true,
+              text: valueKey,
+            },
+          },
+          x: {
+            title: {
+              display: true,
+              text: "timestamp",
+            },
+          },
+        },
+      },
     };
+
+    console.log({ data });
 
     const ctx = canvas.getContext("2d");
     const c = new Chart(ctx, config);
@@ -40,13 +93,15 @@
     const reader = new FileReader();
     reader.onload = (e) => {
       console.log("data:", e.target.result);
-      drawGraph(e.target.result);
+      drawGraph(e.target.result, "position");
     };
     reader.readAsText(file);
   }
 </script>
 
 <main>
+  <h1>Tether Graph Utility</h1>
+
   <label for="avatar">Upload a picture:</label>
   <input
     accept="application/json"
