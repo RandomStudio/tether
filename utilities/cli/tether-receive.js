@@ -3,9 +3,11 @@ const mqtt = require("async-mqtt");
 const rc = require("rc");
 const parse = require("parse-strings-in-object");
 const { decode } = require("@msgpack/msgpack");
+const { getLogger } = require("log4js");
 
 const config = parse(
   rc("tetherSend", {
+    loglevel: "info",
     protocol: "tcp",
     host: "localhost",
     port: 1883,
@@ -13,33 +15,49 @@ const config = parse(
     username: "tether",
     password: "sp_ceB0ss!",
     path: "",
+    format: {
+      json: false,
+    },
   })
 );
 
-const run = async () => {
-  const { protocol, host, port, username, password, path } = config;
+const logger = getLogger("tether-receive");
+logger.level = config.loglevel;
 
-  const url = `${protocol}://${host}:${port}${path}`;
+logger.debug(
+  "tether-receive CLI launched with config",
+  JSON.stringify(config, null, 2)
+);
 
-  console.log("Connecting to MQTT broker @", url, "...");
-
-  const client = await mqtt.connectAsync(url, { username, password });
-
-  console.log("...connected OK");
-
-  const { topic } = config;
-
+const setupSubsription = (client, topic) => {
+  logger.debug(`Subscribing to topic "${topic}"`);
   client.subscribe(topic);
   client.on("message", (topic, message) => {
     try {
       const decoded = decode(message);
-      console.log(
-        `received message on topic "${topic}": ${JSON.stringify(decoded)}`
+      logger.info(
+        `received message on topic "${topic}": \n${JSON.stringify(decoded)}\n`
       );
-    } catch (e) {
-      console.log("Could not decode message:", { message, e });
+    } catch (error) {
+      logger.error("Could not decode message:", { message, error });
     }
   });
 };
 
-run();
+const main = async () => {
+  const { protocol, host, port, username, password, path } = config;
+
+  const url = `${protocol}://${host}:${port}${path}`;
+
+  logger.info("Connecting to MQTT broker @", url, "...");
+
+  try {
+    const client = await mqtt.connectAsync(url, { username, password });
+    logger.info("...connected OK");
+    setupSubsription(client, config.topic);
+  } catch (e) {
+    logger.fatal("could not connect to MQTT broker:", e);
+  }
+};
+
+main();
