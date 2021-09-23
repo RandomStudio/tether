@@ -15,14 +15,16 @@ const config = parse(
     username: "tether",
     password: "sp_ceB0ss!",
     path: "",
-    format: {
-      json: false,
+    json: {
+      enabled: false,
+      commaSeparated: true,
+      enclosingBrackets: true,
     },
   })
 );
 
 const logger = getLogger("tether-receive");
-logger.level = config.format.json ? "fatal" : config.loglevel;
+logger.level = config.json.enabled ? "fatal" : config.loglevel;
 
 logger.debug(
   "tether-receive CLI launched with config",
@@ -32,19 +34,33 @@ logger.debug(
 const setupSubsription = (client, topic) => {
   logger.debug(`Subscribing to topic "${topic}"`);
   client.subscribe(topic);
+  if (config.json.enabled && config.json.enclosingBrackets) {
+    console.log("[");
+  }
+  let messageCount = 0;
   client.on("message", (topic, message) => {
+    messageCount++;
     try {
       const decoded = decode(message);
-      if (config.format.json) {
-        console.log(JSON.stringify(decoded));
+      if (config.json.enabled) {
+        console.log(
+          (config.json.commaSeparated && messageCount > 1 ? "," : "") +
+            JSON.stringify(decoded)
+        );
       }
-      logger.info(
-        `received message on topic "${topic}": \n${JSON.stringify(decoded)}\n`
-      );
+      logger.info(`received on topic "${topic}": \n${JSON.stringify(decoded)}`);
     } catch (error) {
       logger.error("Could not decode message:", { message, error });
     }
   });
+};
+
+const cleanup = (exitCode) => {
+  if (config.json.enabled && config.json.enclosingBrackets) {
+    console.log("]");
+  }
+  logger.debug("...cleanup completed, exit code", exitCode);
+  process.exit(exitCode || 0);
 };
 
 const main = async () => {
@@ -62,5 +78,17 @@ const main = async () => {
     logger.fatal("could not connect to MQTT broker:", e);
   }
 };
+
+if (config.json.enabled) {
+  const readline = require("readline");
+  readline.emitKeypressEvents(process.stdin);
+  process.stdin.setRawMode(true);
+  process.stdin.on("keypress", (str, key) => {
+    if (key.ctrl && key.name === "c") {
+      cleanup();
+    }
+  });
+}
+process.on("SIGINT", cleanup);
 
 main();
