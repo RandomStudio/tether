@@ -2,6 +2,8 @@
   import { Chart, registerables } from "chart.js";
   Chart.register(...registerables);
 
+  const paletteColours = ["edae49", "d1495b", "00798c", "30638e", "003d5b"];
+
   let files;
   let canvas;
 
@@ -38,7 +40,7 @@
     console.log({ jsonArray, topics });
 
     const data = {
-      datasets: topics.map((topic) => ({
+      datasets: topics.map((topic, index) => ({
         label: topic,
         data: jsonArray
           .filter((e) => e.topic === topic)
@@ -46,6 +48,7 @@
             x: e.timestamp,
             y: e[valueKey],
           })),
+        borderColor: `#${paletteColours[index % paletteColours.length]}`,
       })),
       // [
       //   {
