@@ -22,7 +22,7 @@ const config = parse(
 );
 
 const logger = getLogger("tether-receive");
-logger.level = config.loglevel;
+logger.level = config.format.json ? "fatal" : config.loglevel;
 
 logger.debug(
   "tether-receive CLI launched with config",
@@ -35,6 +35,9 @@ const setupSubsription = (client, topic) => {
   client.on("message", (topic, message) => {
     try {
       const decoded = decode(message);
+      if (config.format.json) {
+        console.log(JSON.stringify(decoded));
+      }
       logger.info(
         `received message on topic "${topic}": \n${JSON.stringify(decoded)}\n`
       );
