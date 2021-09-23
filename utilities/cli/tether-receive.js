@@ -20,7 +20,7 @@ const config = parse(
       commaSeparated: true,
       enclosingBrackets: true,
       includeTopics: true,
-      includeDeltaTime: true,
+      includeElapsedTime: true,
       includeTimestamps: false,
     },
   })
@@ -41,12 +41,15 @@ const setupSubsription = (client, topic) => {
     console.log("[");
   }
   let messageCount = 0;
-  let startTime = Date.now();
+  let startTime = null;
   client.on("message", (topic, message) => {
+    if (startTime === null) {
+      startTime = Date.now(); // Start timing from first message received
+    }
     messageCount++;
     try {
       const decoded = decode(message);
-      const { enabled, includeTopics, includeDeltaTime, includeTimestamps } =
+      const { enabled, includeTopics, includeElapsedTime, includeTimestamps } =
         config.json;
       if (enabled) {
         if (messageCount > 1) {
@@ -55,7 +58,7 @@ const setupSubsription = (client, topic) => {
         const jsonString = {
           ...decoded,
           topic: includeTopics ? topic : undefined,
-          deltaTime: includeDeltaTime ? Date.now() - startTime : undefined,
+          elapsedTime: includeElapsedTime ? Date.now() - startTime : undefined,
           timestamp: includeTimestamps ? Date.now() : undefined,
         };
         process.stdout.write(JSON.stringify(jsonString));
