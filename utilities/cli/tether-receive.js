@@ -43,10 +43,10 @@ const setupSubsription = (client, topic) => {
     try {
       const decoded = decode(message);
       if (config.json.enabled) {
-        console.log(
-          (config.json.commaSeparated && messageCount > 1 ? "," : "") +
-            JSON.stringify(decoded)
-        );
+        if (messageCount > 1) {
+          process.stdout.write(",\n");
+        }
+        process.stdout.write(JSON.stringify(decoded));
       }
       logger.info(`received on topic "${topic}": \n${JSON.stringify(decoded)}`);
     } catch (error) {
@@ -57,7 +57,7 @@ const setupSubsription = (client, topic) => {
 
 const cleanup = (exitCode) => {
   if (config.json.enabled && config.json.enclosingBrackets) {
-    console.log("]");
+    console.log("\n]");
   }
   logger.debug("...cleanup completed, exit code", exitCode);
   process.exit(exitCode || 0);
