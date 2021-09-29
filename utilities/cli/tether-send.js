@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 const mqtt = require("async-mqtt");
 const rc = require("rc");
 const parse = require("parse-strings-in-object");
@@ -81,7 +82,7 @@ const main = async () => {
     const client = await mqtt.connectAsync(url, { username, password });
     logger.info("...connected OK");
 
-    if (config.jsonReader) {
+    if (config.jsonReader.enabled) {
       const filePath = path.resolve(config.jsonReader.path);
       logger.info("jsonReader enabled; will read from file", filePath, "...");
       await sendFromJson(client, filePath);

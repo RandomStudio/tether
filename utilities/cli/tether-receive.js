@@ -62,7 +62,7 @@ const setupSubsription = (client, topic) => {
       }
       logger.info(`received on topic "${topic}": \n${JSON.stringify(decoded)}`);
     } catch (error) {
-      logger.error("Could not decode message:", { message, error });
+      logger.error("Could not decode message:", { topic, message, error });
     }
   });
 };
