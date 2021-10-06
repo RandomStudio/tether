@@ -69,7 +69,7 @@ MessagePack really feels like "JSON, but less javascript-specific and more effic
 
 ### Standardisation instead of rules
 
-In the first version of Tether, we had some complex, multi-stage processes for "agents" to gain the necessary information to start reading or publishing messages. The system assumed a centralised way of configuring and giving "permission" to publish or read anything.
+In the first version of Tether, we had some complex, multi-stage processes for "agents" to gain the necessary information to even _start_ reading or publishing messages. The system assumed a centralised way of configuring and giving "permission" to publish or read anything.
 
 Tether 2 does away with just about all of this complexity. We use a standard messaging protocol (MQTT) in a standard way. MessagePack allows the developer to be as structured as they like with data, and we do not (so far) add any further restrictions on message format.
 
