@@ -28,20 +28,51 @@ To keep it persistent (even between reboots) the following worked well:
 
 Given a valid certificate generated for a particular domain, it is possible to manually copy these (e.g. during the docker-compose build step) into a known location, then connect using `wss://tether-io.dev:15676/ws` (note the `wss` protocol, domain name - not IP address! - associated with certificate, and specific port for TLS)/
 
-## MQTT vs AMQP
+## Tether 2 compared to Tether 1
 
-It's important to note some key differences from Tether 1
+### MQTT instead of AMQP
 
-- Protocol is MQTT (simplified compared to AMQP which is RabbitMQ specific) This in turn means:
-  - Exchange is set to default `amq.topic`. A different default exchange has to be configured in the mqtt plugin, and cannot be specified on the client side.
-  - The NodeJS base agent can/should actually use `mqtt` library (same as browser), rather than `amqplib`
-  - MQTT uses / not . separators, and wildcards are different (see https://www.hivemq.com/blog/mqtt-essentials-part-5-mqtt-topics-best-practices/), e.g. `+` not `*` and `#` may only appear at the _end_ of topic/routing key (or is the only symbol)
+In Tether 1 we used AMQP. For Tether 2, we used MQTT. This in turn means:
+
+- Exchange is set to default `amq.topic`. A different default exchange has to be configured in the mqtt plugin, and cannot be specified on the client side.
+- The NodeJS base agent can/should actually use `mqtt` library (same as browser), rather than `amqplib`
+- MQTT uses / not . separators, and wildcards are different (see https://www.hivemq.com/blog/mqtt-essentials-part-5-mqtt-topics-best-practices/), e.g. `+` not `*` and `#` may only appear at the _end_ of topic/routing key (or is the only symbol)
 
 Because MQTT does not specify the need for "exchanges" and "queues" (though RabbitMQ may use these internally), the subscription process is quite different. Subscription is on the level of the _client_ not the (channel+exhange+)queue.
 
 This means that if we keep the concept of a defined "Input Plug" (which seems sensible, since this can then be queried/reported elsewhere) then a little bit of extra work is done to match incoming messages with the correct Input instance, since there is no inherent link between the subscription and the messages that come in. Incoming messages include a topic (a string) - that is all that is needed to match with the Input.
 
 It also means that we cannot (and probably don't need to) stop the end-user ignoring the concept of an "Input Plug" altogether, listening for incoming messages and then breaking up and interpreting topic strings in order to redirect/handle messages as they see fit.
+
+Perhaps most importantly, MQTT-over-Websocket is a standardised and easy-to-use protocol, entirely interoperable (from the point of view of the broker and the clients) with "normal" MQTT. This makes it easy to use in the browser, without any complicated "bridging" between protocols as was the case with AMQP (or any other raw TCP socket based protocols).
+
+### MessagePack instead of Protocol Buffers
+
+While Protocol Buffers were efficient and client libraries were available in multiple languages, they had some serious downsides:
+
+- Strict schemas meant that it was impossible to encode or decode messages without the accompanying schema. This is done for good reasons, of course, but for our purposes introduces all kinds of extra complexity in getting even the most basic communication going.
+- For most languages, protocol buffer client libraries would have to be specially (re)compiled in order to handle new schemas. This requires a lot of work to automate in a convenient way, and each programming language (and OS) could have its own quirks.
+- Protocol Buffers assume you'd rather be very precise about the layout of data and how it is typed, so intentionally makes it relatively difficult to add, remove or otherwise modify anything about the data in your messages. This makes sense in many use cases, but for us (shorter-lived projects with rapid development timelines) it just made things unecessarily hard.
+- It is relatively difficult to onboard new developers with a system such as Protocol Buffers, since it has a non-trivial level of complexity.
+
+MessagePack, by contrast, represented a good compromise in terms of performance, message size and the ability to structure data (e.g. in nested objects and/or arrays), but with numerous advantages over Protocol Buffers, including:
+
+- The ability to decode messages without needing a schema first. This is a massive help when monitoring, debugging and troubleshooting a system. Sometimes, you just need to see what messages are in the system, with minimal setup, and decide what to _do_ with the messages later.
+- The ability to encode messages without needing a schema first. This of course has pitfalls (no enforcement of naming, structure or data types) but lowers the barrier to entry (in terms of time, complexity, configuration) to getting prototypes up and running with minimal fuss.
+- Like JSON (or XML, for that matter), the data fields are _named_ with ordinary string "keys", and therefore in principle the messages can be self-describing and the contents self-explanatory. This puts an onus on the developer to name and structure things in a sensible way, of course, but when the alternative is either no structure, arbitrary structure (e.g. order of parameters), or overly-prescriptive (developer must define everything in advance), then at least the temptation to take shortcuts is minimised.
+- MessagePack is easy for new developers to pick up and use. Onboarding a new person onto the team is not difficult.
+
+By switching from Protocol Buffers to MessagePack, we lost nothing in terms of wide support across multiple languages, platforms and even existing software such as game engines.
+
+MessagePack really feels like "JSON, but less javascript-specific and more efficient".
+
+### The result
+
+The combination of these two simple and robust technologies (MQTT and MessagePack) means that a Tether system is just about the _easiest and quickest_ way to get parts of a distributed system talking to each other. It requires very little code, minimal APIs and very little network configuration.
+
+Other approaches (websocket servers, OSC, etc.) may sometimes appear easier to reach for in certain circumstances, but typically do not offer the flexibility of a "pub/sub" messaging system or a structured (but very transparent) data structure in the messages.
+
+The fact that the system can be used very easily in everything from websites to microcontrollers to game engines is incredibly powerful.
 
 ## TODOs
 
