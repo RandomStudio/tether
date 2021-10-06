@@ -50,7 +50,7 @@ It also means that we cannot (and probably don't need to) stop the end-user igno
 - [x] demonstrate microcontroller client (Arduino): without even a base agent, and no need for Plugs
 - [x] tether agent should be able to disconnect (clean up, unsubscribe)
 - [ ] topic patterns could be agent/id-or-group/plug ?
-- [ ] tether CLI client should be something you can install for the system
+- [x] tether CLI client should be something you can install for the system
 - [ ] proper event type definition for on "message", and the order of topic/payload should be payload, topic!
 - [ ] call `.publish()` with no params should send empty message (`Buffer from([])`)
 - [ ] allow client to get currently-applied Tether config?
