@@ -169,7 +169,7 @@ export class TetherAgent {
       if (matchingInputPlug) {
         matchingInputPlug.emit("message", topic, payload);
       } else {
-        console.log("message received but cannot match to Input Plug:", {
+        console.warn("message received but cannot match to Input Plug:", {
           topic,
           payload,
         });
