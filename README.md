@@ -32,11 +32,11 @@ Given a valid certificate generated for a particular domain, it is possible to m
 
 ### MQTT instead of AMQP
 
-In Tether 1 we used AMQP. For Tether 2, we used MQTT. This in turn means:
+In Tether 1 we used AMQP. For Tether 2, we use MQTT. This in turn means:
 
-- Exchange is set to default `amq.topic`. A different default exchange has to be configured in the mqtt plugin, and cannot be specified on the client side.
-- The NodeJS base agent can/should actually use `mqtt` library (same as browser), rather than `amqplib`
-- MQTT uses / not . separators, and wildcards are different (see https://www.hivemq.com/blog/mqtt-essentials-part-5-mqtt-topics-best-practices/), e.g. `+` not `*` and `#` may only appear at the _end_ of topic/routing key (or is the only symbol)
+- The exchange is set to a single default `amq.topic`. A different default exchange has to be configured in the mqtt plugin, and cannot be specified on the client side.
+- The NodeJS base agent can use `mqtt` library (same as browser), rather than `amqplib` (browser could not use `amqplib` anyway)
+- MQTT uses `/` not `.` separators, and wildcards are different (see https://www.hivemq.com/blog/mqtt-essentials-part-5-mqtt-topics-best-practices/), e.g. `+` not `*` and `#` may only appear at the _end_ of topic/routing key (or is the only symbol)
 
 Because MQTT does not specify the need for "exchanges" and "queues" (though RabbitMQ may use these internally), the subscription process is quite different. Subscription is on the level of the _client_ not the (channel+exhange+)queue.
 
@@ -50,21 +50,38 @@ Perhaps most importantly, MQTT-over-Websocket is a standardised and easy-to-use 
 
 While Protocol Buffers were efficient and client libraries were available in multiple languages, they had some serious downsides:
 
-- Strict schemas meant that it was impossible to encode or decode messages without the accompanying schema. This is done for good reasons, of course, but for our purposes introduces all kinds of extra complexity in getting even the most basic communication going.
+- Strict schemas meant that it was impossible to encode or decode messages without the accompanying schema. This is by design, of course, but for our purposes introduces all kinds of extra complexity in getting even the most basic communication going.
 - For most languages, protocol buffer client libraries would have to be specially (re)compiled in order to handle new schemas. This requires a lot of work to automate in a convenient way, and each programming language (and OS) could have its own quirks.
-- Protocol Buffers assume you'd rather be very precise about the layout of data and how it is typed, so intentionally makes it relatively difficult to add, remove or otherwise modify anything about the data in your messages. This makes sense in many use cases, but for us (shorter-lived projects with rapid development timelines) it just made things unecessarily hard.
-- It is relatively difficult to onboard new developers with a system such as Protocol Buffers, since it has a non-trivial level of complexity.
+- Protocol Buffers assume you'd rather be very precise about the layout of data and how it is typed, so intentionally makes it relatively difficult to add, remove or otherwise modify anything about the data in your messages. This makes sense in many use cases, but for us (shorter-lived projects with rapid development timelines) it just made things unecessarily hard. We value speed, flexibility and readability over strict up-front correctness, in most of our installation development work.
+- It is relatively difficult to onboard new developers with a system such as Protocol Buffers, since it has a non-trivial level of complexity. Schemas have their own syntax, for example, compiling tools must be learned, and data needs to be handled carefully in strictly-typed languages.
 
 MessagePack, by contrast, represented a good compromise in terms of performance, message size and the ability to structure data (e.g. in nested objects and/or arrays), but with numerous advantages over Protocol Buffers, including:
 
 - The ability to decode messages without needing a schema first. This is a massive help when monitoring, debugging and troubleshooting a system. Sometimes, you just need to see what messages are in the system, with minimal setup, and decide what to _do_ with the messages later.
 - The ability to encode messages without needing a schema first. This of course has pitfalls (no enforcement of naming, structure or data types) but lowers the barrier to entry (in terms of time, complexity, configuration) to getting prototypes up and running with minimal fuss.
 - Like JSON (or XML, for that matter), the data fields are _named_ with ordinary string "keys", and therefore in principle the messages can be self-describing and the contents self-explanatory. This puts an onus on the developer to name and structure things in a sensible way, of course, but when the alternative is either no structure, arbitrary structure (e.g. order of parameters), or overly-prescriptive (developer must define everything in advance), then at least the temptation to take shortcuts is minimised.
+- The need for detailed documentation is lowered insofar as the messages themselves are accessible and readable in a working system. You do not _have_ to know server IPs, ports and message routing paths or have pre-compiled client libraries just to see the contents of messages.
 - MessagePack is easy for new developers to pick up and use. Onboarding a new person onto the team is not difficult.
 
 By switching from Protocol Buffers to MessagePack, we lost nothing in terms of wide support across multiple languages, platforms and even existing software such as game engines.
 
 MessagePack really feels like "JSON, but less javascript-specific and more efficient".
+
+### Standardisation instead of rules
+
+In the first version of Tether, we had some complex, multi-stage processes for "agents" to gain the necessary information to start reading or publishing messages. The system assumed a centralised way of configuring and giving "permission" to publish or read anything.
+
+Tether 2 does away with just about all of this complexity. We use a standard messaging protocol (MQTT) in a standard way. MessagePack allows the developer to be as structured as they like with data, and we do not (so far) add any further restrictions on message format.
+
+The only "Tether-like" parts of the system are:
+
+- A standardised, 3 part topic route convention (`agent-type/grouping-or-id/plug-name`)
+- A default IP address or hostname for the "Tether Server" (really just an MQTT broker)
+- The expectation that MessagePack will be used for the contents of the messages
+
+As long as client applications conform to the above standards, they will be able to publish and read messages in a Tether system. The aim is to make it quick and easy to get messaging working within a distributed system, even with very diverse programming languages, hardware and software applications.
+
+Various tools, naming conventions, permissions and choices of architecture can be built on top of this system. There is no guarantee that every Tether-like system will work perfectly or behave in the same way, but at least the hard part - distributed messaging - is "solved" so that developers can concentrate on more interesting concerns.
 
 ### The result
 
