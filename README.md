@@ -42,7 +42,7 @@ Because MQTT does not specify the need for "exchanges" and "queues" (though Rabb
 
 This means that if we keep the concept of a defined "Input Plug" (which seems sensible, since this can then be queried/reported elsewhere) then a little bit of extra work is done to match incoming messages with the correct Input instance, since there is no inherent link between the subscription and the messages that come in. Incoming messages include a topic (a string) - that is all that is needed to match with the Input.
 
-It also means that we cannot (and probably don't need to) stop the end-user ignoring the concept of an "Input Plug" altogether, listening for incoming messages and then breaking up and interpreting topic strings in order to redirect/handle messages as they see fit.
+It also means that we cannot (and probably don't need to) prevent the end-user completely ignoring the concept of an "Input Plug" altogether, listening for incoming messages and then breaking up and interpreting topic strings in order to redirect/handle messages as they see fit.
 
 Perhaps most importantly, MQTT-over-Websocket is a standardised and easy-to-use protocol, entirely interoperable (from the point of view of the broker and the clients) with "normal" MQTT. This makes it easy to use in the browser, without any complicated "bridging" between protocols as was the case with AMQP (or any other raw TCP socket based protocols).
 
