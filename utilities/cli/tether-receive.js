@@ -9,7 +9,7 @@ const config = parse(
   rc("tetherSend", {
     loglevel: "info",
     protocol: "tcp",
-    host: "localhost",
+    host: "tether-io.dev",
     port: 1883,
     topic: "#",
     username: "tether",
