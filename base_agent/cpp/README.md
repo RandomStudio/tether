@@ -29,3 +29,9 @@ Then from `base_agent/cpp`:
 - `cd build`
 - `cmake ..`
 - `cmake --build .`
+
+## Run examples
+
+- Full example using Tether Agent instance: `build/examples/tether_agent_example`
+- Example of MsgPack + MQTT publish only: `build/examples/msgpack_publish_example`
+- Example of MQTT (string message) publish only: `build/examples/publish_example`

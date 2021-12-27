@@ -2,6 +2,9 @@
 #include <iostream>
 #include <msgpack.hpp>
 
+// Define your own data payload type as a struct
+// Don't forget the MSGPACK_DEFINE_MAP macro, so that MessagePack
+// knows how to pack the data.
 struct dummyData {
 	std::string name;
 	int distance;
@@ -18,11 +21,10 @@ int main() {
 
   Output* outputPlug = agent.createOutput("testout");
 
-
   // Create a dummy struct instance to send...
-  dummyData d;
-  d.name = "sensor";
-  d.distance = 101;
+  dummyData d {
+    "sensor", 101
+  };
 
   // Make a buffer, pack data using messagepack...
   std::stringstream buffer;

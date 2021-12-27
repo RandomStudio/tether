@@ -31,10 +31,11 @@ int TetherAgent::connect (string protocol, string host, int port)  {
 Output* TetherAgent::createOutput(string name) {
   // TODO: check for mClient == NULL ?
 
-  PlugDefinition def;
-  def.name = name;
-  def.topic = mAgentType + "/" + mAgentID + "/" + name;
-  def.flowDirection = OUT;
+  PlugDefinition def {
+    name, 
+    mAgentType + "/" + mAgentID + "/" + name,
+    OUT
+  };
 
   Output* p = new Output(def, mClient);
   mOutputs.push_back(p);
