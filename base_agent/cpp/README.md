@@ -2,9 +2,10 @@
 
 - [x] Demo: Basic MQTT publish working
 - [x] Demo: basic MessagePack serialisation
-- [ ] Demo: Get basic MessagePack serialised message into MQTT body
-- [ ] Build actual library that can be included from other CPP projects, rather than sitting inside `examples` folder - using CMake again
-- [ ] Merge this project into the monorepo
+- [x] Demo: Get basic MessagePack serialised message into MQTT body
+- [x] Build actual library that can be included from other CPP projects, rather than sitting inside `examples` folder - using CMake again
+- [x] Merge this project into the monorepo
+- [ ] Test out using CMake to import this library automatically, and document the steps needed for developers to do the same
 
 ## Third-party libraries used
 
