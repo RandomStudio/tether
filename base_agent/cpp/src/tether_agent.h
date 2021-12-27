@@ -3,10 +3,11 @@
 class TetherAgent {
 
   private:
-    std::string mHost;
-    int mPort;
+    std::string mAgentType;
+    std::string mAgentID;
 
   public:
-    TetherAgent(std::string host, int port);
+    TetherAgent(std::string agentType, std::string agentID);
+    void connect (std::string protocol, std::string address, int port);
   
 };

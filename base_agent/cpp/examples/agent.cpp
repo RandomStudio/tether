@@ -5,7 +5,9 @@ int main() {
 
   std::cout << "Starting Tether Agent example..." << std::endl;
 
-  TetherAgent agent ("tether-io.dev", 1883);
+  TetherAgent agent ("dummy", "dummy01");
+
+  agent.connect("tcp", "tether-io.dev", 1883);
 
   std::cout << "OK" << std::endl;
 
