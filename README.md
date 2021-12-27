@@ -3,7 +3,8 @@
 ## Structure of this project
 
 - `base_agent`
-  - `js`: The only base agent implemented so far. You don't even have to use this (see a few examples below).
+  - `js`: Base agent in Javascript, suitable for both NodeJS and browser environments. You don't even have to use this (see a few examples below).
+  - `cpp`: Base agent in C++11, using CMake for build/install automation.
 - `explorer`: A proof-of-concept of a browser-based agent which uses _both_ the JS base agent and pure-MQTT-client approaches to demonstrate input and output being passed via the browser
 - `examples`
   - `nodejs`: A demo agent that uses the same JS base agent as the "explorer". It publishes messages on two separate topics every 3 seconds, and also decodes any messages it receives on the "browserData" Input Plug.
