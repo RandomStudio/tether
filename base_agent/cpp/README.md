@@ -11,7 +11,6 @@
 
 - MQTT: https://github.com/eclipse/paho.mqtt.cpp
 - MessagePack: https://github.com/msgpack/msgpack-c/tree/cpp_master
-- PSN CPP: https://github.com/vyv/psn-cpp
 
 ## Resources
 
