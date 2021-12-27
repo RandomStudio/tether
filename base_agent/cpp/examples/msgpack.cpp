@@ -20,15 +20,6 @@ const int QOS = 1;
 
 const auto TIMEOUT = std::chrono::seconds(10);
 
-// // TODO: these should be msgpack buffers
-// const char* PAYLOADS[] = {
-// 	"Hello World!",
-// 	"Hi there!",
-// 	"Is anyone listening?",
-// 	"Someone is always listening.",
-// 	nullptr
-// };
-
 struct dummyData {
 	std::string name;
 	int distance;
