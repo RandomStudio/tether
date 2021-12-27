@@ -10,7 +10,9 @@
 ## Third-party libraries used
 
 - MQTT: https://github.com/eclipse/paho.mqtt.cpp
+  - which depends on https://github.com/eclipse/paho.mqtt.c.git
 - MessagePack: https://github.com/msgpack/msgpack-c/tree/cpp_master
+  - which depends on Boost
 
 ## Resources
 
