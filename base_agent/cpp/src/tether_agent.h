@@ -6,6 +6,7 @@ class TetherAgent {
     std::string mHost;
     int mPort;
 
-  TetherAgent(std::string host = "tether-io.dev", int port = 1883);
-
+  public:
+    TetherAgent(std::string host, int port);
+  
 };
