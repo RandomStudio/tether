@@ -6,6 +6,7 @@ TetherAgent::TetherAgent (std::string agentType, std::string agentID) {
   mAgentID = agentID;
 }
 
-void TetherAgent::connect (std::string protocol, std::string address, int port)  {
-  std::cout << "Connecting to broker at " << protocol << address << port << std::endl;
+void TetherAgent::connect (std::string protocol, std::string host, int port)  {
+  std::string address = protocol + "://" + host + ":" + std::to_string(port);
+  std::cout << "Connecting to broker at " << address << " ..." << std::endl;
 }
