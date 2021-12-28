@@ -4,3 +4,5 @@ set_property(TARGET TetherAgent PROPERTY CXX_STANDARD 11)
 
 target_include_directories(TetherAgent PUBLIC ../libs/paho.mqtt.cpp/src)
 target_include_directories(TetherAgent PUBLIC ../libs/paho.mqtt.c/src)
+
+target_link_libraries(TetherAgent PUBLIC paho-mqttpp3 msgpackc-cxx)
