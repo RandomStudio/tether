@@ -22,18 +22,16 @@ int main() {
 
   Output* outputPlug = agent.createOutput("testout");
 
-  // Create a dummy struct instance to send...
+  //Create a dummy struct instance to send...
   dummyData d {
-    "comet", 101, 98.785
+    "comet", 101, 98.0
   };
 
-  // Make a buffer, pack data using messagepack...
+  // // Make a buffer, pack data using messagepack...
   std::stringstream buffer;
   msgpack::pack(buffer, d);
-  const std::string& tmp = buffer.str();   
-  const char* payload = tmp.c_str();
 
-  outputPlug->publish(payload);
+  outputPlug->publish(buffer.str());
 
   std::cout << "OK" << std::endl;
 

@@ -55,12 +55,7 @@ int main(int argc, char* argv[])
 		std::stringstream buffer;
     msgpack::pack(buffer, d);
 
-		// Convert stringstream to const char, without copying
-		// as per https://www.py4u.net/discuss/63761
-		const std::string& tmp = buffer.str();   
-		const char* cstr = tmp.c_str();
-
-		tok = top.publish(cstr);
+		tok = top.publish(buffer.str());
 
 		tok->wait();	// Just wait for the last one to complete.
 		cout << "OK" << endl;
