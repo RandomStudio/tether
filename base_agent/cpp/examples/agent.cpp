@@ -8,7 +8,8 @@
 struct dummyData {
 	std::string name;
 	int distance;
-	MSGPACK_DEFINE_MAP(name, distance);
+  double probabilityOfImpact;
+	MSGPACK_DEFINE_MAP(name, distance, probabilityOfImpact);
 };
 
 int main() {
@@ -23,7 +24,7 @@ int main() {
 
   // Create a dummy struct instance to send...
   dummyData d {
-    "sensor", 101
+    "comet", 101, 98.785
   };
 
   // Make a buffer, pack data using messagepack...

@@ -3,14 +3,12 @@
 
 #include "mqtt/async_client.h"
 
-using namespace std;
-
 enum FlowDirection {
   IN, OUT
 };
 struct PlugDefinition {
-  string name;
-  string topic;
+  std::string name;
+  std::string topic;
   FlowDirection flowDirection;
 };
 
@@ -35,7 +33,7 @@ class Output : Plug {
   public:
 
     Output(PlugDefinition definition, mqtt::async_client * client): Plug (definition, client) {
-      cout << "Output created: " << definition.name << endl;  
+      std::cout << "Output created: " << definition.name << std::endl;  
     };
 
     void publish(mqtt::binary_ref payload) {
@@ -46,19 +44,19 @@ class Output : Plug {
 class TetherAgent {
 
   private:
-    string mAgentType;
-    string mAgentID;
+    std::string mAgentType;
+    std::string mAgentID;
 
     mqtt::async_client*  mClient;
-    vector<Output*> mOutputs;
+    std::vector<Output*> mOutputs;
 
   public:
-    TetherAgent(string agentType, string agentID);
+    TetherAgent(std::string agentType, std::string agentID);
 
-    int connect (string protocol, string host, int port);
+    int connect (std::string protocol, std::string host, int port);
     void disconnect();
 
-    Output* createOutput(string name);
+    Output* createOutput(std::string name);
 
     void publish();
   

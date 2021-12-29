@@ -1,26 +1,24 @@
 #include "tether_agent.h"
 #include <iostream>
 
-using namespace std;
-
-TetherAgent::TetherAgent (string agentType, string agentID) {
+TetherAgent::TetherAgent (std::string agentType, std::string agentID) {
   mAgentType = agentType;
   mAgentID = agentID;
   mClient = NULL;
 }
 
-int TetherAgent::connect (string protocol, string host, int port)  {
-  string address = protocol + "://" + host + ":" + to_string(port);
-  cout << "Connecting to broker at " << address << " ..." << endl;
+int TetherAgent::connect (std::string protocol, std::string host, int port)  {
+  std::string address = protocol + "://" + host + ":" + std::to_string(port);
+  std::cout << "Connecting to broker at " << address << " ..." << std::endl;
 
   mqtt::connect_options options("tether", "sp_ceB0ss!");
   mClient = new mqtt::async_client(address, "");
 
   try {
     mClient->connect(options)->wait();
-    cout << "Connected OK!" << endl;
+    std::cout << "Connected OK!" << std::endl;
   } catch (const mqtt::exception& exc) {
-		cerr << exc << endl;
+		std::cerr << exc << std::endl;
 		return 1;
 	}
 
@@ -28,7 +26,7 @@ int TetherAgent::connect (string protocol, string host, int port)  {
 
 }
 
-Output* TetherAgent::createOutput(string name) {
+Output* TetherAgent::createOutput(std::string name) {
   // TODO: check for mClient == NULL ?
 
   PlugDefinition def {
@@ -40,13 +38,13 @@ Output* TetherAgent::createOutput(string name) {
   Output* p = new Output(def, mClient);
   mOutputs.push_back(p);
 
-  cout << "Tether Agent now has " << mOutputs.size() << " output plug(s)" << endl;
+  std::cout << "Tether Agent now has " << mOutputs.size() << " output plug(s)" << std::endl;
 
   return p;
 }
 
 void TetherAgent::disconnect() {
-  cout << "\nDisconnecting..." << endl;
+  std::cout << "\nDisconnecting..." << std::endl;
   mClient->disconnect()->wait();
-  cout << "  ...OK" << endl;
+  std::cout << "  ...OK" << std::endl;
 }
