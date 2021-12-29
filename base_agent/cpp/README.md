@@ -1,3 +1,7 @@
+## Warning
+
+This library currently does Output Plugs only, i.e. it can publish messages but cannot subscribe/consume!
+
 ## TODO
 
 - [x] Demo: Basic MQTT publish working
@@ -5,7 +9,8 @@
 - [x] Demo: Get basic MessagePack serialised message into MQTT body
 - [x] Build actual library that can be included from other CPP projects, rather than sitting inside `examples` folder - using CMake again
 - [x] Merge this project into the monorepo
-- [ ] Test out using CMake to import (and/or install?) this library automatically, and document the steps needed for developers to do the same
+- [x] Test out using CMake to import (and/or install?) this library automatically, and document the steps needed for developers to do the same
+- [ ] Get receiving (subscribing) working!
 
 ## Third-party libraries used
 
@@ -37,3 +42,23 @@ Then from `base_agent/cpp`:
 - Full example using Tether Agent instance: `build/examples/tether_agent_example`
 - Example of MsgPack + MQTT publish only: `build/examples/msgpack_publish_example`
 - Example of MQTT (string message) publish only: `build/examples/publish_example`
+
+## Install in your own CMake-based project
+
+An example CMakeLists.txt that includes this library and dependent libraries:
+
+```
+cmake_minimum_required(VERSION 3.19)
+
+project(My_TetherAgent)
+
+add_executable(My_TetherAgent src/My_TetherAgent.cpp)
+set_property(TARGET My_TetherAgent PROPERTY CXX_STANDARD 11)
+
+add_subdirectory(./libs/tether/base_agent/cpp)
+add_subdirectory(./libs/psn-cpp)
+
+target_include_directories(My_TetherAgent PUBLIC ./libs/tether/base_agent/cpp/src)
+
+target_link_libraries(My_TetherAgent PUBLIC TetherAgent msgpackc-cxx psnlib)
+```
