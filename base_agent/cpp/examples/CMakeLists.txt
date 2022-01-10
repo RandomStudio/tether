@@ -1,4 +1,4 @@
-find_package(msgpack REQUIRED)
+#find_package(msgpack REQUIRED)
 
 add_executable(publish_example publish.cpp)
 add_executable(msgpack_publish_example msgpack.cpp)
