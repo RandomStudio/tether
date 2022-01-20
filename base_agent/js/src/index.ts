@@ -78,10 +78,10 @@ export class TetherAgent {
 
     const url = `${protocol}://${host}:${port}${path}`;
 
-    console.log("Connecting to MQTT broker @", url);
+    console.log("Tether Agent connecting to MQTT broker @", url), "...";
 
     try {
-      this.client = await mqtt.connectAsync(url, { username, password });
+      this.client = await mqtt.connectAsync(url, { username, password }, false);
       console.info("Connected OK");
       this.listenForIncoming();
     } catch (error) {
@@ -183,4 +183,4 @@ const topicHasWildcards = (topic: string) => topic.includes("+");
 const topicHasPlugName = (topic: string, plugName: string) =>
   topic.split(`/`)[2] === plugName;
 
-export default TetherAgent;
+// export default TetherAgent;
