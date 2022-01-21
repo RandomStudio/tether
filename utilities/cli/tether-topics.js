@@ -18,18 +18,11 @@ const config = parse(
     username: "tether",
     password: "sp_ceB0ss!",
     path: "",
-    json: {
-      enabled: false,
-      commaSeparated: true,
-      enclosingBrackets: true,
-      includeTopics: true,
-      includeTimestamps: true,
-    },
   })
 );
 
-const logger = getLogger("tether-receive");
-logger.level = config.json.enabled ? "fatal" : config.loglevel;
+const logger = getLogger("tether-topics");
+logger.level = config.loglevel;
 
 logger.debug(
   "tether-receive CLI launched with config",

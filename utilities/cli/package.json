@@ -17,6 +17,7 @@
   },
   "bin": {
     "tether-receive": "./tether-receive.js",
-    "tether-send": "./tether-send.js"
+    "tether-send": "./tether-send.js",
+    "tether-topics": "./tether-topics.js"
   }
 }
