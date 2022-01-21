@@ -86,11 +86,28 @@ const startPlayback = async (client, filePath) => {
 
   const messages$ = fromEvent(pipeline, "data").pipe(
     map((tokenizedJson) => {
-      logger.debug({ tokenizedJson });
+      logger.trace({ tokenizedJson });
       return tokenizedJson.value;
     })
   );
 
-  messages$.subscribe((el) => logger.debug("element:", el));
+  // messages$.subscribe((el) => logger.debug("element:", el));
+
+  const timedMessages$ = messages$.pipe(
+    // delay emit messages by delta
+    concatMap((message) => of(message).pipe(delay(message.deltaTime))),
+    // then send with simulated topic
+    tap((message) => {
+      logger.debug("Send after", message.deltaTime);
+      logger.warn("TODO: send the message now!");
+    }),
+    // takeUntil(reachedEnd$),
+    finalize(() => {
+      logger.info("all done; close read stream");
+      readStream.close();
+    })
+  );
+
+  timedMessages$.subscribe((x) => logger.debug("delayed message", x));
 };
 main();

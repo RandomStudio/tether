@@ -62,7 +62,7 @@ const setupSubsription = (client) => {
 
   fs.writeFileSync(filePath, "[\n");
 
-  const startTime = Date.now();
+  let lastUpdate = Date.now();
   let count = 0;
 
   client.on("message", (topic, message) => {
@@ -70,8 +70,9 @@ const setupSubsription = (client) => {
     const entry = {
       topic,
       message,
-      deltaTime: Date.now() - startTime,
+      deltaTime: Date.now() - lastUpdate,
     };
+    lastUpdate = Date.now();
     logger.debug("Writing", entry);
     fs.appendFileSync(
       filePath,
