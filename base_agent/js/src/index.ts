@@ -61,14 +61,17 @@ export class TetherAgent {
     console.log("Tether Agent instance:", { agentType, agentId: this.agentID });
   }
 
-  public connect = async (overrides?: {
-    protocol?: string;
-    host?: string;
-    port?: number;
-    path?: string;
-    username?: string;
-    password?: string;
-  }) => {
+  public connect = async (
+    overrides?: {
+      protocol?: string;
+      host?: string;
+      port?: number;
+      path?: string;
+      username?: string;
+      password?: string;
+    },
+    shouldRetry = true // if MQTT agent retries, it will not throw connection errors!
+  ) => {
     const protocol = overrides?.protocol || defaults.broker.protocol;
     const host = overrides?.host || defaults.broker.host;
     const port = overrides?.port || defaults.broker.port;
@@ -81,7 +84,11 @@ export class TetherAgent {
     console.log("Tether Agent connecting to MQTT broker @", url), "...";
 
     try {
-      this.client = await mqtt.connectAsync(url, { username, password }, false);
+      this.client = await mqtt.connectAsync(
+        url,
+        { username, password },
+        shouldRetry
+      );
       console.info("Connected OK");
       this.listenForIncoming();
     } catch (error) {
