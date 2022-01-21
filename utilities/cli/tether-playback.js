@@ -11,15 +11,19 @@ const { streamArray } = require("stream-json/streamers/StreamArray");
 const { fromEvent, Observable, of } = require("rxjs");
 const {
   concatMap,
+  concat,
   delay,
   endWith,
   filter,
   finalize,
   find,
   map,
+  merge,
+  mergeScan,
   pairwise,
   startWith,
   takeUntil,
+  scan,
   tap,
   withLatestFrom,
 } = require("rxjs/operators");
@@ -79,10 +83,12 @@ const startPlayback = async (client, filePath) => {
   const fileHandle = await fs.open(filePath);
   const readStream = fileHandle.createReadStream();
 
+  // let totalCount = 0;
   const pipeline = chain([readStream, parser(), streamArray()]);
-  pipeline.on("data", (d) => {
-    logger.trace("entry", d.value);
-  });
+  // pipeline.on("data", (d) => {
+  //   logger.trace("entry", d.value);
+  //   totalCount++;
+  // });
 
   const messages$ = fromEvent(pipeline, "data").pipe(
     map((tokenizedJson) => {
@@ -91,23 +97,52 @@ const startPlayback = async (client, filePath) => {
     })
   );
 
-  // messages$.subscribe((el) => logger.debug("element:", el));
+  const totalCount$ = messages$.pipe(scan((acc, _) => acc + 1, 0));
+  // totalCount$.subscribe((total) => logger.debug("total", total));
+
+  // const reachedEnd$ = fromEvent(pipeline, "end");
 
   const timedMessages$ = messages$.pipe(
     // delay emit messages by delta
     concatMap((message) => of(message).pipe(delay(message.deltaTime))),
     // then send with simulated topic
-    tap((message) => {
-      logger.debug("Send after", message.deltaTime);
-      logger.warn("TODO: send the message now!");
+    tap((entry) => {
+      logger.trace("Send after", entry.deltaTime);
+      logger.debug("Sending", entry);
+      client.publish(entry.topic, Buffer.from(entry.message.data));
+      // logger.warn("TODO: send the message now!");
     }),
-    // takeUntil(reachedEnd$),
-    finalize(() => {
-      logger.info("all done; close read stream");
-      readStream.close();
-    })
+    scan((acc, _) => acc + 1, 0),
+    // tap((count) => logger.debug("messages sent:", count)),
+    withLatestFrom(totalCount$),
+    tap((both) => logger.debug("both:", both))
   );
 
-  timedMessages$.subscribe((x) => logger.debug("delayed message", x));
+  const compareCounts$ = timedMessages$.pipe(
+    tap((val) => logger.debug("compareCounts:", val)),
+    filter(([soFar, total]) => soFar === total)
+  );
+
+  // // const countMessages$ = timedMessages$.pipe(
+  // //   withLatestFrom(totalCount$),
+  // //   tap(([totalCount, myCount]) => {
+  // //     logger.debug({ totalCount, myCount });
+  // //     if (totalCount === myCount) {
+  // //       logger.debug("we should be done now");
+  // //     }
+  // //   })
+  // // );
+
+  compareCounts$.subscribe((x) => logger.info("compare", x));
+
+  const reachedEnd$ = timedMessages$.pipe(
+    takeUntil(compareCounts$),
+    finalize(() => {
+      logger.info("all done");
+    })
+  );
+  reachedEnd$.subscribe((x) => logger.debug("reachedEnd", x));
+
+  reachedEnd$.subscribe();
 };
 main();
