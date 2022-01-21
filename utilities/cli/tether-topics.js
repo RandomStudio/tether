@@ -5,6 +5,9 @@ const parse = require("parse-strings-in-object");
 const { getLogger } = require("log4js");
 
 let topics = [];
+let agentTypes = [];
+let agentIds = [];
+let outputNames = [];
 
 const config = parse(
   rc("tetherTopics", {
@@ -52,13 +55,41 @@ const main = async () => {
 const setupSubsription = (client) => {
   client.subscribe("#");
   client.on("message", (topic, message) => {
-    const match = topics.find((t) => t === topic);
-    if (!match) {
-      topics.push(topic);
-      logger.info("Found topic", topic);
-      logger.debug(`Current list (${topics.length} topics)`, topics);
+    const updateTopics = appendToListIfNew(topics, topic);
+    if (updateTopics.length !== topics.length) {
+      topics = updateTopics;
+      try {
+        const { agentType, agentId, outputName } = getTopicElements(topic);
+        agentTypes = appendToListIfNew(agentTypes, agentType);
+        agentIds = appendToListIfNew(agentIds, agentId);
+        outputNames = appendToListIfNew(outputNames, outputName);
+        logger.info({ topics, agentTypes, agentIds, outputNames });
+      } catch (e) {
+        logger.error("Error getting topic elements:", e);
+      }
     }
   });
+};
+
+const getTopicElements = (topic) => {
+  const parts = topic.split("/");
+  if (parts.length !== 3) {
+    throw Error(
+      "not a valid Tether topic routing key:" + JSON.stringify({ topic, parts })
+    );
+  }
+  const [agentType, agentId, outputName] = parts;
+  return { agentType, agentId, outputName };
+};
+
+const appendToListIfNew = (list, item) => {
+  const match = list.includes(item);
+  if (!match) {
+    logger.debug("append", item);
+    return [...list, item];
+  } else {
+    return list;
+  }
 };
 
 main();
