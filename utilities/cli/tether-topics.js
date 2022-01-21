@@ -25,7 +25,7 @@ const logger = getLogger("tether-topics");
 logger.level = config.loglevel;
 
 logger.debug(
-  "tether-receive CLI launched with config",
+  "tether-topics CLI launched with config",
   JSON.stringify(config, null, 2)
 );
 
