@@ -75,7 +75,7 @@ const setupSubsription = (client) => {
     logger.debug("Writing", entry);
     fs.appendFileSync(
       filePath,
-      (count > 1 ? ",\n" : "\n") + JSON.stringify(entry, null, 2)
+      (count > 1 ? ",\n" : "") + JSON.stringify(entry, null, 0)
     );
   });
 
