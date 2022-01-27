@@ -34,8 +34,8 @@ jobs:
         with:
           node-version: 16
           registry-url: https://npm.pkg.github.com/
-      - name: Typescript compiler
-        uses: iCrawl/action-tsc@v1
+      - run: npm i
+        working-directory: base_agent/js
       - run: npm publish
         working-directory: base_agent/js
         env:
