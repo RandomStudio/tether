@@ -1,5 +1,5 @@
 {
-  "name": "tether-agent",
+  "name": "@tether/tether-agent",
   "version": "2.3.1",
   "description": "",
   "main": "dist/index.js",
