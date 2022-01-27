@@ -16,8 +16,8 @@ jobs:
       - uses: actions/setup-node@v2
         with:
           node-version: 16
-      - name: tsc
-        uses: icrawl/action-tsc@v1
+      - name: Typescript compiler
+        uses: iCrawl/action-tsc@v1
       - name: install
         run: npm install
         working-directory: base_agent/js
@@ -36,6 +36,8 @@ jobs:
         with:
           node-version: 16
           registry-url: https://npm.pkg.github.com/
+      - name: Typescript compiler
+        uses: iCrawl/action-tsc@v1
       - run: npm publish
         working-directory: base_agent/js
         env:
