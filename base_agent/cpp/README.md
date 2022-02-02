@@ -60,5 +60,5 @@ add_subdirectory(./libs/psn-cpp)
 
 target_include_directories(My_TetherAgent PUBLIC ./libs/tether/base_agent/cpp/src)
 
-target_link_libraries(My_TetherAgent PUBLIC TetherAgent msgpackc-cxx psnlib)
+target_link_libraries(My_TetherAgent PUBLIC TetherAgent msgpackc-cxx)
 ```
