@@ -107,3 +107,4 @@ The fact that the system can be used very easily in everything from websites to 
 - [ ] allow client to get currently-applied Tether config?
 - [ ] announcement/heartbeat/ping-pong messages standard?
 - [ ] include msgpack encoding/decoding in Tether base agent?
+- [ ] it should be possible to subscribe to the same / overlapping topic from multiple Plugs
