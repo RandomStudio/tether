@@ -15,6 +15,7 @@ const config = parse(
     username: "tether",
     password: "sp_ceB0ss!",
     path: "",
+    decode: true,
     json: {
       enabled: false,
       commaSeparated: true,
@@ -46,23 +47,32 @@ const setupSubsription = (client, topic) => {
       startTime = Date.now(); // Start timing from first message received
     }
     messageCount++;
-    try {
-      const decoded = decode(message);
-      const { enabled, includeTopics, includeTimestamps } = config.json;
-      if (enabled) {
-        if (messageCount > 1) {
-          process.stdout.write(",\n");
+    logger.debug("receive", { topic, message });
+    if (config.decode === true) {
+      try {
+        const decoded = decode(message);
+        const { enabled, includeTopics, includeTimestamps } = config.json;
+        if (enabled) {
+          if (messageCount > 1) {
+            process.stdout.write(",\n");
+          }
+          const jsonString = {
+            ...decoded,
+            topic: includeTopics ? topic : undefined,
+            timestamp: includeTimestamps ? Date.now() : undefined,
+          };
+          process.stdout.write(JSON.stringify(jsonString));
         }
-        const jsonString = {
-          ...decoded,
-          topic: includeTopics ? topic : undefined,
-          timestamp: includeTimestamps ? Date.now() : undefined,
-        };
-        process.stdout.write(JSON.stringify(jsonString));
+        logger.info(
+          `received on topic "${topic}": \n${JSON.stringify(decoded)}`
+        );
+      } catch (error) {
+        logger.error("Could not decode message:", { topic, message, error });
       }
-      logger.info(`received on topic "${topic}": \n${JSON.stringify(decoded)}`);
-    } catch (error) {
-      logger.error("Could not decode message:", { topic, message, error });
+    } else {
+      logger.info(
+        `msgpack decoding disabled; received on topic "${topic}": \n${message}`
+      );
     }
   });
 };
