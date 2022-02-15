@@ -34,13 +34,17 @@ export class Input extends Plug {
 }
 
 export class Output extends Plug {
-  publish = async (content: Buffer) => {
+  publish = async (content: Buffer | Uint8Array) => {
     if (this.client === null) {
       console.error(
         "trying to send without connection; not possible until connected"
       );
     } else {
-      this.client.publish(this.definition.topic, content);
+      if (content instanceof Uint8Array) {
+        this.client.publish(this.definition.topic, Buffer.from(content));
+      } else {
+        this.client.publish(this.definition.topic, content);
+      }
     }
   };
 }
