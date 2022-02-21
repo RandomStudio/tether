@@ -3,7 +3,7 @@ const parse = require("parse-strings-in-object");
 const rc = require("rc");
 const { encode, decode } = require("@msgpack/msgpack");
 
-const agent = new TetherAgent("dummy", "NodeJSDummy", "trace");
+const agent = new TetherAgent("dummy", "NodeJSDummy", "debug");
 
 const config = parse(rc("NodeJSDummy", {}));
 
@@ -38,12 +38,19 @@ const main = async () => {
   });
 
   const inputPlugThree = agent.createInput(
-    "moreRandomValues",
+    "evenMoreRandomValues",
     "+/+/randomValue"
   );
   inputPlugThree.on("message", (topic, payload) => {
     const m = decode(payload);
     console.log("received message on inputPlugThree:", { topic, m });
+  });
+
+  const inputPlugFour = agent.createInput("randomValue", "+/+/somethingElse");
+  inputPlugFour.on("message", () => {
+    throw Error(
+      "we didn't expect to receive anything on this plug, despite the name"
+    );
   });
 };
 

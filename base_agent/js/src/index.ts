@@ -180,7 +180,10 @@ export class TetherAgent {
         "available input plugs:",
         this.inputs.map((p) => p.getDefinition())
       );
-      logger.debug("matched on", matchingInputPlugs.length, "plugs");
+      logger.debug(
+        `matched on ${matchingInputPlugs.length}/${this.inputs.length}`,
+        `plugs`
+      );
       if (matchingInputPlugs.length > 0) {
         matchingInputPlugs.forEach((p) => {
           p.emit("message", topic, payload);
