@@ -28,6 +28,7 @@ const main = async () => {
 
   const inputPlugOne = agent.createInput("randomValue");
   inputPlugOne.on("message", (payload, topic) => {
+    console.log("received:", { payload, topic });
     const m = decode(payload);
     console.log("received message on inputPlugOne:", { topic, m });
   });

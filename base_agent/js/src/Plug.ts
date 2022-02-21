@@ -1,14 +1,12 @@
 import { AsyncMqttClient } from "async-mqtt";
-import EventEmitter from "events";
 import { logger } from ".";
 import { PlugDefinition } from "./types";
 
-class Plug extends EventEmitter {
+class Plug {
   protected definition: PlugDefinition;
   protected client: AsyncMqttClient | null;
 
   constructor(client: AsyncMqttClient, definition: PlugDefinition) {
-    super();
     this.client = client;
     this.definition = definition;
   }
@@ -16,14 +14,21 @@ class Plug extends EventEmitter {
   public getDefinition = () => this.definition;
 }
 
-export declare interface Input {
-  on(
-    event: "message",
-    listener: (payload: Buffer, topic: string) => void
-  ): this;
-}
-
 export class Input extends Plug {
+  private onMessageCallbacks: Function[];
+
+  constructor(client: AsyncMqttClient, definition: PlugDefinition) {
+    super(client, definition);
+    this.onMessageCallbacks = [];
+  }
+
+  public on(
+    _event: "message",
+    cb: (payload: Buffer, topic: string) => void
+  ): this {
+    this.onMessageCallbacks.push(cb);
+    return this;
+  }
   subscribe = async () => {
     if (this.client === null) {
       logger.warn(
@@ -31,7 +36,17 @@ export class Input extends Plug {
       );
     }
     await this.client.subscribe(this.definition.topic);
-    logger.debug("subscribed to topic", this.definition.topic);
+    logger.debug(
+      "subscribed to topic",
+      this.definition.topic,
+      `for Input Plug "${this.getDefinition().name}"`
+    );
+  };
+
+  emit = (event: "message", payload: Buffer, topic: string) => {
+    this.onMessageCallbacks.forEach((cb) => {
+      cb.call(this, payload, topic);
+    });
   };
 }
 
