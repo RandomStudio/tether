@@ -73,16 +73,6 @@ export class TetherAgent {
       ...defaults.broker,
       ...overrides,
     };
-    // const protocol = overrides?.protocol || defaults.broker.protocol;
-    // const host = overrides?.host || defaults.broker.host;
-    // const port = overrides?.port || defaults.broker.port;
-    // const path = overrides?.path || defaults.broker.path;
-    // const username = overrides?.username || defaults.broker.username;
-    // const password = overrides?.password || defaults.broker.password;
-
-    // const url = `${protocol}://${host}:${port}${path}`;
-
-    // console.log("Tether Agent connecting to MQTT broker @", url), "...";
     console.log("Tether Agent connecting with options", options);
 
     try {
@@ -129,7 +119,10 @@ export class TetherAgent {
    *
    * For convenience, the topic is generated once and used for every message on this Output instance when calling its `publish` function.
    */
-  public createOutput = async (name: string, overrideTopic?: string) => {
+  public createOutput = (name: string, overrideTopic?: string) => {
+    if (name === undefined) {
+      throw Error("No name provided for output");
+    }
     const definition: PlugDefinition = {
       name,
       topic: overrideTopic || `${this.agentType}/${this.agentID}/${name}`,
@@ -149,7 +142,11 @@ export class TetherAgent {
    *
    * Returns an Output instance which is an EventEmitter. Events named "message" with contents (topic, message) will be emitted on this instance, but _only_ if they match the Output name.
    */
-  public createInput = async (name: string, overrideTopic?: string) => {
+  public createInput = (name: string, overrideTopic?: string) => {
+    if (name === undefined) {
+      throw Error("No name provided for output");
+    }
+
     // Create a new Input
     const definition: PlugDefinition = {
       name,
