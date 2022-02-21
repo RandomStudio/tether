@@ -2,13 +2,12 @@ import mqtt, { AsyncMqttClient, IClientOptions } from "async-mqtt";
 import { EventEmitter } from "events";
 import defaults from "./defaults";
 import { v4 as uuidv4 } from "uuid";
+import { PlugDefinition } from "./types";
 
-export interface PlugDefinition {
-  name: string;
-  topic: string;
-  flowDirection: "in" | "out";
-}
+const { getLogger } = require("log4js");
 
+const logger = getLogger("tetherAgentJS");
+logger.level = "info";
 class Plug extends EventEmitter {
   protected definition: PlugDefinition;
   protected client: AsyncMqttClient | null;
@@ -24,19 +23,19 @@ class Plug extends EventEmitter {
 export class Input extends Plug {
   subscribe = async () => {
     if (this.client === null) {
-      console.warn(
+      logger.warn(
         "subscribing to topic before client is connected; this is allowed but you won't receive any messages until connected"
       );
     }
     await this.client.subscribe(this.definition.topic);
-    console.log("subscribed to topic", this.definition.topic);
+    logger.debug("subscribed to topic", this.definition.topic);
   };
 }
 
 export class Output extends Plug {
   publish = async (content: Buffer | Uint8Array) => {
     if (this.client === null) {
-      console.error(
+      logger.error(
         "trying to send without connection; not possible until connected"
       );
     } else {
@@ -58,11 +57,14 @@ export class TetherAgent {
   private inputs: Input[] = [];
   private outputs: Output[] = [];
 
-  constructor(agentType: string, agentID?: string) {
+  constructor(agentType: string, agentID?: string, loglevel?: string) {
     this.agentType = agentType;
     this.agentID = agentID || uuidv4();
     this.client = null;
-    console.log("Tether Agent instance:", { agentType, agentId: this.agentID });
+    if (loglevel) {
+      logger.level = loglevel;
+    }
+    logger.info("Tether Agent instance:", { agentType, agentId: this.agentID });
   }
 
   public connect = async (
@@ -73,14 +75,14 @@ export class TetherAgent {
       ...defaults.broker,
       ...overrides,
     };
-    console.log("Tether Agent connecting with options", options);
+    logger.info("Tether Agent connecting with options", options);
 
     try {
       this.client = await mqtt.connectAsync(null, options, shouldRetry);
       console.info("Connected OK");
       this.listenForIncoming();
     } catch (error) {
-      console.error("Error connecting to MQTT broker:", {
+      logger.error("Error connecting to MQTT broker:", {
         error,
         overrides,
         options,
@@ -92,9 +94,9 @@ export class TetherAgent {
   public disconnect = async () => {
     if (this.client) {
       await this.client.end();
-      console.log("MQTT client closed normally");
+      logger.debug("MQTT client closed normally");
     } else {
-      console.warn("MQTT client not available on disconnect request");
+      logger.warn("MQTT client not available on disconnect request");
     }
   };
 
@@ -165,19 +167,26 @@ export class TetherAgent {
   private listenForIncoming = () => {
     this.client.on("message", (topic, payload) => {
       const matchingInputPlugs = this.inputs.filter((p) =>
-        // If the Plug was defined with wildcard topics, match on name
-        // i.e. last part of 3-part topic /x/x/name
+        // If the Plug was defined with a wildcard anywhere, match
+        // on name, i.e. last part of 3-part topic agentType/agentGroup/name
         // Otherwise, match on topic exactly
         topicHasWildcards(p.getDefinition().topic)
-          ? topicHasPlugName(topic, p.getDefinition().name)
+          ? getTopicPlugName(p.getDefinition().topic) ===
+            getTopicPlugName(topic)
           : p.getDefinition().topic === topic
       );
+      logger.debug("received message:", { topic, payload });
+      logger.trace(
+        "available input plugs:",
+        this.inputs.map((p) => p.getDefinition())
+      );
+      logger.debug("matched on", matchingInputPlugs.length, "plugs");
       if (matchingInputPlugs.length > 0) {
         matchingInputPlugs.forEach((p) => {
           p.emit("message", topic, payload);
         });
       } else {
-        console.warn("message received but cannot match to Input Plug:", {
+        logger.warn("message received but cannot match to Input Plug:", {
           topic,
           payload,
         });
@@ -188,7 +197,9 @@ export class TetherAgent {
 
 const topicHasWildcards = (topic: string) => topic.includes("+");
 
+const getTopicPlugName = (topic: string) => topic.split(`/`)[2];
+
 const topicHasPlugName = (topic: string, plugName: string) =>
-  topic.split(`/`)[2] === plugName;
+  getTopicPlugName(topic) === plugName;
 
 // export default TetherAgent;
