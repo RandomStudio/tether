@@ -1,4 +1,6 @@
-const defaults = {
+import { Config } from "./types";
+
+const defaults: Config = {
   broker: {
     protocol: "tcp",
     host: "tether-io.dev",

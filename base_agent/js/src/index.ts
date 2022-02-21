@@ -1,4 +1,4 @@
-import mqtt, { AsyncMqttClient } from "async-mqtt";
+import mqtt, { AsyncMqttClient, IClientOptions } from "async-mqtt";
 import { EventEmitter } from "events";
 import defaults from "./defaults";
 import { v4 as uuidv4 } from "uuid";
@@ -66,37 +66,35 @@ export class TetherAgent {
   }
 
   public connect = async (
-    overrides?: {
-      protocol?: string;
-      host?: string;
-      port?: number;
-      path?: string;
-      username?: string;
-      password?: string;
-    },
+    overrides?: IClientOptions,
     shouldRetry = true // if MQTT agent retries, it will not throw connection errors!
   ) => {
-    const protocol = overrides?.protocol || defaults.broker.protocol;
-    const host = overrides?.host || defaults.broker.host;
-    const port = overrides?.port || defaults.broker.port;
-    const path = overrides?.path || defaults.broker.path;
-    const username = overrides?.username || defaults.broker.username;
-    const password = overrides?.password || defaults.broker.password;
+    const options: IClientOptions = {
+      ...defaults.broker,
+      ...overrides,
+    };
+    // const protocol = overrides?.protocol || defaults.broker.protocol;
+    // const host = overrides?.host || defaults.broker.host;
+    // const port = overrides?.port || defaults.broker.port;
+    // const path = overrides?.path || defaults.broker.path;
+    // const username = overrides?.username || defaults.broker.username;
+    // const password = overrides?.password || defaults.broker.password;
 
-    const url = `${protocol}://${host}:${port}${path}`;
+    // const url = `${protocol}://${host}:${port}${path}`;
 
-    console.log("Tether Agent connecting to MQTT broker @", url), "...";
+    // console.log("Tether Agent connecting to MQTT broker @", url), "...";
+    console.log("Tether Agent connecting with options", options);
 
     try {
-      this.client = await mqtt.connectAsync(
-        url,
-        { username, password },
-        shouldRetry
-      );
+      this.client = await mqtt.connectAsync(null, options, shouldRetry);
       console.info("Connected OK");
       this.listenForIncoming();
     } catch (error) {
-      console.error("Error connecting to MQTT broker:", { error, url });
+      console.error("Error connecting to MQTT broker:", {
+        error,
+        overrides,
+        options,
+      });
       throw error;
     }
   };
