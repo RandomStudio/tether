@@ -14,7 +14,10 @@ const agent = new TetherAgent("dummy", "NodeJSDummy", config.loglevel);
 console.log("Launch with config", config);
 
 const main = async () => {
-  await agent.connect(config.clientOptions);
+  setTimeout(() => {
+    agent.connect(config.clientOptions);
+  }, 5000);
+  // await agent.connect(config.clientOptions);
 
   const outputPlug = agent.createOutput("randomValue");
 

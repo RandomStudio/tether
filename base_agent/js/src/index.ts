@@ -86,6 +86,11 @@ export class TetherAgent {
     if (name === undefined) {
       throw Error("No name provided for output");
     }
+    if (this.client === null) {
+      logger.warn(
+        "Created output before client connected. This is allowed but you will be unable to publish messages until connected."
+      );
+    }
     const definition: PlugDefinition = {
       name,
       topic: overrideTopic || `${this.agentType}/${this.agentID}/${name}`,
@@ -101,12 +106,14 @@ export class TetherAgent {
    * Define a named Input to indicate some data this agent is expected to consume/receive.
    *
    * For convenience, the topic is assumed to end in the given `name`, e.g. an Input named "someTopic" will match messages on topics `foo/bar/someTopic` as well as `something/else/someTopic`.
-   *
-   * Returns an Output instance which is an EventEmitter. Events named "message" with contents (topic, message) will be emitted on this instance, but _only_ if they match the Output name.
    */
   public createInput = (name: string, overrideTopic?: string) => {
     if (name === undefined) {
       throw Error("No name provided for output");
+    }
+
+    if (this.client === null) {
+      throw Error("trying to create an Input before client is connected");
     }
 
     // Create a new Input
@@ -116,7 +123,14 @@ export class TetherAgent {
     };
     const input = new Input(this.client, definition);
 
-    input.subscribe();
+    input
+      .subscribe()
+      .then(() => {
+        logger.debug("subscribed ok");
+      })
+      .catch((e) => {
+        logger.error("failed to subscribe:", e);
+      });
 
     this.inputs.push(input);
 

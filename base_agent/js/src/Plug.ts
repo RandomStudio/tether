@@ -29,6 +29,7 @@ export class Input extends Plug {
     this.onMessageCallbacks.push(cb);
     return this;
   }
+
   subscribe = async () => {
     if (this.client === null) {
       logger.warn(
