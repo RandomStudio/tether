@@ -3,14 +3,18 @@ const parse = require("parse-strings-in-object");
 const rc = require("rc");
 const { encode, decode } = require("@msgpack/msgpack");
 
-const agent = new TetherAgent("dummy", "NodeJSDummy", "debug");
-
-const config = parse(rc("NodeJSDummy", {}));
+const config = parse(
+  rc("NodeJSDummy", {
+    loglevel: "debug",
+    clientOptions: {},
+  })
+);
+const agent = new TetherAgent("dummy", "NodeJSDummy", config.loglevel);
 
 console.log("Launch with config", config);
 
 const main = async () => {
-  await agent.connect();
+  await agent.connect(config.clientOptions);
 
   const outputPlug = agent.createOutput("randomValue");
 
