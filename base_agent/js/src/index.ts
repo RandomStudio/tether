@@ -169,7 +169,7 @@ export class TetherAgent {
 
   private listenForIncoming = () => {
     this.client.on("message", (topic, payload) => {
-      const matchingInputPlug = this.inputs.find((p) =>
+      const matchingInputPlugs = this.inputs.filter((p) =>
         // If the Plug was defined with wildcard topics, match on name
         // i.e. last part of 3-part topic /x/x/name
         // Otherwise, match on topic exactly
@@ -177,8 +177,10 @@ export class TetherAgent {
           ? topicHasPlugName(topic, p.getDefinition().name)
           : p.getDefinition().topic === topic
       );
-      if (matchingInputPlug) {
-        matchingInputPlug.emit("message", topic, payload);
+      if (matchingInputPlugs.length > 0) {
+        matchingInputPlugs.forEach((p) => {
+          p.emit("message", topic, payload);
+        });
       } else {
         console.warn("message received but cannot match to Input Plug:", {
           topic,
