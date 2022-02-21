@@ -1,52 +1,13 @@
 import mqtt, { AsyncMqttClient, IClientOptions } from "async-mqtt";
-import { EventEmitter } from "events";
 import defaults from "./defaults";
 import { v4 as uuidv4 } from "uuid";
 import { PlugDefinition } from "./types";
+import { Input, Output } from "./Plug";
 
 const { getLogger } = require("log4js");
 
-const logger = getLogger("tetherAgentJS");
+export const logger = getLogger("tetherAgentJS");
 logger.level = "info";
-class Plug extends EventEmitter {
-  protected definition: PlugDefinition;
-  protected client: AsyncMqttClient | null;
-
-  constructor(client: AsyncMqttClient, definition: PlugDefinition) {
-    super();
-    this.client = client;
-    this.definition = definition;
-  }
-
-  public getDefinition = () => this.definition;
-}
-export class Input extends Plug {
-  subscribe = async () => {
-    if (this.client === null) {
-      logger.warn(
-        "subscribing to topic before client is connected; this is allowed but you won't receive any messages until connected"
-      );
-    }
-    await this.client.subscribe(this.definition.topic);
-    logger.debug("subscribed to topic", this.definition.topic);
-  };
-}
-
-export class Output extends Plug {
-  publish = async (content: Buffer | Uint8Array) => {
-    if (this.client === null) {
-      logger.error(
-        "trying to send without connection; not possible until connected"
-      );
-    } else {
-      if (content instanceof Uint8Array) {
-        this.client.publish(this.definition.topic, Buffer.from(content));
-      } else {
-        this.client.publish(this.definition.topic, content);
-      }
-    }
-  };
-}
 
 export class TetherAgent {
   private agentType: string = null;
@@ -202,7 +163,4 @@ const topicHasWildcards = (topic: string) => topic.includes("+");
 
 const getTopicPlugName = (topic: string) => topic.split(`/`)[2];
 
-const topicHasPlugName = (topic: string, plugName: string) =>
-  getTopicPlugName(topic) === plugName;
-
-// export default TetherAgent;
+export default TetherAgent;
