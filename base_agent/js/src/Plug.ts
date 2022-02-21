@@ -43,7 +43,11 @@ export class Output extends Plug {
       );
     } else {
       if (content instanceof Uint8Array) {
-        this.client.publish(this.definition.topic, Buffer.from(content));
+        try {
+          this.client.publish(this.definition.topic, Buffer.from(content));
+        } catch (e) {
+          logger.error("Error publishing message:", e);
+        }
       } else {
         this.client.publish(this.definition.topic, content);
       }
