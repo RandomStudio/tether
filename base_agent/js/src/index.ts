@@ -89,7 +89,6 @@ export class TetherAgent {
     const definition: PlugDefinition = {
       name,
       topic: overrideTopic || `${this.agentType}/${this.agentID}/${name}`,
-      flowDirection: "out",
     };
 
     const output = new Output(this.client, definition);
@@ -114,7 +113,6 @@ export class TetherAgent {
     const definition: PlugDefinition = {
       name,
       topic: overrideTopic || `+/+/${name}`,
-      flowDirection: "in",
     };
     const input = new Input(this.client, definition);
 
@@ -147,7 +145,7 @@ export class TetherAgent {
       );
       if (matchingInputPlugs.length > 0) {
         matchingInputPlugs.forEach((p) => {
-          p.emit("message", topic, payload);
+          p.emit("message", payload, topic);
         });
       } else {
         logger.warn("message received but cannot match to Input Plug:", {

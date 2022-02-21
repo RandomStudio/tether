@@ -7,5 +7,4 @@ export interface Config {
 export interface PlugDefinition {
   name: string;
   topic: string;
-  flowDirection: "in" | "out";
 }

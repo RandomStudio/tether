@@ -27,7 +27,7 @@ const main = async () => {
   }, 1000);
 
   const inputPlugOne = agent.createInput("randomValue");
-  inputPlugOne.on("message", (topic, payload) => {
+  inputPlugOne.on("message", (payload, topic) => {
     const m = decode(payload);
     console.log("received message on inputPlugOne:", { topic, m });
   });
@@ -36,7 +36,7 @@ const main = async () => {
     "moreRandomValues",
     "dummy/NodeJSDummy/randomValue"
   );
-  inputPlugTwo.on("message", (topic, payload) => {
+  inputPlugTwo.on("message", (payload, topic) => {
     const m = decode(payload);
     console.log("received message on inputPlugTwo:", { topic, m });
   });
@@ -45,7 +45,7 @@ const main = async () => {
     "evenMoreRandomValues",
     "+/+/randomValue"
   );
-  inputPlugThree.on("message", (topic, payload) => {
+  inputPlugThree.on("message", (payload, topic) => {
     const m = decode(payload);
     console.log("received message on inputPlugThree:", { topic, m });
   });

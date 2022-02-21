@@ -15,6 +15,14 @@ class Plug extends EventEmitter {
 
   public getDefinition = () => this.definition;
 }
+
+export declare interface Input {
+  on(
+    event: "message",
+    listener: (payload: Buffer, topic: string) => void
+  ): this;
+}
+
 export class Input extends Plug {
   subscribe = async () => {
     if (this.client === null) {
