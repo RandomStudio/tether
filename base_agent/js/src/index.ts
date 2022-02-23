@@ -107,6 +107,9 @@ export class TetherAgent {
     if (name === undefined) {
       throw Error("No name provided for output");
     }
+    if (this.getInput(name) !== undefined) {
+      throw Error(`duplicate plug name "${name}"`);
+    }
     if (this.client === null) {
       throw Error("trying to create an Output before client is connected");
     }
@@ -129,6 +132,9 @@ export class TetherAgent {
   public createInput = (name: string, overrideTopic?: string) => {
     if (name === undefined) {
       throw Error("No name provided for output");
+    }
+    if (this.getInput(name) !== undefined) {
+      throw Error(`duplicate plug name "${name}"`);
     }
 
     if (this.client === null) {
@@ -178,7 +184,7 @@ export class TetherAgent {
       );
       if (matchingInputPlugs.length > 0) {
         matchingInputPlugs.forEach((p) => {
-          p.emit("message", payload, topic);
+          p.emitMessage(payload, topic);
         });
       } else {
         logger.warn("message received but cannot match to Input Plug:", {

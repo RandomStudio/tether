@@ -1,6 +1,6 @@
 import { AsyncMqttClient } from "async-mqtt";
 import { logger } from ".";
-import { PlugDefinition } from "./types";
+import { MessageCallback, PlugDefinition } from "./types";
 
 class Plug {
   protected definition: PlugDefinition;
@@ -14,20 +14,24 @@ class Plug {
   public getDefinition = () => this.definition;
 }
 
+type MessageCallbackListIterm = {
+  cb: MessageCallback;
+  once: boolean;
+};
 export class Input extends Plug {
-  private onMessageCallbacks: Function[];
+  private onMessageCallbacksList: MessageCallbackListIterm[];
 
   constructor(client: AsyncMqttClient, definition: PlugDefinition) {
     super(client, definition);
-    this.onMessageCallbacks = [];
+    this.onMessageCallbacksList = [];
   }
 
-  public on(
-    _event: "message",
-    cb: (payload: Buffer, topic: string) => void
-  ): this {
-    this.onMessageCallbacks.push(cb);
-    return this;
+  public onMessage(cb: MessageCallback) {
+    this.onMessageCallbacksList.push({ cb, once: false });
+  }
+
+  public onMessageOnce(cb: MessageCallback) {
+    this.onMessageCallbacksList.push({ cb, once: true });
   }
 
   subscribe = async () => {
@@ -44,10 +48,14 @@ export class Input extends Plug {
     );
   };
 
-  emit = (event: "message", payload: Buffer, topic: string) => {
-    this.onMessageCallbacks.forEach((cb) => {
-      cb.call(this, payload, topic);
+  emitMessage = (payload: Buffer, topic: string) => {
+    this.onMessageCallbacksList.forEach((i) => {
+      i.cb.call(this, payload, topic);
     });
+    // And delete any "once only" callbacks
+    this.onMessageCallbacksList = this.onMessageCallbacksList.filter(
+      (i) => i.once === false
+    );
   };
 }
 
