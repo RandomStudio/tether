@@ -9,17 +9,17 @@ const { getLogger } = require("log4js");
 export const logger = getLogger("tetherAgentJS");
 logger.level = "info";
 
-export const connectTetherAgent = async (
-  agentType: string,
-  agentID?: string,
-  overrides?: IClientOptions,
-  loglevel?: string
-): Promise<TetherAgent> => {
-  const agent = new TetherAgent(agentType, agentID, loglevel);
-  await agent.connect(overrides, false);
-  return agent;
-};
-class TetherAgent {
+// export const connectTetherAgent = async (
+//   agentType: string,
+//   agentID?: string,
+//   overrides?: IClientOptions,
+//   loglevel?: string
+// ): Promise<TetherAgent> => {
+//   const agent = new TetherAgent(agentType, agentID, loglevel);
+//   await agent.connect(overrides, false);
+//   return agent;
+// };
+export class TetherAgent {
   private agentType: string = null;
   private agentID: string = null;
 
@@ -28,7 +28,18 @@ class TetherAgent {
   private inputs: Input[] = [];
   private outputs: Output[] = [];
 
-  constructor(agentType: string, agentID?: string, loglevel?: string) {
+  public static async create(
+    agentType: string,
+    agentID?: string,
+    overrides?: IClientOptions,
+    loglevel?: string
+  ): Promise<TetherAgent> {
+    const agent = new TetherAgent(agentType, agentID, loglevel);
+    await agent.connect(overrides, false);
+    return agent;
+  }
+
+  private constructor(agentType: string, agentID?: string, loglevel?: string) {
     this.agentType = agentType;
     this.agentID = agentID || uuidv4();
     this.client = null;
@@ -38,7 +49,7 @@ class TetherAgent {
     logger.info("Tether Agent instance:", { agentType, agentId: this.agentID });
   }
 
-  public connect = async (
+  private connect = async (
     overrides?: IClientOptions,
     shouldRetry = true // if MQTT agent retries, it will not throw connection errors!
   ) => {
@@ -97,9 +108,7 @@ class TetherAgent {
       throw Error("No name provided for output");
     }
     if (this.client === null) {
-      logger.warn(
-        "Created output before client connected. This is allowed but you will be unable to publish messages until connected."
-      );
+      throw Error("trying to create an Output before client is connected");
     }
     const definition: PlugDefinition = {
       name,
