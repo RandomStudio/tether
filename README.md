@@ -102,8 +102,9 @@ The fact that the system can be used very easily in everything from websites to 
 - [x] tether agent should be able to disconnect (clean up, unsubscribe)
 - [ ] topic patterns could be agent/id-or-group/plug ?
 - [x] tether CLI client should be something you can install for the system
-- [ ] proper event type definition for on "message", and the order of topic/payload should be payload, topic!
-- [ ] call `.publish()` with no params should send empty message (`Buffer from([])`)
+- [x] proper event type definition for on "message", and the order of topic/payload should be payload, topic!
+- [x] call `.publish()` with no params should send empty message (`Buffer from([])`)
+- [ ] allow QoS to be set per plug
 - [ ] allow client to get currently-applied Tether config?
 - [ ] announcement/heartbeat/ping-pong messages standard?
 - [ ] include msgpack encoding/decoding in Tether base agent?

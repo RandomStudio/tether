@@ -22,6 +22,7 @@ const main = async () => {
     agent.connect(config.clientOptions);
   }, 5000);
   const outputPlug = agent.createOutput("randomValue");
+  const emptyOutputPlug = agent.createOutput("emptyMessage");
 
   setInterval(() => {
     const m = {
@@ -29,6 +30,8 @@ const main = async () => {
       value: Math.random(),
     };
     outputPlug.publish(Buffer.from(encode(m)));
+
+    emptyOutputPlug.publish();
   }, 1000);
 
   const inputPlugOne = agent.createInput("randomValue");
@@ -78,6 +81,11 @@ const main = async () => {
     if (countReceived > 1) {
       throw Error("we should only be able to receive one message on this plug");
     }
+  });
+
+  const inputEmptyMessages = agent.createInput("emptyMessage");
+  inputEmptyMessages.onMessage((payload, topic) => {
+    console.log("received empty message:", { payload, topic });
   });
 };
 

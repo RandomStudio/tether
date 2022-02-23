@@ -60,20 +60,22 @@ export class Input extends Plug {
 }
 
 export class Output extends Plug {
-  publish = async (content: Buffer | Uint8Array) => {
+  publish = async (content?: Buffer | Uint8Array) => {
     if (this.client === null) {
       logger.error(
         "trying to send without connection; not possible until connected"
       );
     } else {
-      if (content instanceof Uint8Array) {
-        try {
+      try {
+        if (content === undefined) {
+          this.client.publish(this.definition.topic, Buffer.from([]));
+        } else if (content instanceof Uint8Array) {
           this.client.publish(this.definition.topic, Buffer.from(content));
-        } catch (e) {
-          logger.error("Error publishing message:", e);
+        } else {
+          this.client.publish(this.definition.topic, content);
         }
-      } else {
-        this.client.publish(this.definition.topic, content);
+      } catch (e) {
+        logger.error("Error publishing message:", e);
       }
     }
   };
