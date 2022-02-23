@@ -1,4 +1,4 @@
-const { TetherAgent } = require("@tether/tether-agent");
+const { connectTetherAgent } = require("@tether/tether-agent");
 const parse = require("parse-strings-in-object");
 const rc = require("rc");
 const { encode, decode } = require("@msgpack/msgpack");
@@ -9,11 +9,15 @@ const config = parse(
     clientOptions: {},
   })
 );
-const agent = new TetherAgent("dummy", "NodeJSDummy", config.loglevel);
-
 console.log("Launch with config", config);
 
 const main = async () => {
+  const agent = await connectTetherAgent(
+    "dummy",
+    "NodeJSDummy",
+    config.clientOptions,
+    config.loglevel
+  );
   setTimeout(() => {
     agent.connect(config.clientOptions);
   }, 5000);

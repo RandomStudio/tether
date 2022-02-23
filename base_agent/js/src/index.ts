@@ -9,7 +9,17 @@ const { getLogger } = require("log4js");
 export const logger = getLogger("tetherAgentJS");
 logger.level = "info";
 
-export class TetherAgent {
+export const connectTetherAgent = async (
+  agentType: string,
+  agentID?: string,
+  overrides?: IClientOptions,
+  loglevel?: string
+): Promise<TetherAgent> => {
+  const agent = new TetherAgent(agentType, agentID, loglevel);
+  await agent.connect(overrides, false);
+  return agent;
+};
+class TetherAgent {
   private agentType: string = null;
   private agentID: string = null;
 
@@ -174,5 +184,3 @@ export class TetherAgent {
 const topicHasWildcards = (topic: string) => topic.includes("+");
 
 const getTopicPlugName = (topic: string) => topic.split(`/`)[2];
-
-export default TetherAgent;
