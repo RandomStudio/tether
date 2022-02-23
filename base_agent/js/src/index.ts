@@ -9,16 +9,6 @@ const { getLogger } = require("log4js");
 export const logger = getLogger("tetherAgentJS");
 logger.level = "info";
 
-// export const connectTetherAgent = async (
-//   agentType: string,
-//   agentID?: string,
-//   overrides?: IClientOptions,
-//   loglevel?: string
-// ): Promise<TetherAgent> => {
-//   const agent = new TetherAgent(agentType, agentID, loglevel);
-//   await agent.connect(overrides, false);
-//   return agent;
-// };
 export class TetherAgent {
   private agentType: string = null;
   private agentID: string = null;
