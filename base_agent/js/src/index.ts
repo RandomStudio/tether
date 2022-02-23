@@ -9,6 +9,8 @@ const { getLogger } = require("log4js");
 export const logger = getLogger("tetherAgentJS");
 logger.level = "info";
 
+export { Input, Output };
+
 export class TetherAgent {
   private agentType: string = null;
   private agentID: string = null;
@@ -159,8 +161,7 @@ export class TetherAgent {
         // on name, i.e. last part of 3-part topic agentType/agentGroup/name
         // Otherwise, match on topic exactly
         topicHasWildcards(p.getDefinition().topic)
-          ? getTopicPlugName(p.getDefinition().topic) ===
-            getTopicPlugName(topic)
+          ? parsePlugName(p.getDefinition().topic) === parsePlugName(topic)
           : p.getDefinition().topic === topic
       );
       logger.debug("received message:", { topic, payload });
@@ -188,4 +189,6 @@ export class TetherAgent {
 
 const topicHasWildcards = (topic: string) => topic.includes("+");
 
-const getTopicPlugName = (topic: string) => topic.split(`/`)[2];
+export const parsePlugName = (topic: string) => topic.split(`/`)[2];
+export const parseAgentID = (topic: string) => topic.split(`/`)[1];
+export const parseAgentType = (topic: string) => topic.split(`/`)[0];
