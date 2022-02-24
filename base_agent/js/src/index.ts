@@ -9,7 +9,7 @@ const { getLogger } = require("log4js");
 export const logger = getLogger("tetherAgentJS");
 logger.level = "info";
 
-export { Input, Output };
+export { Input, Output, IClientOptions };
 
 export class TetherAgent {
   private agentType: string = null;
@@ -22,9 +22,9 @@ export class TetherAgent {
 
   public static async create(
     agentType: string,
-    agentID?: string,
     overrides?: IClientOptions,
-    loglevel?: string
+    loglevel?: string,
+    agentID?: string,
   ): Promise<TetherAgent> {
     const agent = new TetherAgent(agentType, agentID, loglevel);
     await agent.connect(overrides, false);
