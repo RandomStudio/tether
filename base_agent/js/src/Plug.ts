@@ -1,14 +1,12 @@
 import { AsyncMqttClient } from "async-mqtt";
-import EventEmitter from "events";
 import { logger } from ".";
-import { PlugDefinition } from "./types";
+import { MessageCallback, PlugDefinition } from "./types";
 
-class Plug extends EventEmitter {
+class Plug {
   protected definition: PlugDefinition;
   protected client: AsyncMqttClient | null;
 
   constructor(client: AsyncMqttClient, definition: PlugDefinition) {
-    super();
     this.client = client;
     this.definition = definition;
   }
@@ -16,14 +14,26 @@ class Plug extends EventEmitter {
   public getDefinition = () => this.definition;
 }
 
-export declare interface Input {
-  on(
-    event: "message",
-    listener: (payload: Buffer, topic: string) => void
-  ): this;
-}
-
+type MessageCallbackListIterm = {
+  cb: MessageCallback;
+  once: boolean;
+};
 export class Input extends Plug {
+  private onMessageCallbacksList: MessageCallbackListIterm[];
+
+  constructor(client: AsyncMqttClient, definition: PlugDefinition) {
+    super(client, definition);
+    this.onMessageCallbacksList = [];
+  }
+
+  public onMessage(cb: MessageCallback) {
+    this.onMessageCallbacksList.push({ cb, once: false });
+  }
+
+  public onMessageOnce(cb: MessageCallback) {
+    this.onMessageCallbacksList.push({ cb, once: true });
+  }
+
   subscribe = async () => {
     if (this.client === null) {
       logger.warn(
@@ -31,25 +41,41 @@ export class Input extends Plug {
       );
     }
     await this.client.subscribe(this.definition.topic);
-    logger.debug("subscribed to topic", this.definition.topic);
+    logger.debug(
+      "subscribed to topic",
+      this.definition.topic,
+      `for Input Plug "${this.getDefinition().name}"`
+    );
+  };
+
+  emitMessage = (payload: Buffer, topic: string) => {
+    this.onMessageCallbacksList.forEach((i) => {
+      i.cb.call(this, payload, topic);
+    });
+    // And delete any "once only" callbacks
+    this.onMessageCallbacksList = this.onMessageCallbacksList.filter(
+      (i) => i.once === false
+    );
   };
 }
 
 export class Output extends Plug {
-  publish = async (content: Buffer | Uint8Array) => {
+  publish = async (content?: Buffer | Uint8Array) => {
     if (this.client === null) {
       logger.error(
         "trying to send without connection; not possible until connected"
       );
     } else {
-      if (content instanceof Uint8Array) {
-        try {
+      try {
+        if (content === undefined) {
+          this.client.publish(this.definition.topic, Buffer.from([]));
+        } else if (content instanceof Uint8Array) {
           this.client.publish(this.definition.topic, Buffer.from(content));
-        } catch (e) {
-          logger.error("Error publishing message:", e);
+        } else {
+          this.client.publish(this.definition.topic, content);
         }
-      } else {
-        this.client.publish(this.definition.topic, content);
+      } catch (e) {
+        logger.error("Error publishing message:", e);
       }
     }
   };

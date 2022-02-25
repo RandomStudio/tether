@@ -9,6 +9,8 @@ const { getLogger } = require("log4js");
 export const logger = getLogger("tetherAgentJS");
 logger.level = "info";
 
+export { Input, Output, IClientOptions };
+
 export class TetherAgent {
   private agentType: string = null;
   private agentID: string = null;
@@ -18,7 +20,18 @@ export class TetherAgent {
   private inputs: Input[] = [];
   private outputs: Output[] = [];
 
-  constructor(agentType: string, agentID?: string, loglevel?: string) {
+  public static async create(
+    agentType: string,
+    overrides?: IClientOptions,
+    loglevel?: string,
+    agentID?: string,
+  ): Promise<TetherAgent> {
+    const agent = new TetherAgent(agentType, agentID, loglevel);
+    await agent.connect(overrides, false);
+    return agent;
+  }
+
+  private constructor(agentType: string, agentID?: string, loglevel?: string) {
     this.agentType = agentType;
     this.agentID = agentID || uuidv4();
     this.client = null;
@@ -28,7 +41,7 @@ export class TetherAgent {
     logger.info("Tether Agent instance:", { agentType, agentId: this.agentID });
   }
 
-  public connect = async (
+  private connect = async (
     overrides?: IClientOptions,
     shouldRetry = true // if MQTT agent retries, it will not throw connection errors!
   ) => {
@@ -86,6 +99,12 @@ export class TetherAgent {
     if (name === undefined) {
       throw Error("No name provided for output");
     }
+    if (this.getInput(name) !== undefined) {
+      throw Error(`duplicate plug name "${name}"`);
+    }
+    if (this.client === null) {
+      throw Error("trying to create an Output before client is connected");
+    }
     const definition: PlugDefinition = {
       name,
       topic: overrideTopic || `${this.agentType}/${this.agentID}/${name}`,
@@ -101,12 +120,17 @@ export class TetherAgent {
    * Define a named Input to indicate some data this agent is expected to consume/receive.
    *
    * For convenience, the topic is assumed to end in the given `name`, e.g. an Input named "someTopic" will match messages on topics `foo/bar/someTopic` as well as `something/else/someTopic`.
-   *
-   * Returns an Output instance which is an EventEmitter. Events named "message" with contents (topic, message) will be emitted on this instance, but _only_ if they match the Output name.
    */
   public createInput = (name: string, overrideTopic?: string) => {
     if (name === undefined) {
       throw Error("No name provided for output");
+    }
+    if (this.getInput(name) !== undefined) {
+      throw Error(`duplicate plug name "${name}"`);
+    }
+
+    if (this.client === null) {
+      throw Error("trying to create an Input before client is connected");
     }
 
     // Create a new Input
@@ -116,7 +140,14 @@ export class TetherAgent {
     };
     const input = new Input(this.client, definition);
 
-    input.subscribe();
+    input
+      .subscribe()
+      .then(() => {
+        logger.debug("subscribed ok");
+      })
+      .catch((e) => {
+        logger.error("failed to subscribe:", e);
+      });
 
     this.inputs.push(input);
 
@@ -130,8 +161,7 @@ export class TetherAgent {
         // on name, i.e. last part of 3-part topic agentType/agentGroup/name
         // Otherwise, match on topic exactly
         topicHasWildcards(p.getDefinition().topic)
-          ? getTopicPlugName(p.getDefinition().topic) ===
-            getTopicPlugName(topic)
+          ? parsePlugName(p.getDefinition().topic) === parsePlugName(topic)
           : p.getDefinition().topic === topic
       );
       logger.debug("received message:", { topic, payload });
@@ -145,7 +175,7 @@ export class TetherAgent {
       );
       if (matchingInputPlugs.length > 0) {
         matchingInputPlugs.forEach((p) => {
-          p.emit("message", payload, topic);
+          p.emitMessage(payload, topic);
         });
       } else {
         logger.warn("message received but cannot match to Input Plug:", {
@@ -159,6 +189,6 @@ export class TetherAgent {
 
 const topicHasWildcards = (topic: string) => topic.includes("+");
 
-const getTopicPlugName = (topic: string) => topic.split(`/`)[2];
-
-export default TetherAgent;
+export const parsePlugName = (topic: string) => topic.split(`/`)[2];
+export const parseAgentID = (topic: string) => topic.split(`/`)[1];
+export const parseAgentType = (topic: string) => topic.split(`/`)[0];

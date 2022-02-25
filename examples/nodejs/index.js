@@ -9,14 +9,20 @@ const config = parse(
     clientOptions: {},
   })
 );
-const agent = new TetherAgent("dummy", "NodeJSDummy", config.loglevel);
-
 console.log("Launch with config", config);
 
 const main = async () => {
-  await agent.connect(config.clientOptions);
-
+  const agent = await TetherAgent.create(
+    "dummy",
+    "NodeJSDummy",
+    config.clientOptions,
+    config.loglevel
+  );
+  setTimeout(() => {
+    agent.connect(config.clientOptions);
+  }, 5000);
   const outputPlug = agent.createOutput("randomValue");
+  const emptyOutputPlug = agent.createOutput("emptyMessage");
 
   setInterval(() => {
     const m = {
@@ -24,10 +30,13 @@ const main = async () => {
       value: Math.random(),
     };
     outputPlug.publish(Buffer.from(encode(m)));
+
+    emptyOutputPlug.publish();
   }, 1000);
 
   const inputPlugOne = agent.createInput("randomValue");
-  inputPlugOne.on("message", (payload, topic) => {
+  inputPlugOne.onMessage((payload, topic) => {
+    console.log("received:", { payload, topic });
     const m = decode(payload);
     console.log("received message on inputPlugOne:", { topic, m });
   });
@@ -36,7 +45,7 @@ const main = async () => {
     "moreRandomValues",
     "dummy/NodeJSDummy/randomValue"
   );
-  inputPlugTwo.on("message", (payload, topic) => {
+  inputPlugTwo.onMessage((payload, topic) => {
     const m = decode(payload);
     console.log("received message on inputPlugTwo:", { topic, m });
   });
@@ -45,16 +54,38 @@ const main = async () => {
     "evenMoreRandomValues",
     "+/+/randomValue"
   );
-  inputPlugThree.on("message", (payload, topic) => {
+  inputPlugThree.onMessage((payload, topic) => {
     const m = decode(payload);
     console.log("received message on inputPlugThree:", { topic, m });
   });
 
-  const inputPlugFour = agent.createInput("randomValue", "+/+/somethingElse");
-  inputPlugFour.on("message", () => {
-    throw Error(
-      "we didn't expect to receive anything on this plug, despite the name"
-    );
+  try {
+    const inputPlugFour = agent.createInput("randomValue", "+/+/somethingElse");
+    inputPlugFour.onMessage(() => {
+      throw Error(
+        "we didn't expect to receive anything on this plug, despite the name"
+      );
+    });
+  } catch (e) {
+    console.log("we expected an error here; duplicate plug names!");
+  }
+
+  let countReceived = 0;
+  const inputPlugJustOnce = agent.createInput(
+    "randomValueOnce",
+    "+/+/randomValue"
+  );
+  inputPlugJustOnce.onMessageOnce((payload, topic) => {
+    countReceived++;
+    console.log("received", countReceived, "message on inputPlugJustOnce");
+    if (countReceived > 1) {
+      throw Error("we should only be able to receive one message on this plug");
+    }
+  });
+
+  const inputEmptyMessages = agent.createInput("emptyMessage");
+  inputEmptyMessages.onMessage((payload, topic) => {
+    console.log("received empty message:", { payload, topic });
   });
 };
 
