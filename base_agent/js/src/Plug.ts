@@ -1,6 +1,7 @@
 import { AsyncMqttClient } from "async-mqtt";
 import { logger } from ".";
 import { MessageCallback, PlugDefinition } from "./types";
+import { Buffer } from "buffer";
 
 class Plug {
   protected definition: PlugDefinition;
