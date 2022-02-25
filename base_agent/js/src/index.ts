@@ -4,8 +4,7 @@ import { v4 as uuidv4 } from "uuid";
 import { PlugDefinition } from "./types";
 import { Input, Output } from "./Plug";
 
-const { getLogger } = require("log4js");
-
+import { getLogger} from "log4js";
 export const logger = getLogger("tetherAgentJS");
 logger.level = "info";
 
