@@ -3,10 +3,11 @@ import defaults from "./defaults";
 import { v4 as uuidv4 } from "uuid";
 import { PlugDefinition } from "./types";
 import { Input, Output } from "./Plug";
+import logger from "loglevel";
+import { LogLevelDesc } from "loglevel";
 
-import { getLogger} from "log4js";
-export const logger = getLogger("tetherAgentJS");
-logger.level = "info";
+logger.setLevel("info");
+ export {logger};
 
 export { Input, Output, IClientOptions };
 
@@ -22,7 +23,7 @@ export class TetherAgent {
   public static async create(
     agentType: string,
     overrides?: IClientOptions,
-    loglevel?: string,
+    loglevel?: LogLevelDesc,
     agentID?: string,
   ): Promise<TetherAgent> {
     const agent = new TetherAgent(agentType, agentID, loglevel);
@@ -30,12 +31,12 @@ export class TetherAgent {
     return agent;
   }
 
-  private constructor(agentType: string, agentID?: string, loglevel?: string) {
+  private constructor(agentType: string, agentID?: string, loglevel?: LogLevelDesc) {
     this.agentType = agentType;
     this.agentID = agentID || uuidv4();
     this.client = null;
     if (loglevel) {
-      logger.level = loglevel;
+      logger.setLevel(loglevel);
     }
     logger.info("Tether Agent instance:", { agentType, agentId: this.agentID });
   }
