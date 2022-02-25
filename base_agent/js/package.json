@@ -1,6 +1,6 @@
 {
   "name": "@tether/tether-agent",
-  "version": "2.5.0",
+  "version": "2.5.1",
   "description": "",
   "main": "dist/index.js",
   "scripts": {
@@ -12,7 +12,6 @@
   "license": "ISC",
   "dependencies": {
     "async-mqtt": "^2.6.1",
-    "events": "^3.3.0",
     "log4js": "^6.4.1",
     "uuid": "^8.3.2"
   },
