@@ -1,6 +1,6 @@
 {
-  "name": "tether-cli",
-  "version": "1.1.0",
+  "name": "@tether/tether-cli",
+  "version": "1.2.1",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -17,6 +17,9 @@
   },
   "bin": {
     "tether-receive": "./tether-receive.js",
-    "tether-send": "./tether-send.js"
+    "tether-send": "./tether-send.js",
+    "tether-topics": "./tether-topics.js",
+    "tether-record": "./tether-record.js",
+    "tether-playback": "./tether-playback.js"
   }
 }

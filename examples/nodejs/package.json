@@ -1,6 +1,6 @@
 {
   "name": "tether-nodejs-example",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -9,8 +9,9 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@msgpack/msgpack": "^2.7.0",
-    "tether-agent": "^2.0.2"
+    "@msgpack/msgpack": "^2.7.2",
+    "parse-strings-in-object": "^1.4.0",
+    "rc": "^1.2.8"
   },
   "devDependencies": {
     "prettier": "^2.2.1"
