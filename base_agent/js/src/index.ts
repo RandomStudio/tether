@@ -88,7 +88,7 @@ export class TetherAgent {
     this.inputs.find((p) => p.getDefinition().name === name);
 
   public getOutput = (name: string) =>
-    this.inputs.find((p) => p.getDefinition().name === name);
+    this.outputs.find((p) => p.getDefinition().name === name);
 
   /**
    * Define a named Output to indicate some data that this agent is expected to produce/send.
