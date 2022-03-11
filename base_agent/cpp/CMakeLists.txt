@@ -30,5 +30,5 @@ add_subdirectory(src)
 
 # set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/libs/msgpack)
 
-# add_subdirectory(examples)
+add_subdirectory(examples)
 

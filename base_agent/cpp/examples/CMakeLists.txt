@@ -1,5 +1,3 @@
-#find_package(msgpack REQUIRED)
-
 add_executable(publish_example publish.cpp)
 add_executable(msgpack_publish_example msgpack.cpp)
 add_executable(tether_agent_example agent.cpp)
@@ -14,8 +12,8 @@ target_include_directories(publish_example PUBLIC ../libs/paho.mqtt.c/src)
 target_include_directories(msgpack_publish_example PUBLIC ../libs/paho.mqtt.cpp/src)
 target_include_directories(msgpack_publish_example PUBLIC ../libs/paho.mqtt.c/src)
 
-target_include_directories(tether_agent_example PUBLIC ../src)
+# target_include_directories(tether_agent_example PUBLIC ../src)
 
-target_link_libraries(publish_example PUBLIC paho-mqttpp3)
-target_link_libraries(msgpack_publish_example PUBLIC paho-mqttpp3 msgpackc-cxx)
-target_link_libraries(tether_agent_example PUBLIC TetherAgent paho-mqttpp3 msgpackc-cxx)
+target_link_libraries(publish_example PUBLIC paho-mqttc3::MQTTAsync paho-mqttc3::MQTTClient paho-mqttpp3)
+target_link_libraries(msgpack_publish_example PUBLIC paho-mqttc3::MQTTAsync paho-mqttc3::MQTTClient paho-mqttpp3 msgpackc-cxx)
+# target_link_libraries(tether_agent_example PUBLIC TetherAgent PahoMqttCpp msgpackc-cxx)

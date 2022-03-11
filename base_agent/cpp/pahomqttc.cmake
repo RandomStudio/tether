@@ -31,9 +31,9 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/fix_pahomqttcpp.cmake.in
 
 add_library(paho-mqttc3::MQTTClient STATIC IMPORTED GLOBAL)
 set_target_properties(paho-mqttc3::MQTTClient PROPERTIES
-	 IMPORTED_LOCATION ${PAHOMQTTC_TARGET_DIR}/lib/libpaho-mqtt3c-static.a
+	 IMPORTED_LOCATION ${PAHOMQTTC_TARGET_DIR}/lib/libpaho-mqtt3c.a
 	 INTERFACE_INCLUDE_DIRECTORIES ${PAHOMQTTC_TARGET_DIR}/include)
 add_library(paho-mqttc3::MQTTAsync STATIC IMPORTED GLOBAL)
 set_target_properties(paho-mqttc3::MQTTAsync PROPERTIES
-	 IMPORTED_LOCATION ${PAHOMQTTC_TARGET_DIR}/lib/libpaho-mqtt3a-static.a
+	 IMPORTED_LOCATION ${PAHOMQTTC_TARGET_DIR}/lib/libpaho-mqtt3a.a
 	 INTERFACE_INCLUDE_DIRECTORIES ${PAHOMQTTC_TARGET_DIR}/include)
