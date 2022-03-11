@@ -17,8 +17,8 @@ if(NOT ${PAHO_BUILD_STATIC})
 endif()
 
 ExternalProject_Add(
-    pahomqttcpp
-	 DEPENDS pahomqttc
+    PahoMqttCpp
+	 DEPENDS PahoMqttC
     PREFIX ${PAHOMQTTCPP_TARGET_DIR}
     SOURCE_DIR ${PAHOMQTTCPP_DIR}
 	 CMAKE_ARGS -DCMAKE_PROJECT_paho-mqtt-cpp_INCLUDE=${CMAKE_CURRENT_BINARY_DIR}/fix_pahomqttcpp.cmake
