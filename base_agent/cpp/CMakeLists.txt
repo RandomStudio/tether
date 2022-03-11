@@ -5,6 +5,7 @@ project(TetherCPP)
 SET(PAHO_BUILD_STATIC TRUE)
 SET(PAHO_BUILD_WITH_SSL FALSE)
 
+# Helpful tips for compiling CPP and C libraries together: https://github.com/eclipse/paho.mqtt.cpp/issues/225#issuecomment-586644232
 include(pahomqttc.cmake)
 include(pahomqttcpp.cmake)
 
@@ -16,15 +17,14 @@ set(PAHO_BUILD_STATIC TRUE)
 
 # set(PAHO_MQTT_C_INCLUDE_DIRS ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/libs/paho.mqtt.c/src)
 # add_subdirectory(libs/paho.mqtt.cpp)
-add_subdirectory(libs/msgpack)
 
 
 add_subdirectory(src)
-target_link_libraries(
-    ${PROJECT_NAME}
-    PRIVATE paho-mqttpp3
-    PRIVATE paho-mqttc3::MQTTAsync
-)
+# target_link_libraries(
+#     ${PROJECT_NAME}
+#     PRIVATE paho-mqttpp3
+#     PRIVATE paho-mqttc3::MQTTAsync
+# )
 
 set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/libs/msgpack)
 

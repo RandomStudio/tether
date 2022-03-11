@@ -30,6 +30,8 @@ Useful guides for CMake structure
 Be sure to do
 `git submodule update --init --recursive` so that all submodules are on the correct branch, etc.
 
+Boost unfortunately must be installed on the system BEFORE attempting to build. On Mac, this could be as simple as `brew install boost`; on Linux it should be `sudo apt-get install libboost-dev`
+
 Then from `base_agent/cpp`:
 
 - `mkdir build`

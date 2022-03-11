@@ -7,7 +7,7 @@
 include(ExternalProject)
 set(PAHOMQTTCPP_DIR ${CMAKE_CURRENT_SOURCE_DIR}/libs/paho.mqtt.cpp)
 set(PAHOMQTTCPP_TARGET_DIR ${CMAKE_CURRENT_BINARY_DIR}/paho.mqtt.cpp)
-set(PAHOMQTTCPP_STATIC_LIB ${PAHOMQTTCPP_TARGET_DIR}/libs/libpaho-mqttpp3.a) 
+set(PAHOMQTTCPP_STATIC_LIB ${PAHOMQTTCPP_TARGET_DIR}/lib/libpaho-mqttpp3.a) 
 
 file(MAKE_DIRECTORY ${PAHOMQTTCPP_TARGET_DIR}/include)
 
