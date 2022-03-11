@@ -1,7 +1,14 @@
 cmake_minimum_required(VERSION 3.10)
 project(TetherCPP)
 
-set(OPENSSL_ROOT_DIR /usr/local/opt/openssl@1.1)
+# Settings for MQTT libraries
+SET(PAHO_BUILD_STATIC TRUE)
+SET(PAHO_BUILD_WITH_SSL FALSE)
+
+include(pahomqttc.cmake)
+include(pahomqttcpp.cmake)
+
+# set(OPENSSL_ROOT_DIR /usr/local/opt/openssl@1.1)
 
 
 set(PAHO_BUILD_STATIC TRUE)
@@ -13,6 +20,12 @@ add_subdirectory(libs/msgpack)
 
 
 add_subdirectory(src)
+target_link_libraries(
+    ${PROJECT_NAME}
+    PRIVATE paho-mqttpp3
+    PRIVATE paho-mqttc3::MQTTAsync
+)
+
 set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/libs/msgpack)
 
 add_subdirectory(examples)
