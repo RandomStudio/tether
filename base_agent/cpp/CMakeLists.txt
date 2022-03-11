@@ -18,6 +18,7 @@ set(PAHO_BUILD_STATIC TRUE)
 # set(PAHO_MQTT_C_INCLUDE_DIRS ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/libs/paho.mqtt.c/src)
 # add_subdirectory(libs/paho.mqtt.cpp)
 
+set(PAHO_MQTT_C_LIBRARIES ${CMAKE_CURRENT_SOURCE_DIR}/libs/paho.mqtt.c)
 
 add_subdirectory(src)
 # target_link_libraries(

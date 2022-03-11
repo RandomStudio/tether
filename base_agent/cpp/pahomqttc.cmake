@@ -23,7 +23,7 @@ ExternalProject_Add(
 # and headers are installed, so we provide this information in an additional
 # cmake file which is passed to the paho.mqtt.cpp project build
 set(PAHOMQTTC_INCLUDE_DIR ${PAHOMQTTC_TARGET_DIR}/include)
-set(PAHOMQTTC_LIBRARY_DIR ${PAHOMQTTC_TARGET_DIR}/libs)
+set(PAHOMQTTC_LIBRARY_DIR ${PAHOMQTTC_TARGET_DIR}/lib)
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/fix_pahomqttcpp.cmake.in 
                ${CMAKE_CURRENT_BINARY_DIR}/fix_pahomqttcpp.cmake @ONLY)
@@ -31,9 +31,9 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/fix_pahomqttcpp.cmake.in
 
 add_library(paho-mqttc3::MQTTClient STATIC IMPORTED GLOBAL)
 set_target_properties(paho-mqttc3::MQTTClient PROPERTIES
-	 IMPORTED_LOCATION ${PAHOMQTTC_TARGET_DIR}/libs/libpaho-mqtt3c-static.a
+	 IMPORTED_LOCATION ${PAHOMQTTC_TARGET_DIR}/lib/libpaho-mqtt3c-static.a
 	 INTERFACE_INCLUDE_DIRECTORIES ${PAHOMQTTC_TARGET_DIR}/include)
 add_library(paho-mqttc3::MQTTAsync STATIC IMPORTED GLOBAL)
 set_target_properties(paho-mqttc3::MQTTAsync PROPERTIES
-	 IMPORTED_LOCATION ${PAHOMQTTC_TARGET_DIR}/libs/libpaho-mqtt3a-static.a
+	 IMPORTED_LOCATION ${PAHOMQTTC_TARGET_DIR}/lib/libpaho-mqtt3a-static.a
 	 INTERFACE_INCLUDE_DIRECTORIES ${PAHOMQTTC_TARGET_DIR}/include)
