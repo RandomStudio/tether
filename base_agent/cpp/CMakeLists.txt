@@ -18,16 +18,17 @@ set(PAHO_BUILD_STATIC TRUE)
 # set(PAHO_MQTT_C_INCLUDE_DIRS ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/libs/paho.mqtt.c/src)
 # add_subdirectory(libs/paho.mqtt.cpp)
 
-set(PAHO_MQTT_C_LIBRARIES ${CMAKE_CURRENT_SOURCE_DIR}/libs/paho.mqtt.c)
+# set(PAHO_MQTT_C_LIBRARIES ${CMAKE_CURRENT_SOURCE_DIR}/libs/paho.mqtt.c)
 
 add_subdirectory(src)
+
 # target_link_libraries(
-#     ${PROJECT_NAME}
+#     TetherCpp
 #     PRIVATE paho-mqttpp3
 #     PRIVATE paho-mqttc3::MQTTAsync
 # )
 
-set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/libs/msgpack)
+# set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/libs/msgpack)
 
-add_subdirectory(examples)
+# add_subdirectory(examples)
 
