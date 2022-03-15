@@ -31,8 +31,7 @@ Output* TetherAgent::createOutput(std::string name) {
 
   PlugDefinition def {
     name, 
-    mAgentType + "/" + mAgentID + "/" + name,
-    OUT
+    mAgentType + "/" + mAgentID + "/" + name
   };
 
   Output* p = new Output(def, mClient);
@@ -42,6 +41,15 @@ Output* TetherAgent::createOutput(std::string name) {
 
   return p;
 }
+
+Input* TetherAgent::createInput(std::string name) {
+  PlugDefinition def {
+    name,
+    mAgentType + "/" + mAgentID + "/" + name
+  };
+
+  Input* p = new Input(def, mClient);
+} 
 
 void TetherAgent::disconnect() {
   std::cout << "\nDisconnecting..." << std::endl;

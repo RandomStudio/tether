@@ -9,7 +9,6 @@ enum FlowDirection {
 struct PlugDefinition {
   std::string name;
   std::string topic;
-  FlowDirection flowDirection;
 };
 
 class Plug {
@@ -33,12 +32,39 @@ class Output : Plug {
   public:
 
     Output(PlugDefinition definition, mqtt::async_client * client): Plug (definition, client) {
-      std::cout << "Output created: " << definition.name << std::endl;  
+      std::cout << "Output plug created: " << definition.name << std::endl;  
     };
 
     void publish(mqtt::binary_ref payload) {
       mToken = mTopic->publish(payload);
     }
+};
+
+
+
+class Input : Plug, public virtual mqtt::callback,
+					public virtual mqtt::iaction_listener {
+  private:
+  public:
+
+    Input(PlugDefinition definition, mqtt::async_client * client): Plug (definition, client) {
+      std::cout << "Input plug created: " << definition.name << std::endl;  
+      client->subscribe(definition.topic, 1);
+    }
+
+    void message_arrived(mqtt::const_message_ptr msg) override {
+      std::cout << "Message arrived" << std::endl;
+      std::cout << "\ttopic: '" << msg->get_topic() << "'" << std::endl;
+      std::cout << "\tpayload: '" << msg->to_string() << "'\n" << std::endl;
+	}
+
+  // Re-connection failure
+	void on_failure(const mqtt::token& tok) override {
+		std::cout << "Connection attempt failed" << std::endl;
+	}
+
+	void on_success(const mqtt::token& tok) override {}
+
 };
 
 class TetherAgent {
@@ -57,6 +83,7 @@ class TetherAgent {
     void disconnect();
 
     Output* createOutput(std::string name);
+    Input* createInput(std::string name);
 
     void publish();
   
