@@ -45,7 +45,8 @@ Output* TetherAgent::createOutput(std::string name) {
 Input* TetherAgent::createInput(std::string name) {
   PlugDefinition def {
     name,
-    mAgentType + "/" + mAgentID + "/" + name
+    // mAgentType + "/" + mAgentID + "/" + name
+    "+/+/" + name
   };
 
   Input* p = new Input(def, mClient);
