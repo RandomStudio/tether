@@ -1,26 +1,12 @@
+cmake_minimum_required(VERSION 3.19)
 find_package(msgpack REQUIRED)
 
-add_executable(publish_example publish.cpp)
-add_executable(msgpack_publish_example msgpack.cpp)
-add_executable(tether_agent_example agent.cpp)
+project(TetherExample)
 
-set_property(TARGET publish_example PROPERTY CXX_STANDARD 11)
-# set_property(TARGET msgpack_publish_example PROPERTY CXX_STANDARD 11)
-# set_property(TARGET tether_agent_example PROPERTY CXX_STANDARD 11)
 
-target_include_directories(publish_example PUBLIC ../libs/paho.mqtt.cpp/src)
-target_include_directories(publish_example PUBLIC ../libs/paho.mqtt.c/src)
+add_executable(tether-agent-example ./agent.cpp)
+set_property(TARGET tether-agent-example PROPERTY CXX_STANDARD 17)
+target_include_directories(tether-agent-example PUBLIC ../src)
+# target_include_directories(tether-agent-example PUBLIC ../libs/msgpack/include)
 
-target_link_libraries(publish_example PUBLIC paho-mqttpp3 msgpackc-cxx)
-
-# target_include_directories(publish_example PUBLIC ../../libs/paho.mqtt.cpp/src)
-# target_include_directories(publish_example PUBLIC ../../libs/paho.mqtt.c/src)
-
-# target_include_directories(msgpack_publish_example PUBLIC ../../libs/paho.mqtt.cpp/src)
-# target_include_directories(msgpack_publish_example PUBLIC ../../libs/paho.mqtt.c/src)
-
-target_include_directories(publish_example PUBLIC ../src)
-
-# target_link_libraries(publish_example PUBLIC paho-mqttc3::MQTTAsync paho-mqttc3::MQTTClient paho-mqttpp3)
-# target_link_libraries(msgpack_publish_example PUBLIC paho-mqttc3::MQTTAsync paho-mqttc3::MQTTClient paho-mqttpp3 msgpackc-cxx)
-# target_link_libraries(tether_agent_example PUBLIC TetherAgent PahoMqttCpp msgpackc-cxx)
+target_link_libraries(tether-agent-example PUBLIC TetherAgent msgpackc-cxx)
