@@ -51,6 +51,8 @@ Input* TetherAgent::createInput(std::string name, std::function<void(std::string
 
   Input* p = new Input(def, mClient, callback);
   mClient->set_callback(*p);
+
+  return p;
 } 
 
 void TetherAgent::disconnect() {
