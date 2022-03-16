@@ -56,10 +56,10 @@ class Input : Plug, public virtual mqtt::callback,
     }
 
     void message_arrived(mqtt::const_message_ptr msg) override {
-      std::cout << "Message arrived" << std::endl;
-      std::cout << "\ttopic: '" << msg->to_string() << "'" << std::endl;
-      std::cout << "\tpayload: '" << msg->to_string() << "'\n" << std::endl;
-        mCallback(msg->to_string(), msg->to_string());
+      // std::cout << "Message arrived" << std::endl;
+      // std::cout << "\ttopic: '" << msg->get_topic() << "'" << std::endl;
+      // std::cout << "\tpayload: '" << msg->get_payload() << "'\n" << std::endl;
+        mCallback(msg->get_payload(), msg->get_topic());
 	}
 
   // Re-connection failure
