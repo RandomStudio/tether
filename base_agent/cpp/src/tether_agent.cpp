@@ -42,14 +42,14 @@ Output* TetherAgent::createOutput(std::string name) {
   return p;
 }
 
-Input* TetherAgent::createInput(std::string name) {
+Input* TetherAgent::createInput(std::string name, std::function<void(std::string, std::string)> callback) {
   PlugDefinition def {
     name,
     // mAgentType + "/" + mAgentID + "/" + name
     "+/+/" + name
   };
 
-  Input* p = new Input(def, mClient);
+  Input* p = new Input(def, mClient, callback);
   mClient->set_callback(*p);
 } 
 
