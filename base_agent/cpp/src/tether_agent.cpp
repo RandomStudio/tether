@@ -31,7 +31,7 @@ Output* TetherAgent::createOutput(std::string name) {
 
   PlugDefinition def {
     name, 
-    mAgentType + "/" + mAgentID + "/" + name
+    // mAgentType + "/" + mAgentID + "/" + name
   };
 
   Output* p = new Output(def, mClient);
