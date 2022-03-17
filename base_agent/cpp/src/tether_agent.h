@@ -45,17 +45,21 @@ class Output : Plug {
 class Input : Plug, public virtual mqtt::callback,
 					public virtual mqtt::iaction_listener {
   private:
+    std::function<void(std::string, std::string)> mCallback;
+    
   public:
 
-    Input(PlugDefinition definition, mqtt::async_client * client): Plug (definition, client) {
+    Input(PlugDefinition definition, mqtt::async_client * client, std::function<void(std::string, std::string)> callback): Plug (definition, client) {
       std::cout << "Input plug created: " << definition.name << std::endl;  
       client->subscribe(definition.topic, 1);
+      mCallback = callback;
     }
 
     void message_arrived(mqtt::const_message_ptr msg) override {
-      std::cout << "Message arrived" << std::endl;
-      std::cout << "\ttopic: '" << msg->get_topic() << "'" << std::endl;
-      std::cout << "\tpayload: '" << msg->to_string() << "'\n" << std::endl;
+      // std::cout << "Message arrived" << std::endl;
+      // std::cout << "\ttopic: '" << msg->get_topic() << "'" << std::endl;
+      // std::cout << "\tpayload: '" << msg->get_payload() << "'\n" << std::endl;
+        mCallback(msg->get_payload(), msg->get_topic());
 	}
 
   // Re-connection failure
@@ -64,6 +68,16 @@ class Input : Plug, public virtual mqtt::callback,
 	}
 
 	void on_success(const mqtt::token& tok) override {}
+
+  // void onMessage(std::function<void(std::string, std::string)> callback) {
+  //   mCallback = &callback;
+  //   std::cout << "Registered onMessage callback OK" << std::endl;
+  //   if (mCallback == nullptr) {
+  //   std::cout << "Actually, no" << std::endl;
+      
+  //   }
+  //   // callback("payload", "topic");
+  // }
 
 };
 
@@ -83,7 +97,7 @@ class TetherAgent {
     void disconnect();
 
     Output* createOutput(std::string name);
-    Input* createInput(std::string name);
+    Input* createInput(std::string name, std::function<void(std::string, std::string)> callback);
 
     void publish();
   
