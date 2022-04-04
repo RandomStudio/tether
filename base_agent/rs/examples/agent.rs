@@ -10,7 +10,10 @@ fn main() {
     println!("agent ID: {}", agent.get_id());
     agent.connect().await;
 
-    
+    println!("connected");
+
+    agent.disconnect().await;
+
 
     // Ok::<(), mqtt::Error>(())
     Ok::<(),()>(()) // TODO: proper error handling?

@@ -17,7 +17,12 @@ pub fn create_agent (agent_type: String, agent_id: String) -> TetherAgent {
 impl TetherAgent {
   pub async fn connect(&self)  {
     println!("Connecting to the MQTT server...");
-    self.client.connect(mqtt::ConnectOptionsBuilder::new().user_name("tether").password("sp_ceB0ss!").finalize()).await;
+    self.client.connect(mqtt::ConnectOptionsBuilder::new().user_name("tether").password("sp_ceB0ss!").finalize());
+  }
+
+  pub async fn disconnect(&self) {
+    println!("Disconnecting MQTT...");
+    self.client.disconnect(None);
   }
 
   pub fn get_id(&self) -> String {
