@@ -1,6 +1,21 @@
+extern crate serde;
+#[macro_use]
+extern crate serde_derive;
+extern crate rmp_serde as rmps;
+
+use std::collections::HashMap;
+use serde::{Deserialize, Serialize};
+use rmps::{Deserializer, Serializer};
+
 use futures::executor::block_on;
 use paho_mqtt as mqtt;
 use std::{ process};
+
+#[derive(Debug, PartialEq, Deserialize, Serialize)]
+struct Human {
+    age: u32,
+    name: String,
+}
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -18,7 +33,16 @@ fn main() {
 
         // Create a message and publish it
         println!("Publishing a message on the topic 'test'");
-        let msg = mqtt::Message::new("test", "Hello Rust MQTT world!", mqtt::QOS_1);
+
+        let mut buf = Vec::new();
+        let val = Human {
+            age: 42,
+            name: "John".into(),
+        };
+    
+        val.serialize(&mut Serializer::new(&mut buf)).unwrap();
+
+        let msg = mqtt::Message::new("/tetherRs/dummy/test", buf, mqtt::QOS_1);
         client.publish(msg).await?;
 
         // Disconnect from the broker
