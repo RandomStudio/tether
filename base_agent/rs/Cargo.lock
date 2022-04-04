@@ -349,7 +349,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "tether-agent"
+name = "tether"
 version = "0.1.0"
 dependencies = [
  "futures",

@@ -3,7 +3,7 @@ extern crate serde;
 extern crate serde_derive;
 extern crate rmp_serde as rmps;
 
-use std::collections::HashMap;
+// use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 use rmps::{Deserializer, Serializer};
 
@@ -29,7 +29,7 @@ fn main() {
     if let Err(err) = block_on(async {
         // Connect with default options and wait for it to complete or fail
         println!("Connecting to the MQTT server");
-        client.connect(mqtt::ConnectOptionsBuilder::new().user_name("tether").password("sp_ceB0ss!").finalize()).await?;
+        client.connect(mqtt::ConnectOptionsBuilder::new().user_name("tether").password("sp_ceB0ss!").finalize());
 
         // Create a message and publish it
         println!("Publishing a message on the topic 'test'");
@@ -40,7 +40,11 @@ fn main() {
             name: "John".into(),
         };
     
-        val.serialize(&mut Serializer::new(&mut buf)).unwrap();
+        // this does it tuple-style:
+        // val.serialize(&mut Serializer::new(&mut buf)).unwrap(); 
+
+        // this does it map-style, i.e. named fields:
+        val.serialize(&mut Serializer::new(&mut buf).with_struct_map()).unwrap(); 
 
         let msg = mqtt::Message::new("/tetherRs/dummy/test", buf, mqtt::QOS_1);
         client.publish(msg).await?;
