@@ -43,10 +43,12 @@ Output* TetherAgent::createOutput(std::string name) {
 }
 
 Input* TetherAgent::createInput(std::string name, std::function<void(std::string, std::string)> callback) {
+  std::string topic = "+/+/" + name;
+  std::cout << "Creating input for topic " + topic << std::endl;
   PlugDefinition def {
     name,
     // mAgentType + "/" + mAgentID + "/" + name
-    "+/+/" + name
+    topic
   };
 
   Input* p = new Input(def, mClient, callback);
