@@ -31,7 +31,8 @@ class Output : Plug {
       std::cout << "Output plug created: " << definition.name << std::endl;  
     };
 
-    void publish(std::string payload);
+    void publish(std::string payload) {
+    }
 };
 
 
