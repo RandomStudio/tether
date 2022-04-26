@@ -54,20 +54,20 @@ Output* TetherAgent::createOutput(std::string name) {
   return p;
 }
 
-// Input* TetherAgent::createInput(std::string name, std::function<void(std::string, std::string)> callback) {
-//   std::string topic = "+/+/" + name;
-//   std::cout << "Creating input for topic " + topic << std::endl;
-//   PlugDefinition def {
-//     name,
-//     // mAgentType + "/" + mAgentID + "/" + name
-//     topic
-//   };
+Input* TetherAgent::createInput(std::string name, std::function<void(std::string, std::string)> callback) {
+  std::string topic = "+/+/" + name;
+  std::cout << "Creating input for topic " + topic << std::endl;
+  PlugDefinition def {
+    name,
+    // mAgentType + "/" + mAgentID + "/" + name
+    topic
+  };
 
-//   Input* p = new Input(def, mClient, callback);
-//   mClient->set_callback(*p);
+  Input* p = new Input(def, mClient, callback);
+  // mClient->set_callback(*p);
 
-//   return p;
-// } 
+  return p;
+} 
 
 void TetherAgent::disconnect() {
   std::cout << "\nDisconnecting..." << std::endl;
