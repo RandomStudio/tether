@@ -16,6 +16,8 @@ int TetherAgent::connect (std::string protocol, std::string host, int port)  {
 
   mosquitto_connect_callback_set(mClient, on_connect_wrapper);
   mosquitto_subscribe_callback_set(mClient, on_subscribe_wrapper);
+  mosquitto_message_callback_set(mClient, on_message_wrapper);
+
   mosquitto_username_pw_set(mClient, "tether", "sp_ceB0ss!");
 
   std::cout << "Connecting to broker at " << address << " ..." << std::endl;
@@ -64,12 +66,6 @@ Input* TetherAgent::createInput(std::string name, std::function<void(std::string
   };
 
   Input* p = new Input(def, mClient, callback);
-  int rc = mosquitto_subscribe(mClient, NULL, "example/temperature", 1);
-	if(rc != MOSQ_ERR_SUCCESS){
-		fprintf(stderr, "Error subscribing: %s\n", mosquitto_strerror(rc));
-		// /* We might as well disconnect if we were unable to subscribe */
-		// mosquitto_disconnect(mClient);
-	}
 
   return p;
 } 

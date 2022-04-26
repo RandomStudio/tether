@@ -47,14 +47,22 @@ class Output : Plug {
 
 class Input : Plug {
   private:
-    void* mCallback;
+     std::function<void(std::string, std::string)> mCallback;
 
   public:
 
     Input(PlugDefinition definition, mosquitto * client, std::function<void(std::string, std::string)> callback): Plug (definition, client) {
       std::cout << "Input plug created: " << definition.name << std::endl;  
+
+      int rc = mosquitto_subscribe(mClient, NULL, mDefinition.topic.c_str(), 0);
+      if(rc != MOSQ_ERR_SUCCESS){
+        fprintf(stderr, "Error subscribing: %s\n", mosquitto_strerror(rc));
+        // /* We might as well disconnect if we were unable to subscribe */
+        // mosquitto_disconnect(mClient);
+      }
+
       // client->subscribe(definition.topic, 1);
-      // mCallback = callback;
+      mCallback = callback;
     }
 
     // void message_arrived(mqtt::const_message_ptr msg) override {
@@ -110,13 +118,14 @@ class TetherAgent {
         }
       }
       if(have_subscription == false){
-        /* The broker rejected all of our subscriptions, we know we only sent
-        * the one SUBSCRIBE, so there is no point remaining connected. */
         fprintf(stderr, "Error: All subscriptions rejected.\n");
-        mosquitto_disconnect(mosq);
+        // mosquitto_disconnect(mosq);
       }
     }
 
+    static void on_message_wrapper(struct mosquitto *mosq, void *obj, const struct mosquitto_message *msg) {
+      printf("%s %d %s\n", msg->topic, msg->qos, (char *)msg->payload);
+    }
 
   public:
     TetherAgent(std::string agentType, std::string agentID);
