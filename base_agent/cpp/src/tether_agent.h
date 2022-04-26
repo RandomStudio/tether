@@ -46,6 +46,9 @@ class Output : Plug {
 
 
 class Input : Plug {
+  private:
+    void* mCallback;
+
   public:
 
     Input(PlugDefinition definition, mosquitto * client, std::function<void(std::string, std::string)> callback): Plug (definition, client) {
@@ -91,6 +94,27 @@ class TetherAgent {
 
     static void on_connect_wrapper(struct mosquitto *, void *userData, int rc) {
       std::cout << "Connected with rc " << rc << std::endl;
+    }
+
+    static void on_subscribe_wrapper(struct mosquitto *mosq, void *obj, int mid, int qos_count, const int *granted_qos) {
+      int i;
+      bool have_subscription = false;
+
+      /* In this example we only subscribe to a single topic at once, but a
+      * SUBSCRIBE can contain many topics at once, so this is one way to check
+      * them all. */
+      for(i=0; i<qos_count; i++){
+        printf("on_subscribe: %d:granted qos = %d\n", i, granted_qos[i]);
+        if(granted_qos[i] <= 2){
+          have_subscription = true;
+        }
+      }
+      if(have_subscription == false){
+        /* The broker rejected all of our subscriptions, we know we only sent
+        * the one SUBSCRIBE, so there is no point remaining connected. */
+        fprintf(stderr, "Error: All subscriptions rejected.\n");
+        mosquitto_disconnect(mosq);
+      }
     }
 
 
