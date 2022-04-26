@@ -11,16 +11,10 @@ int TetherAgent::connect (std::string protocol, std::string host, int port)  {
   std::string address = protocol + "://" + host + ":" + std::to_string(port);
   std::cout << "Connecting to broker at " << address << " ..." << std::endl;
 
-  mqtt::connect_options options("tether", "sp_ceB0ss!");
-  mClient = new mqtt::async_client(address, "");
+  mosquitto_lib_init();
+  mClient = mosquitto_new("Tether", true, this);
 
-  try {
-    mClient->connect(options)->wait();
-    std::cout << "Connected OK!" << std::endl;
-  } catch (const mqtt::exception& exc) {
-		std::cerr << exc << std::endl;
-		return 1;
-	}
+  
 
   return 0;
 
@@ -42,23 +36,23 @@ Output* TetherAgent::createOutput(std::string name) {
   return p;
 }
 
-Input* TetherAgent::createInput(std::string name, std::function<void(std::string, std::string)> callback) {
-  std::string topic = "+/+/" + name;
-  std::cout << "Creating input for topic " + topic << std::endl;
-  PlugDefinition def {
-    name,
-    // mAgentType + "/" + mAgentID + "/" + name
-    topic
-  };
+// Input* TetherAgent::createInput(std::string name, std::function<void(std::string, std::string)> callback) {
+//   std::string topic = "+/+/" + name;
+//   std::cout << "Creating input for topic " + topic << std::endl;
+//   PlugDefinition def {
+//     name,
+//     // mAgentType + "/" + mAgentID + "/" + name
+//     topic
+//   };
 
-  Input* p = new Input(def, mClient, callback);
-  mClient->set_callback(*p);
+//   Input* p = new Input(def, mClient, callback);
+//   mClient->set_callback(*p);
 
-  return p;
-} 
+//   return p;
+// } 
 
 void TetherAgent::disconnect() {
   std::cout << "\nDisconnecting..." << std::endl;
-  mClient->disconnect()->wait();
+  // mClient->disconnect()->wait();
   std::cout << "  ...OK" << std::endl;
 }

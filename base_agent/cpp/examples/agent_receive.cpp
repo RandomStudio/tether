@@ -1,6 +1,5 @@
 #include "tether_agent.h"
 #include <iostream>
-#include <msgpack.hpp>
 
 // Define your own data payload type as a struct
 // Don't forget the MSGPACK_DEFINE_MAP macro, so that MessagePack

@@ -1,7 +1,7 @@
-#include <string>
-#include <sstream>
+#include <iostream>
+#include <vector>
 
-#include "mqtt/async_client.h"
+#include "mosquitto.h"
 
 enum FlowDirection {
   IN, OUT
@@ -14,72 +14,66 @@ struct PlugDefinition {
 class Plug {
   protected:
     PlugDefinition mDefinition;
-    mqtt::topic * mTopic;
-    mqtt::token_ptr mToken;
-
+    mosquitto *mosq;
 
   public:
-    Plug (PlugDefinition definition, mqtt::async_client * client){
+    Plug (PlugDefinition definition, mosquitto * client){
       mDefinition = definition;
-      const int QOS = 1;
-      mTopic = new mqtt::topic(*client, definition.topic, QOS);
     };
 
 }; 
 
 class Output : Plug {
-  private:
+  // private:
   public:
 
-    Output(PlugDefinition definition, mqtt::async_client * client): Plug (definition, client) {
+    Output(PlugDefinition definition, mosquitto * client): Plug (definition, client) {
       std::cout << "Output plug created: " << definition.name << std::endl;  
     };
 
-    void publish(mqtt::binary_ref payload) {
-      mToken = mTopic->publish(payload);
-    }
+    void publish(std::string payload);
 };
 
 
 
-class Input : Plug, public virtual mqtt::callback,
-					public virtual mqtt::iaction_listener {
-  private:
-    std::function<void(std::string, std::string)> mCallback;
+// class Input : Plug, public virtual mqtt::callback,
+// 					public virtual mqtt::iaction_listener {
+//   private:
+//     std::function<void(std::string, std::string)> mCallback;
     
-  public:
+//   public:
 
-    Input(PlugDefinition definition, mqtt::async_client * client, std::function<void(std::string, std::string)> callback): Plug (definition, client) {
-      std::cout << "Input plug created: " << definition.name << std::endl;  
-      client->subscribe(definition.topic, 1);
-      mCallback = callback;
-    }
+//     Input(PlugDefinition definition, mqtt::async_client * client, std::function<void(std::string, std::string)> callback): Plug (definition, client) {
+//       std::cout << "Input plug created: " << definition.name << std::endl;  
+//       client->subscribe(definition.topic, 1);
+//       mCallback = callback;
+//     }
 
-    void message_arrived(mqtt::const_message_ptr msg) override {
-      // std::cout << "Message arrived" << std::endl;
-      // std::cout << "\ttopic: '" << msg->get_topic() << "'" << std::endl;
-      // std::cout << "\tpayload: '" << msg->get_payload() << "'\n" << std::endl;
-        mCallback(msg->get_payload(), msg->get_topic());
-	}
+//     void message_arrived(mqtt::const_message_ptr msg) override {
+//       // std::cout << "Message arrived" << std::endl;
+//       // std::cout << "\ttopic: '" << msg->get_topic() << "'" << std::endl;
+//       // std::cout << "\tpayload: '" << msg->get_payload() << "'\n" << std::endl;
+//         mCallback(msg->get_payload(), msg->get_topic());
+// 	}
 
-  // Re-connection failure
-	void on_failure(const mqtt::token& tok) override {
-		std::cout << "Connection attempt failed" << std::endl;
-	}
+//   // // Re-connection failure
+// 	// void on_failure(const mqtt::token& tok) override {
+// 	// 	std::cout << "Connection attempt failed" << std::endl;
+// 	// }
 
-	void on_success(const mqtt::token& tok) override {}
+// 	// void on_success(const mqtt::token& tok) override {}
 
-  // void onMessage(std::function<void(std::string, std::string)> callback) {
-  //   mCallback = &callback;
-  //   std::cout << "Registered onMessage callback OK" << std::endl;
-  //   if (mCallback == nullptr) {
-  //   std::cout << "Actually, no" << std::endl;
+//   // void onMessage(std::function<void(std::string, std::string)> callback) {
+//   //   mCallback = &callback;
+//   //   std::cout << "Registered onMessage callback OK" << std::endl;
+//   //   if (mCallback == nullptr) {
+//   //   std::cout << "Actually, no" << std::endl;
       
-  //   }
-  //   // callback("payload", "topic");
-  // }
+//   //   }
+//   //   // callback("payload", "topic");
+//   // }
 
-};
+// };
 
 class TetherAgent {
 
@@ -87,7 +81,7 @@ class TetherAgent {
     std::string mAgentType;
     std::string mAgentID;
 
-    mqtt::async_client*  mClient;
+    struct mosquitto * mClient;
     std::vector<Output*> mOutputs;
 
   public:
@@ -97,7 +91,7 @@ class TetherAgent {
     void disconnect();
 
     Output* createOutput(std::string name);
-    Input* createInput(std::string name, std::function<void(std::string, std::string)> callback);
+    // Input* createInput(std::string name, std::function<void(std::string, std::string)> callback);
 
     void publish();
   
