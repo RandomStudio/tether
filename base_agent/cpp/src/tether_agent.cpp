@@ -5,18 +5,36 @@ TetherAgent::TetherAgent (std::string agentType, std::string agentID) {
   mAgentType = agentType;
   mAgentID = agentID;
   mClient = NULL;
+  // mIsConnected = false;
 }
 
 int TetherAgent::connect (std::string protocol, std::string host, int port)  {
   std::string address = protocol + "://" + host + ":" + std::to_string(port);
-  std::cout << "Connecting to broker at " << address << " ..." << std::endl;
 
   mosquitto_lib_init();
-  mClient = mosquitto_new("Tether", true, this);
+  mClient = mosquitto_new(NULL, true, this);
 
-  
+  mosquitto_connect_callback_set(mClient, on_connect_wrapper);
+  mosquitto_username_pw_set(mClient, "tether", "sp_ceB0ss!");
 
-  return 0;
+  std::cout << "Connecting to broker at " << address << " ..." << std::endl;
+
+  int rc = mosquitto_connect(mClient, host.c_str(), port, 60);
+
+  if (rc != MOSQ_ERR_SUCCESS) {
+    std::cout << "Connect error: " << mosquitto_strerror(rc);
+    return 0;
+  }
+
+  /* Run the network loop in a background thread, this call returns quickly. */
+	rc = mosquitto_loop_start(mClient);
+	if(rc != MOSQ_ERR_SUCCESS){
+		mosquitto_destroy(mClient);
+		fprintf(stderr, "Error: %s\n", mosquitto_strerror(rc));
+		return 1;
+	}
+
+  return 1;
 
 }
 
@@ -25,7 +43,7 @@ Output* TetherAgent::createOutput(std::string name) {
 
   PlugDefinition def {
     name, 
-    // mAgentType + "/" + mAgentID + "/" + name
+    mAgentType + "/" + mAgentID + "/" + name
   };
 
   Output* p = new Output(def, mClient);

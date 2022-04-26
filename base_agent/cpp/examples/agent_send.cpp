@@ -12,13 +12,23 @@ struct dummyData {
 	MSGPACK_DEFINE_MAP(name, distance, probabilityOfImpact);
 };
 
+unsigned long someBigNumber;
+
 int main() {
+
+  someBigNumber = 0;
 
   std::cout << "Starting Tether Agent example..." << std::endl;
 
   TetherAgent agent ("dummy", "dummy01");
 
-  agent.connect("tcp", "tether-io.dev", 1883);
+  int result = agent.connect("tcp", "tether-io.dev", 1883);
+
+  if (result) {
+    std::cout << "Connected OK" << std::endl;
+  } else {
+    std::cout << "Connection error!" << std::endl;
+  }
 
   Output* outputPlug = agent.createOutput("testout");
 
@@ -27,13 +37,19 @@ int main() {
     "comet", 101, 98.0
   };
 
-  // // Make a buffer, pack data using messagepack...
-  std::stringstream buffer;
-  msgpack::pack(buffer, d);
+  while (someBigNumber < 10) {
+    someBigNumber++;
+    sleep(1);
 
-  outputPlug->publish(buffer.str());
+    // // Make a buffer, pack data using messagepack...
+    std::stringstream buffer;
+    msgpack::pack(buffer, d);
 
-  std::cout << "OK" << std::endl;
+    outputPlug->publish(buffer.str());
+
+    std::cout << "OK" << std::endl;
+  }
+
 
   agent.disconnect();
 

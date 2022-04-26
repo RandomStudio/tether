@@ -14,24 +14,32 @@ struct PlugDefinition {
 class Plug {
   protected:
     PlugDefinition mDefinition;
-    mosquitto *mosq;
+    mosquitto * mClient;
 
   public:
     Plug (PlugDefinition definition, mosquitto * client){
       mDefinition = definition;
+      mClient = client;
     };
 
 }; 
 
 class Output : Plug {
   // private:
+    
   public:
 
     Output(PlugDefinition definition, mosquitto * client): Plug (definition, client) {
-      std::cout << "Output plug created: " << definition.name << std::endl;  
+      std::cout << "Output plug created: \"" << definition.name << "\" with topic " << mDefinition.topic << std::endl;  
     };
 
     void publish(std::string payload) {
+      int rc = mosquitto_publish(mClient, NULL, mDefinition.topic.c_str(), int(payload.length()), payload.c_str(), 0, false);
+      if(rc != MOSQ_ERR_SUCCESS){
+        fprintf(stderr, "Error publishing: %s\n", mosquitto_strerror(rc));
+      } else {
+        std::cout << "Send " << payload << " on " << mDefinition.topic << " OK" << std::endl;
+      }
     }
 };
 
@@ -85,6 +93,11 @@ class TetherAgent {
     struct mosquitto * mClient;
     std::vector<Output*> mOutputs;
 
+    static void on_connect_wrapper(struct mosquitto *, void *userData, int rc) {
+      std::cout << "Connected with rc " << rc << std::endl;
+    }
+
+
   public:
     TetherAgent(std::string agentType, std::string agentID);
 
@@ -94,6 +107,5 @@ class TetherAgent {
     Output* createOutput(std::string name);
     // Input* createInput(std::string name, std::function<void(std::string, std::string)> callback);
 
-    void publish();
   
 };
