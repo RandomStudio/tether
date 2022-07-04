@@ -1,6 +1,6 @@
 from time import sleep
 # for now, this assumes that tether_agent.py is present in the same directory
-from tether_agent import TetherAgent
+from tether_agent import TetherAgent, LogLevel
 
 
 def on_message(message):
@@ -8,7 +8,7 @@ def on_message(message):
     print("*** Received from topic " + topic + ": " + str(payload))
 
 
-agent = TetherAgent("test", "abc123")
+agent = TetherAgent("test", "abc123", LogLevel.DEBUG)
 in_plug = agent.create_input("test")
 in_plug.add_listener(on_message)
 out_plug = agent.create_output("test")
