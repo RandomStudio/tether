@@ -1,4 +1,5 @@
 from enum import Enum
+from uuid import uuid4
 import logging
 import paho.mqtt.client as mqtt
 import msgpack
@@ -104,7 +105,7 @@ class TetherAgent:
     # Constructor. Expects an agent type and id, which are used in the (automatically generated) topics that it publishes data to.
     def __init__(self, agent_type, agent_id=None, loglevel=LogLevel.INFO):
         self.agent_type = agent_type
-        self.agent_id = agent_id if agent_id is not None else uuid4()
+        self.agent_id = agent_id if agent_id is not None else str(uuid4())
         self.client = mqtt.Client(agent_id)  # TODO expose other options here?
         self.client.on_connect = self.on_connect
         self.client.on_disconnect = self.on_disconnect
@@ -130,8 +131,8 @@ class TetherAgent:
         self.host = host
         self.port = port
         if username is not None:
-            logging.debug("Setting username \"" + username + "\"" +
-                          ((" and password \"" + password + "\"") if password is not None else ""))
+            logging.debug("Setting username" + ((" and password")
+                          if password is not None else ""))
             self.client.username_pw_set(username, password)
         logging.info("Connecting to MQTT at " + host + ":" + str(port) +
                      ((" via local interface " + local_ip) if local_ip is not None else ""))
