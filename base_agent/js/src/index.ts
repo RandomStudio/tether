@@ -99,7 +99,7 @@ export class TetherAgent {
     if (name === undefined) {
       throw Error("No name provided for output");
     }
-    if (this.getInput(name) !== undefined) {
+    if (this.getOutput(name) !== undefined) {
       throw Error(`duplicate plug name "${name}"`);
     }
     if (this.client === null) {
@@ -123,7 +123,7 @@ export class TetherAgent {
    */
   public createInput = (name: string, overrideTopic?: string) => {
     if (name === undefined) {
-      throw Error("No name provided for output");
+      throw Error("No name provided for input");
     }
     if (this.getInput(name) !== undefined) {
       throw Error(`duplicate plug name "${name}"`);
