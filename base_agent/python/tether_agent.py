@@ -114,7 +114,8 @@ class TetherAgent:
         self.is_connected = False
         self.inputs = []
         self.outputs = []
-        logging.basicConfig(level=loglevel.value)
+        logging.basicConfig(
+            level=loglevel.value, format='[%(asctime)s] %(levelname)s : %(module)s : %(message)s', datefmt='%Y/%m/%d %H:%M:%S')
         logging.info("Tether Agent instance: agent_type=" +
                      self.agent_type + ", agent_id=" + self.agent_id)
 
@@ -234,3 +235,24 @@ class TetherAgent:
         for plug in self.inputs:
             if plug.subscription_mid == mid:
                 logging.debug("Subscribed to topic: " + plug.topic)
+
+
+if __name__ == "__main__":
+    from time import sleep
+
+    def on_message(message):
+        (topic, payload) = message
+        print("Received message on topic " + topic + ": " + str(payload))
+
+    agent = TetherAgent("test", "test", LogLevel.DEBUG)
+    in_plug = agent.create_input("test")
+    in_plug.add_listener(on_message)
+    out_plug = agent.create_output("test")
+    agent.connect("127.0.0.1", 1883, "tether", "sp_ceB0ss!")
+
+    while True:
+        if agent.get_is_connected():
+            sleep(1)
+            out_plug.publish(3.1415926536)
+            sleep(1)
+            quit()
