@@ -1,5 +1,6 @@
 #include <iostream>
 #include <vector>
+#include <sstream>
 
 #include "mosquitto.h"
 
@@ -38,7 +39,7 @@ class Output : Plug {
       if(rc != MOSQ_ERR_SUCCESS){
         fprintf(stderr, "Error publishing: %s\n", mosquitto_strerror(rc));
       } else {
-        // std::cout << "Send " << payload << " on " << mDefinition.topic << " OK" << std::endl;
+        std::cout << "Send " << payload << " on " << mDefinition.topic << " OK" << std::endl;
       }
     }
 };
@@ -65,6 +66,40 @@ class Input : Plug {
       mCallback = callback;
     }
 
+    bool isMessageForMe(std::string topic) {
+      if (mDefinition.topic.find("+") != std::string::npos) {
+        // we have a wildcard, match on "name" at end
+        auto parts = split (topic, '/');
+        bool found = false;
+
+        if (parts.size() == 3) {
+          return parts.at(2).compare(mDefinition.name) == 0;
+        } else {
+          return false;
+        }
+
+      } else {
+        // no wildcards, match only on exact topic string
+        return mDefinition.topic.compare(topic) == 0;
+      }
+    }
+
+    void callCallback(std::string payload, std::string topic) {
+      mCallback(payload, topic);
+    }
+
+    std::vector<std::string> split (const std::string &s, char delim) {
+      std::vector<std::string> result;
+      std::stringstream ss (s);
+      std::string item;
+
+      while (getline (ss, item, delim)) {
+          result.push_back (item);
+      }
+
+      return result;
+    }
+  
     // void message_arrived(mqtt::const_message_ptr msg) override {
     //   // std::cout << "Message arrived" << std::endl;
     //   // std::cout << "\ttopic: '" << msg->get_topic() << "'" << std::endl;
@@ -99,6 +134,7 @@ class TetherAgent {
 
     struct mosquitto * mClient;
     std::vector<Output*> mOutputs;
+    std::vector<Input*> mInputs;
 
     static void on_connect_wrapper(struct mosquitto *, void *userData, int rc) {
       std::cout << "Connected with rc " << rc << std::endl;
@@ -123,8 +159,15 @@ class TetherAgent {
       }
     }
 
-    static void on_message_wrapper(struct mosquitto *mosq, void *obj, const struct mosquitto_message *msg) {
+    static void on_message_wrapper(struct mosquitto *mosq, void *userData, const struct mosquitto_message *msg) {
       printf("%s %d %s\n", msg->topic, msg->qos, (char *)msg->payload);
+
+      auto *agentInstance = (class TetherAgent *)userData;
+      for (auto p: agentInstance->getInputs()) {
+        if (p->isMessageForMe(msg->topic)) {
+          p->callCallback( (char *)msg->payload, (char *)msg->topic);
+        }
+      }
     }
 
   public:
@@ -136,5 +179,10 @@ class TetherAgent {
     Output* createOutput(std::string name);
     Input* createInput(std::string name, std::function<void(std::string, std::string)> callback);
 
+    std::vector<Input*> getInputs() {
+      return mInputs;
+    }
+
   
 };
+

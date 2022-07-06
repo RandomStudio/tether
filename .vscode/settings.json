@@ -1,6 +1,7 @@
 {
   "editor.formatOnSave": true,
   "files.associations": {
+    "*.toml": "toml",
     "array": "cpp",
     "atomic": "cpp",
     "bit": "cpp",
@@ -88,7 +89,9 @@
     "ios": "cpp",
     "locale": "cpp",
     "queue": "cpp",
-    "stack": "cpp"
+    "stack": "cpp",
+    "variant": "cpp",
+    "filesystem": "cpp"
   },
   "cmake.configureOnOpen": false,
   "C_Cpp.errorSquiggles": "Enabled"

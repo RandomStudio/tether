@@ -24,6 +24,7 @@ int main() {
   Output* outputPlug = agent.createOutput("testOut");
   Input* inputPlug = agent.createInput("testInput", [&](std::string payload, std::string topic) -> void{
     std::cout << "----------> onMessage got: " << payload << " from " << topic << std::endl;
+    std::cout << "size: " << payload.size() << std::endl;
 
     msgpack::object_handle oh = msgpack::unpack(payload.data(), payload.size());
     msgpack::object const& obj = oh.get();
@@ -35,19 +36,6 @@ int main() {
   // inputPlug->onMessage();
   
 
-  //Create a dummy struct instance to send...
-  dummyData d {
-    "comet", 101, 98.0
-  };
-
-  // // Make a buffer, pack data using messagepack...
-  std::stringstream buffer;
-  msgpack::pack(buffer, d);
-
-  outputPlug->publish(buffer.str());
-
-  std::cout << "OK" << std::endl;
-  
   while (std::tolower(std::cin.get()) != 'q')
   ;
 

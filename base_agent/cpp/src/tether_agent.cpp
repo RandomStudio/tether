@@ -66,6 +66,7 @@ Input* TetherAgent::createInput(std::string name, std::function<void(std::string
   };
 
   Input* p = new Input(def, mClient, callback);
+  mInputs.push_back(p);
 
   return p;
 } 
