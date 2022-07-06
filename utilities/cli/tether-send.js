@@ -25,7 +25,7 @@ const config = parse(
   })
 );
 
-const logger = getLogger("tether-receive");
+const logger = getLogger("tether-send");
 logger.level = config.loglevel;
 
 logger.debug(
