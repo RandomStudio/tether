@@ -35,11 +35,13 @@ logger.debug(
 
 const sendMessages = (client, message, topic) => {
   try {
-    const parsedMessage = JSON.parse(message);
-    const encoded = encode(parsedMessage);
+    console.log(`message: "${message}"`);
+    // const parsedMessage = JSON.parse(message);
+    // console.log({ parsedMessage });
+    const encoded = encode(message);
 
     client.publish(topic, Buffer.from(encoded));
-    logger.info("sent", parsedMessage, "on topic", topic);
+    logger.info("sent", message, "on topic", topic);
   } catch (error) {
     logger.error("Could not parse or send message:", { message, error });
   }
