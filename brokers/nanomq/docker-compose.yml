@@ -6,8 +6,6 @@ services:
     restart: "unless-stopped"
     # build: .
     ports:
-      - "5672:5672" # Standard TCP for AMQP
-      - "8080:15672" # Standard Web Management
+    # remember HOST_PORT:CONTAINER_PORT
+      - "15675:8083" # Websocket, match 15676 for the outside
       - "1883:1883" # Standard TCP for MQTT
-      - "15675:15675" # Standard MQTT-over-WebSocket
-      #- "15676:15676" # TLS MQTT-over-WebSocket
