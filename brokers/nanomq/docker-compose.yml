@@ -1,7 +1,7 @@
 version: "3.9"
 services:
   nanomq:
-    image: "emqx/nanomq:0.8.5"
+    image: "emqx/nanomq:0.8.5-slim"
     #environment:
     restart: "unless-stopped"
     # build: .
