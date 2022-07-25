@@ -11,19 +11,21 @@
   - `arduino`: Demonstrating how a Tether-like "agent" (without needing a Base Agent) can be written for a microcontroller
 - `utilities`:
   - `cli`: Sending and Receiving from the command-line. These utilities can be installed globally on the system (via npm) to be used to test, monitor and troubleshoot a Tether-based system, interacting with it in pure text.
-- `rabbitmq_docker`: A Dockerfile for building RabbitMQ with the MQTT and MQTT-web plugins enabled, and a docker-compose file to map the appropriate ports.
+- `brokers`:
+  - `rabbitmq`: A Dockerfile for building RabbitMQ with the MQTT and MQTT-web plugins enabled, and a Docker Compose file to map the appropriate ports.
+  - `nanomq`: Alternative to RabbitMQ, possibly faster and/or lower-latency; certainly more lightweight and starts up more quickly. The Docker Compose file maps similar ports to the RabbitMQ config above, so you shouldn't need to change anything on your Agent (client) side of things.
 
-## Running RabbitMQ with websocket/mqtt support
+## Running an MQTT broker with websocket/mqtt support
 
-A `docker-compose.yml` file (and corresponding `Dockerfile`) is available in `./rabbitmq_docker`. This installs the appropriate plugins (for web/MQTT) and sets up the port mappings needed.
+A `docker-compose.yml` file (and corresponding `Dockerfile`) is available in both `./brokers/rabbitmq` and `./brokers/nanomq`. These install the appropriate plugins/config (for web/MQTT) and sets up the port mappings needed.
 
 Run with `docker-compose up` (attach, keep running in this shell) or `docker-compose up -d` (daemonise).
 
-To keep it persistent (even between reboots) the following worked well:
+To keep it persistent (even between reboots) the following works well:
 
-- `restart: "unless-stopped" was added to the `docker-compose.yml`
-- Made sure that Docker was enabled as a service in systemd: `sudo systemctl enable docker`
-- Started the container (once!) using `docker-compose up -d`
+- Notice that `restart: "unless-stopped"` has been added to the `docker-compose.yml`
+- Made sure that Docker is enabled as a service in systemd, if using Ubuntu/Debian Linux: `sudo systemctl enable docker`
+- Start the container (once!) using `docker-compose up -d`
 
 ### Use with SSL
 
