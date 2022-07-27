@@ -14,9 +14,9 @@ console.log("Launch with config", config);
 const main = async () => {
   const agent = await TetherAgent.create(
     "dummy",
-    "NodeJSDummy",
     config.clientOptions,
-    config.loglevel
+    config.loglevel,
+    "NodeJSDummy"
   );
   setTimeout(() => {
     agent.connect(config.clientOptions);
