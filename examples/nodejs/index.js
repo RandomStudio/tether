@@ -18,9 +18,9 @@ const main = async () => {
     config.loglevel,
     "NodeJSDummy"
   );
-  setTimeout(() => {
-    agent.connect(config.clientOptions);
-  }, 5000);
+  // setTimeout(() => {
+  //   agent.connect(config.clientOptions);
+  // }, 5000);
   const outputPlug = agent.createOutput("randomValue");
   const emptyOutputPlug = agent.createOutput("emptyMessage");
 
