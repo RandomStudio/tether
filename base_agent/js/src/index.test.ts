@@ -41,6 +41,23 @@ describe("matching topics to plugs", () => {
     ).toBeFalsy();
   });
 
+  test("if GroupOrId and PlugName specified, but not AgentType, then match when these match", () => {
+    const plugDefinedTopic = "+/specificGroupOrId/plugName";
+
+    expect(
+      topicMatchesPlug(plugDefinedTopic, "someAgent/specificGroupOrId/plugName")
+    ).toBeTruthy();
+    expect(
+      topicMatchesPlug(
+        plugDefinedTopic,
+        "anotherAgent/specificGroupOrId/plugName"
+      )
+    ).toBeTruthy();
+    expect(
+      topicMatchesPlug(plugDefinedTopic, "someAgent/wrongGroup/plugName")
+    ).toBeFalsy();
+  });
+
   test("if Plug Name was never specified, throw an Error", () => {
     const plugDefinedTopic = "something/something/+";
     try {
