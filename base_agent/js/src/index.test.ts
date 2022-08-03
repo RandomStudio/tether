@@ -27,7 +27,7 @@ describe("matching topics to plugs", () => {
     ).toBeTruthy();
   });
 
-  test("if AgentType and PlugName specified, but not GroupOrId, then match when these match", () => {
+  test("if AgentType and PlugName specified, but not GroupOrId, then match ONLY when these match", () => {
     const plugDefinedTopic = "specificAgent/+/plugName";
 
     expect(
@@ -38,6 +38,29 @@ describe("matching topics to plugs", () => {
     ).toBeTruthy();
     expect(
       topicMatchesPlug(plugDefinedTopic, "differentAgent/anything/plugName")
+    ).toBeFalsy();
+  });
+
+  test("specific use case: agentType specified, no group/ID, plug name", () => {
+    const plugDefinedTopic = "LidarConsolidation/+/trackedPoints";
+
+    expect(
+      topicMatchesPlug(
+        plugDefinedTopic,
+        "LidarConsolidation/e933b82f-cb0d-4f91-a4a7-5625ce3ed20b/clusters"
+      )
+    ).toBeFalsy();
+    expect(
+      topicMatchesPlug(
+        plugDefinedTopic,
+        "LidarConsolidation/e933b82f-cb0d-4f91-a4a7-5625ce3ed20b/trackedPoints"
+      )
+    ).toBeTruthy();
+    expect(
+      topicMatchesPlug(
+        plugDefinedTopic,
+        "SomethingElse/e933b82f-cb0d-4f91-a4a7-5625ce3ed20b/trackedPoints"
+      )
     ).toBeFalsy();
   });
 

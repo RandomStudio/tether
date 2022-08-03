@@ -197,14 +197,17 @@ export const topicMatchesPlug = (
     // ... Then MATCH only if the defined topic and incoming topic match EXACTLY
   }
 
-  if (wasSpecified(parsePlugName(plugTopic))) {
+  const incomingPlugName = parsePlugName(incomingTopic);
+  const topicDefinedPlugName = parsePlugName(plugTopic);
+
+  if (wasSpecified(incomingPlugName)) {
     if (
       !wasSpecified(parseAgentType(plugTopic)) &&
       !wasSpecified(parseAgentIdOrGroup(plugTopic))
       // if ONLY the Plug Name was specified (which is the default), then MATCH
       // anything that matches the Plug Name, regardless of the rest
     ) {
-      return parsePlugName(plugTopic) === parsePlugName(incomingTopic);
+      return topicDefinedPlugName === incomingPlugName;
     }
 
     // If either the AgentType or ID/Group was specified, check these as well...
@@ -221,7 +224,11 @@ export const topicMatchesPlug = (
       ? parseAgentIdOrGroup(plugTopic) === parseAgentIdOrGroup(incomingTopic)
       : true;
 
-    return agentTypeMatches && agentIdOrGroupMatches;
+    return (
+      agentTypeMatches &&
+      agentIdOrGroupMatches &&
+      incomingPlugName === topicDefinedPlugName
+    );
   } else {
     // something/something/+ is not allowed for Plugs
     throw Error("No PlugName was specified for this Plug: " + plugTopic);
@@ -229,10 +236,6 @@ export const topicMatchesPlug = (
 };
 
 const wasSpecified = (topicOrPart: string) => !topicOrPart.includes("+");
-
-// const topicMatchesNameOnly = (topic: string) => hasWildcards(parseAgentID(topic)) && hasWildcards(parseAgentType(topic));
-// const topicMatchesIdOnly = (topic: string) => hasWildcards(parsePlugName(topic)) && hasWildcards(parseAgentType(topic));
-// const topicMatchesGroupOnly = (topic: string) => hasWildcards(parsePlugName(topic)) && hasWildcards(parsePlugName(topic));
 
 export const parsePlugName = (topic: string) => topic.split(`/`)[2];
 export const parseAgentIdOrGroup = (topic: string) => topic.split(`/`)[1];
