@@ -160,14 +160,10 @@ export class TetherAgent {
 
   private listenForIncoming = () => {
     this.client.on("message", (topic, payload) => {
-      const matchingInputPlugs = this.inputs.filter((p) =>
-        // If the Plug was defined with a wildcard anywhere, match
-        // on name, i.e. last part of 3-part topic agentType/agentGroup/name
-        // Otherwise, match on topic exactly
-        topicHasWildcards(p.getDefinition().topic)
-          ? parsePlugName(p.getDefinition().topic) === parsePlugName(topic)
-          : p.getDefinition().topic === topic
-      );
+      const matchingInputPlugs = this.inputs.filter((p) => {
+        const plugTopic = p.getDefinition().topic;
+        return topicMatchesPlug(plugTopic, topic);
+      });
       logger.debug("received message:", { topic, payload });
       logger.trace(
         "available input plugs:",
@@ -191,8 +187,54 @@ export class TetherAgent {
   };
 }
 
-const topicHasWildcards = (topic: string) => topic.includes("+");
+export const topicMatchesPlug = (
+  plugTopic: string,
+  incomingTopic: string
+): boolean => {
+  if (wasSpecified(plugTopic)) {
+    // No wildcards at all in full topic e.g. specified/alsoSpecified/plugName ...
+    return plugTopic === incomingTopic;
+    // ... Then MATCH only if the defined topic and incoming topic match EXACTLY
+  }
+
+  if (wasSpecified(parsePlugName(plugTopic))) {
+    if (
+      !wasSpecified(parseAgentType(plugTopic)) &&
+      !wasSpecified(parseAgentIdOrGroup(plugTopic))
+      // if ONLY the Plug Name was specified (which is the default), then MATCH
+      // anything that matches the Plug Name, regardless of the rest
+    ) {
+      return parsePlugName(plugTopic) === parsePlugName(incomingTopic);
+    }
+
+    // If either the AgentType or ID/Group was specified, check these as well...
+
+    // if AgentType specified, see if this matches, otherwise pass all AgentTypes as matches
+    // e.g. specified/+/plugName
+    const agentTypeMatches = wasSpecified(parseAgentType(plugTopic))
+      ? parseAgentType(plugTopic) === parseAgentType(incomingTopic)
+      : true;
+
+    // if Agent ID or Group specified, see if this matches, otherwise pass all AgentIdOrGroup as matches
+    // e.g. +/specified/plugName
+    const agentIdOrGroupMatches = wasSpecified(parseAgentIdOrGroup(plugTopic))
+      ? parseAgentIdOrGroup(plugTopic) === parseAgentIdOrGroup(incomingTopic)
+      : true;
+
+    return agentTypeMatches && agentIdOrGroupMatches;
+  } else {
+    // something/something/+ is not allowed for Plugs
+    logger.error("No PlugName was specified for this Plug:", plugTopic);
+    return false;
+  }
+};
+
+const wasSpecified = (topicOrPart: string) => !topicOrPart.includes("+");
+
+// const topicMatchesNameOnly = (topic: string) => hasWildcards(parseAgentID(topic)) && hasWildcards(parseAgentType(topic));
+// const topicMatchesIdOnly = (topic: string) => hasWildcards(parsePlugName(topic)) && hasWildcards(parseAgentType(topic));
+// const topicMatchesGroupOnly = (topic: string) => hasWildcards(parsePlugName(topic)) && hasWildcards(parsePlugName(topic));
 
 export const parsePlugName = (topic: string) => topic.split(`/`)[2];
-export const parseAgentID = (topic: string) => topic.split(`/`)[1];
+export const parseAgentIdOrGroup = (topic: string) => topic.split(`/`)[1];
 export const parseAgentType = (topic: string) => topic.split(`/`)[0];
