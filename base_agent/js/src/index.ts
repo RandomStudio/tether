@@ -224,8 +224,7 @@ export const topicMatchesPlug = (
     return agentTypeMatches && agentIdOrGroupMatches;
   } else {
     // something/something/+ is not allowed for Plugs
-    logger.error("No PlugName was specified for this Plug:", plugTopic);
-    return false;
+    throw Error("No PlugName was specified for this Plug: " + plugTopic);
   }
 };
 
