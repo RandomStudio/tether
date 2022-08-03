@@ -148,14 +148,13 @@ export class TetherAgent {
       input
         .subscribe()
         .then(() => {
-          logger.debug("subscribed OK to", definition.topic);
+          logger.info("subscribed OK to", definition.topic);
         })
         .catch((e) => {
           logger.error("failed to subscribe:", e);
         });
-
-      this.inputs.push(input);
-    }, Math.random() * 3000);
+    }, this.inputs.length * 100);
+    this.inputs.push(input);
     return input;
   };
 
