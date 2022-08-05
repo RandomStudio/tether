@@ -11,8 +11,8 @@
   "include": [
     "src/**/*"
   ],
-  "exclude": [],
+  "exclude": ["**/*.test.ts"],
   "lib": [
-    "es2015"
+    "es6"
   ]
 }

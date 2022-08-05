@@ -7,7 +7,7 @@ import logger from "loglevel";
 import { LogLevelDesc } from "loglevel";
 
 logger.setLevel("info");
- export {logger};
+export { logger };
 
 export { Input, Output, IClientOptions };
 
@@ -24,14 +24,18 @@ export class TetherAgent {
     agentType: string,
     overrides?: IClientOptions,
     loglevel?: LogLevelDesc,
-    agentID?: string,
+    agentID?: string
   ): Promise<TetherAgent> {
     const agent = new TetherAgent(agentType, agentID, loglevel);
     await agent.connect(overrides, false);
     return agent;
   }
 
-  private constructor(agentType: string, agentID?: string, loglevel?: LogLevelDesc) {
+  private constructor(
+    agentType: string,
+    agentID?: string,
+    loglevel?: LogLevelDesc
+  ) {
     this.agentType = agentType;
     this.agentID = agentID || uuidv4();
     this.client = null;
@@ -99,7 +103,7 @@ export class TetherAgent {
     if (name === undefined) {
       throw Error("No name provided for output");
     }
-    if (this.getInput(name) !== undefined) {
+    if (this.getOutput(name) !== undefined) {
       throw Error(`duplicate plug name "${name}"`);
     }
     if (this.client === null) {
@@ -123,7 +127,7 @@ export class TetherAgent {
    */
   public createInput = (name: string, overrideTopic?: string) => {
     if (name === undefined) {
-      throw Error("No name provided for output");
+      throw Error("No name provided for input");
     }
     if (this.getInput(name) !== undefined) {
       throw Error(`duplicate plug name "${name}"`);
@@ -140,30 +144,26 @@ export class TetherAgent {
     };
     const input = new Input(this.client, definition);
 
-    input
-      .subscribe()
-      .then(() => {
-        logger.debug("subscribed ok");
-      })
-      .catch((e) => {
-        logger.error("failed to subscribe:", e);
-      });
-
+    setTimeout(() => {
+      input
+        .subscribe()
+        .then(() => {
+          logger.info("subscribed OK to", definition.topic);
+        })
+        .catch((e) => {
+          logger.error("failed to subscribe:", e);
+        });
+    }, this.inputs.length * 100);
     this.inputs.push(input);
-
     return input;
   };
 
   private listenForIncoming = () => {
     this.client.on("message", (topic, payload) => {
-      const matchingInputPlugs = this.inputs.filter((p) =>
-        // If the Plug was defined with a wildcard anywhere, match
-        // on name, i.e. last part of 3-part topic agentType/agentGroup/name
-        // Otherwise, match on topic exactly
-        topicHasWildcards(p.getDefinition().topic)
-          ? parsePlugName(p.getDefinition().topic) === parsePlugName(topic)
-          : p.getDefinition().topic === topic
-      );
+      const matchingInputPlugs = this.inputs.filter((p) => {
+        const plugTopic = p.getDefinition().topic;
+        return topicMatchesPlug(plugTopic, topic);
+      });
       logger.debug("received message:", { topic, payload });
       logger.trace(
         "available input plugs:",
@@ -187,8 +187,56 @@ export class TetherAgent {
   };
 }
 
-const topicHasWildcards = (topic: string) => topic.includes("+");
+export const topicMatchesPlug = (
+  plugTopic: string,
+  incomingTopic: string
+): boolean => {
+  if (wasSpecified(plugTopic)) {
+    // No wildcards at all in full topic e.g. specified/alsoSpecified/plugName ...
+    return plugTopic === incomingTopic;
+    // ... Then MATCH only if the defined topic and incoming topic match EXACTLY
+  }
+
+  const incomingPlugName = parsePlugName(incomingTopic);
+  const topicDefinedPlugName = parsePlugName(plugTopic);
+
+  if (wasSpecified(incomingPlugName)) {
+    if (
+      !wasSpecified(parseAgentType(plugTopic)) &&
+      !wasSpecified(parseAgentIdOrGroup(plugTopic))
+      // if ONLY the Plug Name was specified (which is the default), then MATCH
+      // anything that matches the Plug Name, regardless of the rest
+    ) {
+      return topicDefinedPlugName === incomingPlugName;
+    }
+
+    // If either the AgentType or ID/Group was specified, check these as well...
+
+    // if AgentType specified, see if this matches, otherwise pass all AgentTypes as matches
+    // e.g. specified/+/plugName
+    const agentTypeMatches = wasSpecified(parseAgentType(plugTopic))
+      ? parseAgentType(plugTopic) === parseAgentType(incomingTopic)
+      : true;
+
+    // if Agent ID or Group specified, see if this matches, otherwise pass all AgentIdOrGroup as matches
+    // e.g. +/specified/plugName
+    const agentIdOrGroupMatches = wasSpecified(parseAgentIdOrGroup(plugTopic))
+      ? parseAgentIdOrGroup(plugTopic) === parseAgentIdOrGroup(incomingTopic)
+      : true;
+
+    return (
+      agentTypeMatches &&
+      agentIdOrGroupMatches &&
+      incomingPlugName === topicDefinedPlugName
+    );
+  } else {
+    // something/something/+ is not allowed for Plugs
+    throw Error("No PlugName was specified for this Plug: " + plugTopic);
+  }
+};
+
+const wasSpecified = (topicOrPart: string) => !topicOrPart.includes("+");
 
 export const parsePlugName = (topic: string) => topic.split(`/`)[2];
-export const parseAgentID = (topic: string) => topic.split(`/`)[1];
+export const parseAgentIdOrGroup = (topic: string) => topic.split(`/`)[1];
 export const parseAgentType = (topic: string) => topic.split(`/`)[0];

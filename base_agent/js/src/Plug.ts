@@ -41,7 +41,17 @@ export class Input extends Plug {
         "subscribing to topic before client is connected; this is allowed but you won't receive any messages until connected"
       );
     }
-    await this.client.subscribe(this.definition.topic);
+    try {
+      logger.debug(
+        "Attempting subscribtion to topic",
+        this.definition.topic,
+        `for Input Plug "${this.getDefinition().name}"...`
+      );
+      await this.client.subscribe(this.definition.topic);
+    } catch (e) {
+      logger.error("Error subscribing ", e);
+      throw Error("Subscribe error: " + e);
+    }
     logger.debug(
       "subscribed to topic",
       this.definition.topic,
