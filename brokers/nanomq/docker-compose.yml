@@ -1,8 +1,9 @@
 version: "3.9"
 services:
   nanomq:
-    image: "emqx/nanomq:0.8.5-slim"
-    #environment:
+    image: "emqx/nanomq:0.10.1-slim"
+    environment:
+      - NANOMQ_WEBSOCKET_URL=nmq-ws://0.0.0.0:8083/ws
     restart: "unless-stopped"
     # build: .
     ports:

@@ -7,7 +7,7 @@ import logger from "loglevel";
 import { LogLevelDesc } from "loglevel";
 
 logger.setLevel("info");
- export {logger};
+export { logger };
 
 export { Input, Output, IClientOptions };
 
@@ -24,14 +24,18 @@ export class TetherAgent {
     agentType: string,
     overrides?: IClientOptions,
     loglevel?: LogLevelDesc,
-    agentID?: string,
+    agentID?: string
   ): Promise<TetherAgent> {
     const agent = new TetherAgent(agentType, agentID, loglevel);
     await agent.connect(overrides, false);
     return agent;
   }
 
-  private constructor(agentType: string, agentID?: string, loglevel?: LogLevelDesc) {
+  private constructor(
+    agentType: string,
+    agentID?: string,
+    loglevel?: LogLevelDesc
+  ) {
     this.agentType = agentType;
     this.agentID = agentID || uuidv4();
     this.client = null;
@@ -140,17 +144,17 @@ export class TetherAgent {
     };
     const input = new Input(this.client, definition);
 
-    input
-      .subscribe()
-      .then(() => {
-        logger.debug("subscribed ok");
-      })
-      .catch((e) => {
-        logger.error("failed to subscribe:", e);
-      });
-
+    setTimeout(() => {
+      input
+        .subscribe()
+        .then(() => {
+          logger.info("subscribed OK to", definition.topic);
+        })
+        .catch((e) => {
+          logger.error("failed to subscribe:", e);
+        });
+    }, this.inputs.length * 100);
     this.inputs.push(input);
-
     return input;
   };
 

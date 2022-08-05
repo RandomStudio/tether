@@ -18,9 +18,9 @@ const main = async () => {
     config.loglevel,
     "NodeJSDummy"
   );
-  setTimeout(() => {
-    agent.connect(config.clientOptions);
-  }, 5000);
+  // setTimeout(() => {
+  //   agent.connect(config.clientOptions);
+  // }, 5000);
   const outputPlug = agent.createOutput("randomValue");
   const emptyOutputPlug = agent.createOutput("emptyMessage");
 
@@ -33,6 +33,19 @@ const main = async () => {
 
     emptyOutputPlug.publish();
   }, 1000);
+
+  setTimeout(() => {
+    const fastOutput = agent.createOutput("fastValues");
+    setInterval(() => {
+      const a = [Math.random(), Math.random(), Math.random()];
+      fastOutput.publish(Buffer.from(encode(a)));
+    }, 10);
+  }, 4000);
+
+  const fastInput = agent.createInput("fastValuesReceiver", "+/+/fastValues");
+  fastInput.onMessage((payload) => {
+    console.log("received fastValues");
+  });
 
   const inputPlugOne = agent.createInput("randomValue");
   inputPlugOne.onMessage((payload, topic) => {
