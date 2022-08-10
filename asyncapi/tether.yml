@@ -1,0 +1,20 @@
+asyncapi: "2.4.0"
+info:
+  title: Tether
+  version: "2.0.0"
+  description: |
+    Dummy root content
+
+servers:
+  test:
+    url: tether-io.dev
+    protocol: mqtt
+    description: Tether Test RabbitMQ Broker
+
+defaultContentType: application/msgpack
+
+channels:
+  bla/bla/trackedPoints:
+    description: 2D tracked points
+    subscribe:
+      summary: A single frame of 2D tracked points
