@@ -1,0 +1,19 @@
+asyncapi: "2.4.0"
+info:
+  title: Tether
+  version: "2.0.0"
+  description: |
+    A system for connecting stuff easily.
+
+servers:
+  $ref: ./tether.servers.yml
+
+defaultContentType: application/msgpack
+
+channels:
+  agentType/groupOrId/plugName:
+    description: A generic "plug" topic
+    subscribe:
+      summary: Get some data
+    publish:
+      summary: Send some data
