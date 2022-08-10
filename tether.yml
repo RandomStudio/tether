@@ -11,9 +11,15 @@ servers:
 defaultContentType: application/msgpack
 
 channels:
-  agentType/groupOrId/plugName:
+  "{agentType}/{agentIdOrGroup}/plugName":
     description: A generic "plug" topic
+    parameters:
+      $ref: "#/components/parameters"
     subscribe:
       summary: Get some data
     publish:
       summary: Send some data
+
+components:
+  parameters:
+    $ref: ./tether.parameters.yml
