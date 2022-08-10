@@ -1,0 +1,4 @@
+test:
+  url: tether-io.dev
+  protocol: mqtt
+  description: Tether Test RabbitMQ Broker
