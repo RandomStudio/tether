@@ -75,7 +75,7 @@ components:
         type: string
 
   schemas:
-    trackedPoint2d:
+    trackedPoints2d:
       type: array
       items:
         type: object
