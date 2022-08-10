@@ -76,6 +76,7 @@ components:
 
   schemas:
     trackedPoints2d:
+      description: A tracked "point" (could be a touch point, human being, object, etc.) with 2D coordinates, usually normalised in the range [0,1].
       type: array
       items:
         type: object
