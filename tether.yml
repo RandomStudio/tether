@@ -5,6 +5,11 @@ info:
   description: |
     A system for connecting stuff easily.
 
+    Note that as per AsyncAPI specification, `pub` means endpoints to you can publish *to*, and `sub` means endpoints you can receive *from*. In other words:
+
+     - Output Plugs === "subscribe"
+     - Input Plugs === "publish"
+
 servers:
   $ref: "#/components/servers"
 
