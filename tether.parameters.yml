@@ -1,8 +1,0 @@
-agentIdOrGroup:
-  description: A unique ID for the Agent, or a label for a custom Grouping of Agents
-  schema:
-    type: string
-agentType:
-  description: A name, typically in PascalCase, to identify the "class" of the Agent, ie. common behaviour and plugs (input and output) are expected of every instance of this Agent.
-  schema:
-    type: string
