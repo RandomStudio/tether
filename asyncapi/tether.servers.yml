@@ -2,3 +2,29 @@ test:
   url: tether-io.dev
   protocol: mqtt
   description: Tether Test RabbitMQ Broker
+  variables:
+    username:
+      default: tether
+    port:
+      enum:
+        - "1883"
+        - "15675"
+      default: "1883"
+    basePath:
+      default: /ws
+      description: This path is needed for websocket connections only
+local:
+  url: localhost
+  protocol: mqtt
+  description: Your local RabbitMQ or NanoMQ Broker
+  variables:
+    username:
+      default: tether
+    port:
+      enum:
+        - "1883"
+        - "15675"
+      default: "1883"
+    basePath:
+      default: /ws
+      description: This path is needed for websocket connections only
