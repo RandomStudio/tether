@@ -26,6 +26,7 @@ channels:
       summary: Send some data
 
 components:
+
   servers:
     test:
       url: tether-io.dev
@@ -59,6 +60,7 @@ components:
           description: This path is needed for websocket connections only
 
   parameters:
+
     agentType:
       description: A name, typically in camelCase, to identify the "class" of the Agent, ie. common behaviour and plugs (input and output) are expected of every instance of this Agent.
       schema:
@@ -71,3 +73,23 @@ components:
       description: A short name, typically in camelCase, describing the input or output "plug", which is a short way of describing the type of data expected to be sent or received via this topic.
       schema:
         type: string
+
+  schemas:
+    trackedPoint2d:
+      type: array
+      items:
+        type: object
+        required:
+          - id
+          - x
+          - y
+        properties:
+          id:
+            type: number
+            description: Index number of tracked point. In the case of "raw" tracked points from the Lidar Consolidator, these are not guaranteed to be consistent between frames, but for tether-smooth-tracking, they should be.
+          x:
+            type: number
+          y:
+            type: number
+          size:
+            type: number
