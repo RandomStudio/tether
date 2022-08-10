@@ -11,7 +11,7 @@ servers:
 defaultContentType: application/msgpack
 
 channels:
-  "{agentType}/{agentIdOrGroup}/plugName":
+  "{agentType}/{agentIdOrGroup}/{plugName}":
     description: A generic "plug" topic
     parameters:
       $ref: "#/components/parameters"
@@ -54,11 +54,15 @@ components:
           description: This path is needed for websocket connections only
 
   parameters:
+    agentType:
+      description: A name, typically in PascalCase, to identify the "class" of the Agent, ie. common behaviour and plugs (input and output) are expected of every instance of this Agent.
+      schema:
+        type: string
     agentIdOrGroup:
       description: A unique ID for the Agent, or a label for a custom Grouping of Agents
       schema:
         type: string
-    agentType:
-      description: A name, typically in PascalCase, to identify the "class" of the Agent, ie. common behaviour and plugs (input and output) are expected of every instance of this Agent.
+    plugName:
+      description: A short name, typically in camelCase, describing the input or output "plug", which is a short way of describing the type of data expected to be sent or received via this topic.
       schema:
         type: string
