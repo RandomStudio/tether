@@ -6,26 +6,19 @@ const parse = require("parse-strings-in-object");
 const { getLogger } = require("log4js");
 const { chain } = require("stream-chain");
 const { parser } = require("stream-json");
-const { pick } = require("stream-json/filters/Pick");
 const { streamArray } = require("stream-json/streamers/StreamArray");
-const { fromEvent, Observable, of } = require("rxjs");
+const { fromEvent, of } = require("rxjs");
 const {
   concatMap,
-  concat,
   delay,
-  endWith,
   filter,
   finalize,
-  find,
   map,
-  merge,
-  mergeScan,
-  pairwise,
-  startWith,
   takeUntil,
   scan,
   tap,
   withLatestFrom,
+  repeat,
 } = require("rxjs/operators");
 
 // Built-in modules
@@ -83,12 +76,7 @@ const startPlayback = async (client, filePath) => {
   const fileHandle = await fs.open(filePath);
   const readStream = fileHandle.createReadStream();
 
-  // let totalCount = 0;
   const pipeline = chain([readStream, parser(), streamArray()]);
-  // pipeline.on("data", (d) => {
-  //   logger.trace("entry", d.value);
-  //   totalCount++;
-  // });
 
   const messages$ = fromEvent(pipeline, "data").pipe(
     map((tokenizedJson) => {
@@ -98,9 +86,6 @@ const startPlayback = async (client, filePath) => {
   );
 
   const totalCount$ = messages$.pipe(scan((acc, _) => acc + 1, 0));
-  // totalCount$.subscribe((total) => logger.debug("total", total));
-
-  // const reachedEnd$ = fromEvent(pipeline, "end");
 
   const timedMessages$ = messages$.pipe(
     // delay emit messages by delta
@@ -123,16 +108,6 @@ const startPlayback = async (client, filePath) => {
     filter(([soFar, total]) => soFar === total)
   );
 
-  // // const countMessages$ = timedMessages$.pipe(
-  // //   withLatestFrom(totalCount$),
-  // //   tap(([totalCount, myCount]) => {
-  // //     logger.debug({ totalCount, myCount });
-  // //     if (totalCount === myCount) {
-  // //       logger.debug("we should be done now");
-  // //     }
-  // //   })
-  // // );
-
   compareCounts$.subscribe((x) => logger.info("compare", x));
 
   const reachedEnd$ = timedMessages$.pipe(
@@ -141,7 +116,6 @@ const startPlayback = async (client, filePath) => {
       logger.info("all done");
     })
   );
-  reachedEnd$.subscribe((x) => logger.debug("reachedEnd", x));
 
   reachedEnd$.subscribe();
 };
