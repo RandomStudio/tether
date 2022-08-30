@@ -13,7 +13,11 @@
     "async-mqtt": "^2.6.1",
     "log4js": "^6.3.0",
     "parse-strings-in-object": "^1.6.0",
-    "rc": "^1.2.8"
+    "rc": "^1.2.8",
+    "rxjs": "^7.5.6",
+    "rxjs-stream": "^5.0.0",
+    "stream-chain": "^2.2.5",
+    "stream-json": "^1.7.4"
   },
   "bin": {
     "tether-receive": "./tether-receive.js",
