@@ -54,9 +54,16 @@ const main = async () => {
     try {
       const client = await mqtt.connectAsync(url, { username, password });
       logger.info("...connected OK");
-      for (var i = 0; i < config.loops || config.loopInfinite; i++) {
+      for (var i = 1; i <= config.loops || config.loopInfinite; i++) {
         await startPlayback(client, filePath);
-        logger.info("playback done");
+        logger.info(
+          `playback done; loops left: ${
+            config.loopInfinite ? "∞" : (config.loops - i).toString()
+          }`
+        );
+        if (config.loopInfinite) {
+          logger.warn("Infinite loops enabled. Press Ctrl+C to stop");
+        }
       }
       logger.info("all loops completed");
       client.end();
