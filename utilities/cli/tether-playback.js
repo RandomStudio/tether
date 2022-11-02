@@ -4,27 +4,18 @@ const mqtt = require("async-mqtt");
 const rc = require("rc");
 const parse = require("parse-strings-in-object");
 const { getLogger } = require("log4js");
-const { chain } = require("stream-chain");
 const { parser } = require("stream-json");
+const { chain } = require("stream-chain");
 const { streamArray } = require("stream-json/streamers/StreamArray");
-const { fromEvent, of } = require("rxjs");
-const {
-  concatMap,
-  delay,
-  filter,
-  finalize,
-  map,
-  takeUntil,
-  scan,
-  tap,
-  withLatestFrom,
-  repeat,
-} = require("rxjs/operators");
+const { streamToRx } = require("rxjs-stream");
+const { of } = require("rxjs");
+const { concatMap, delay, finalize, tap } = require("rxjs/operators");
 
 // Built-in modules
 const fs = require("fs/promises");
 const path = require("path");
 const readline = require("readline");
+const { resolve } = require("path");
 
 const appName = "tetherPlayback";
 
@@ -34,11 +25,12 @@ const config = parse(
     protocol: "tcp",
     host: "tether-io.dev",
     port: 1883,
-    topic: "#",
     username: "tether",
     password: "sp_ceB0ss!",
     path: "",
-    file: "./recording.json",
+    file: "./demo.json",
+    loops: 1,
+    loopInfinite: false,
   })
 );
 
@@ -48,7 +40,7 @@ logger.level = config.loglevel;
 logger.debug(appName, "launched with config", JSON.stringify(config, null, 2));
 
 const main = async () => {
-  const filePath = path.resolve(config.file);
+  const filePath = path.resolve(config.path, config.file);
   logger.info("Will read from file", filePath, "...");
   try {
     await fs.stat(filePath);
@@ -61,7 +53,20 @@ const main = async () => {
     try {
       const client = await mqtt.connectAsync(url, { username, password });
       logger.info("...connected OK");
-      startPlayback(client, filePath);
+      for (var i = 1; i <= config.loops || config.loopInfinite; i++) {
+        await startPlayback(client, filePath);
+        logger.info(
+          `playback done; loops left: ${
+            config.loopInfinite ? "∞" : (config.loops - i).toString()
+          }`
+        );
+        if (config.loopInfinite) {
+          logger.warn("Infinite loops enabled. Press Ctrl+C to stop");
+        }
+      }
+      logger.info("all loops completed");
+      client.end();
+      process.exit(0);
     } catch (e) {
       logger.fatal("could not connect to MQTT broker:", e);
     }
@@ -71,52 +76,38 @@ const main = async () => {
   }
 };
 
-const startPlayback = async (client, filePath) => {
-  logger.debug("start playback, reading", filePath, "...");
-  const fileHandle = await fs.open(filePath);
-  const readStream = fileHandle.createReadStream();
+const startPlayback = async (client, filePath) =>
+  new Promise(async (resolve, reject) => {
+    logger.debug("start playback, reading", filePath, "...");
+    const fileHandle = await fs.open(filePath);
+    const readStream = fileHandle.createReadStream();
 
-  const pipeline = chain([readStream, parser(), streamArray()]);
+    const pipeline = chain([
+      readStream,
+      parser(),
+      streamArray(),
+      (data) => data.value,
+    ]);
 
-  const messages$ = fromEvent(pipeline, "data").pipe(
-    map((tokenizedJson) => {
-      logger.trace({ tokenizedJson });
-      return tokenizedJson.value;
-    })
-  );
+    pipeline.on("end", () => {
+      logger.debug("JSON stream pipeline ended!");
+    });
 
-  const totalCount$ = messages$.pipe(scan((acc, _) => acc + 1, 0));
+    const messages$ = streamToRx(pipeline);
 
-  const timedMessages$ = messages$.pipe(
-    // delay emit messages by delta
-    concatMap((message) => of(message).pipe(delay(message.deltaTime))),
-    // then send with simulated topic
-    tap((entry) => {
-      logger.trace("Send after", entry.deltaTime);
-      logger.debug("Sending", entry);
-      client.publish(entry.topic, Buffer.from(entry.message.data));
-      // logger.warn("TODO: send the message now!");
-    }),
-    scan((acc, _) => acc + 1, 0),
-    // tap((count) => logger.debug("messages sent:", count)),
-    withLatestFrom(totalCount$),
-    tap((both) => logger.debug("both:", both))
-  );
+    const delayedMessages$ = messages$.pipe(
+      concatMap((message) => of(message).pipe(delay(message.deltaTime))),
+      tap((entry) => {
+        client.publish(entry.topic, Buffer.from(entry.message.data));
+        logger.trace("Send after", entry.deltaTime);
+      }),
+      finalize(() => {
+        logger.debug("finalize!");
+        resolve();
+      })
+    );
 
-  const compareCounts$ = timedMessages$.pipe(
-    tap((val) => logger.debug("compareCounts:", val)),
-    filter(([soFar, total]) => soFar === total)
-  );
+    delayedMessages$.subscribe();
+  });
 
-  compareCounts$.subscribe((x) => logger.info("compare", x));
-
-  const reachedEnd$ = timedMessages$.pipe(
-    takeUntil(compareCounts$),
-    finalize(() => {
-      logger.info("all done");
-    })
-  );
-
-  reachedEnd$.subscribe();
-};
 main();
