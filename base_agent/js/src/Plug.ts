@@ -1,4 +1,4 @@
-import { AsyncMqttClient } from "async-mqtt";
+import { AsyncMqttClient, IClientPublishOptions, IClientSubscribeOptions } from "async-mqtt";
 import { logger } from ".";
 import { MessageCallback, PlugDefinition } from "./types";
 import { Buffer } from "buffer";
@@ -35,7 +35,7 @@ export class Input extends Plug {
     this.onMessageCallbacksList.push({ cb, once: true });
   }
 
-  subscribe = async () => {
+  subscribe = async (options?: IClientSubscribeOptions) => {
     if (this.client === null) {
       logger.warn(
         "subscribing to topic before client is connected; this is allowed but you won't receive any messages until connected"
@@ -47,7 +47,7 @@ export class Input extends Plug {
         this.definition.topic,
         `for Input Plug "${this.getDefinition().name}"...`
       );
-      await this.client.subscribe(this.definition.topic);
+      await this.client.subscribe(this.definition.topic, options);
     } catch (e) {
       logger.error("Error subscribing ", e);
       throw Error("Subscribe error: " + e);
@@ -71,7 +71,7 @@ export class Input extends Plug {
 }
 
 export class Output extends Plug {
-  publish = async (content?: Buffer | Uint8Array) => {
+  publish = async (content?: Buffer | Uint8Array, options?: IClientPublishOptions) => {
     if (this.client === null) {
       logger.error(
         "trying to send without connection; not possible until connected"
@@ -79,11 +79,11 @@ export class Output extends Plug {
     } else {
       try {
         if (content === undefined) {
-          this.client.publish(this.definition.topic, Buffer.from([]));
+          this.client.publish(this.definition.topic, Buffer.from([]), options);
         } else if (content instanceof Uint8Array) {
-          this.client.publish(this.definition.topic, Buffer.from(content));
+          this.client.publish(this.definition.topic, Buffer.from(content), options);
         } else {
-          this.client.publish(this.definition.topic, content);
+          this.client.publish(this.definition.topic, content, options);
         }
       } catch (e) {
         logger.error("Error publishing message:", e);
