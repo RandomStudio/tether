@@ -1,4 +1,4 @@
-import mqtt, { AsyncMqttClient, IClientOptions } from "async-mqtt";
+import mqtt, { AsyncMqttClient, IClientOptions, IClientSubscribeOptions } from "async-mqtt";
 import defaults from "./defaults";
 import { v4 as uuidv4 } from "uuid";
 import { PlugDefinition } from "./types";
@@ -125,7 +125,7 @@ export class TetherAgent {
    *
    * For convenience, the topic is assumed to end in the given `name`, e.g. an Input named "someTopic" will match messages on topics `foo/bar/someTopic` as well as `something/else/someTopic`.
    */
-  public createInput = (name: string, overrideTopic?: string) => {
+  public createInput = (name: string, overrideTopic?: string, options?: IClientSubscribeOptions) => {
     if (name === undefined) {
       throw Error("No name provided for input");
     }
@@ -146,7 +146,7 @@ export class TetherAgent {
 
     setTimeout(() => {
       input
-        .subscribe()
+        .subscribe(options)
         .then(() => {
           logger.info("subscribed OK to", definition.topic);
         })
