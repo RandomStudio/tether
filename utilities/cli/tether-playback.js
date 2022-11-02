@@ -25,7 +25,6 @@ const config = parse(
     protocol: "tcp",
     host: "tether-io.dev",
     port: 1883,
-    topic: "#",
     username: "tether",
     password: "sp_ceB0ss!",
     path: "",
@@ -41,7 +40,7 @@ logger.level = config.loglevel;
 logger.debug(appName, "launched with config", JSON.stringify(config, null, 2));
 
 const main = async () => {
-  const filePath = path.resolve(config.file);
+  const filePath = path.resolve(config.path, config.file);
   logger.info("Will read from file", filePath, "...");
   try {
     await fs.stat(filePath);

@@ -25,6 +25,9 @@ describe("matching topics to plugs", () => {
     expect(
       topicMatchesPlug(plugDefinedTopic, "something/something/somePlugName")
     ).toBeTruthy();
+    expect(
+      topicMatchesPlug(plugDefinedTopic, "something/something/somethingElse")
+    ).toBeFalsy();
   });
 
   test("if AgentType and PlugName specified, but not GroupOrId, then match ONLY when these match", () => {
