@@ -1,5 +1,7 @@
 # Tether Base Agent
 
+JavaScript base agent for the browser and NodeJS.
+
 The JS Base Agent can be used by both NodeJS scripts and web pages, with minor differences:
 
 - In NodeJS, the default MQTT protocol over TCP socket works as normal, although it is possible to use websockets as well
