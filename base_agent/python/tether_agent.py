@@ -19,10 +19,11 @@ class LogLevel(Enum):
 
 
 class Input:
-    def __init__(self, client, name, topic):
+    def __init__(self, client, name, topic, qos=0):
         self.client = client
         self.name = name
         self.topic = topic
+        self.qos = qos
         self.subscription_mid = None
         self.is_client_connected = False
         self.callbacks = []
@@ -32,11 +33,11 @@ class Input:
 
     def subscribe(self):
         if self.client.is_connected:
-            (result, mid) = self.client.subscribe(
-                self.topic, 0)  # TODO let user specify QoS
+            (result, mid) = self.client.subscribe(self.topic, self.qos)
             if result is not mqtt.MQTT_ERR_SUCCESS:
                 logging.warning("Failed to subscribe to topic " + self.topic + (
-                    "; client is not connected" if result is mqtt.MQTT_ERR_NO_CONN else "; reason unknown"))
+                    "; client is not connected" if result is mqtt.MQTT_ERR_NO_CONN else "; reason unknown"
+                ))
             else:
                 self.subscription_mid = mid
                 self.client.message_callback_add(self.topic, self.on_message)
@@ -83,10 +84,12 @@ class Input:
 
 
 class Output:
-    def __init__(self, client, name, topic):
+    def __init__(self, client, name, topic, qos=0, retain=False):
         self.client = client
         self.name = name
         self.topic = topic
+        self.qos = qos
+        self.retain = retain
         self.is_client_connected = False
 
     def set_is_client_connected(self, is_connected):
@@ -96,7 +99,7 @@ class Output:
         logging.debug("Publishing message on topic " +
                       self.topic + " with payload: " + str(payload))
         self.client.publish(self.topic, msgpack.packb(
-            payload, use_bin_type=True))
+            payload, use_bin_type=True), self.qos, self.retain)
 
 # Convenience class to connect to an MQTT broker and interface with it by publishing data and subscribing to topics.
 
@@ -166,9 +169,10 @@ class TetherAgent:
 
     # Create a new input plug. Note that only one input plug is allowed to exist with any unique name.
     # @param name The name of the input plug. This is used for easy reference, as well as in the topic that the plug subscribes to, unless an `override_topic` is specified.
+    # @param qos The quality of service expected from messages received on this plug.
     # @param override_topic A manually defined topic that this plug should subscribe to, rather than the default `+/+/<plug name>`.
     # @param callback A callback function to execute whenever messages arrive on this plug. The handler function should expect a tuple of (topic, payload).
-    def create_input(self, name, override_topic=None, callback=None):
+    def create_input(self, name, qos=0, override_topic=None, callback=None):
         if name is None:
             raise Exception("Input name must have a value")
             return
@@ -180,7 +184,7 @@ class TetherAgent:
                 return
 
         topic = ("+/+/" + name) if override_topic is None else override_topic
-        plug = Input(self.client, name, topic)
+        plug = Input(self.client, name, topic, qos)
         if callback is not None:
             plug.add_listener(callback)
         self.inputs.append(plug)
@@ -191,8 +195,10 @@ class TetherAgent:
 
     # Create a new output plug. Note that only one output plug is allowed to exist with any unique name.
     # @param name The name of the output plug. This is used for easy reference, as well as in the topic that the plug publishes to, unless an `override_topic` is specified.
+    # @param qos Quality of service used for MQTT messaging from this plug.
+    # @param retain Whether or not the messages published from this plug should be retained.
     # @param override_topic A manually defined topic that this plug should publish to, rather than the default `<agent type>/<agent id>/<plug name>`.
-    def create_output(self, name, override_topic=None):
+    def create_output(self, name, qos=0, retain=False, override_topic=None):
         if name is None:
             raise Exception("Output name must have a value")
             return
