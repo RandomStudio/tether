@@ -1,23 +1,17 @@
 [package]
-name = "tether"
-version = "0.1.0"
-authors = ["Stephen Buchanan <stephen.buchanan@random.studio>"]
-edition = "2018"
+name = "tether-agent"
+description = "Standardised use of MQTT and MessagePack for inter-process communication"
+version = "0.5.2"
+edition = "2021"
+license = "MIT"
+repository = "https://github.com/RandomStudio/tether"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
-[lib]
-crate-type=["lib"]
-
-# [[example]]
-# name="publish"
-
 [dependencies]
-futures = "0.3.21"
-paho-mqtt = "0.10"
-rmp = "^0.8"
-rmp-serde = "^1.0.0"
-
-[dev-dependencies]
-serde_derive = "1.0.133"
-serde = "1.0.133"
+paho-mqtt = { version = "0.12.1", default-features=false, features=["bundled"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0.91"
+rmp-serde = "1.1.1"
+log = "0.4.17"
+env_logger = "0.7"
