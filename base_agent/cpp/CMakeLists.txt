@@ -11,9 +11,9 @@ set(PAHO_MQTT_C_INCLUDE_DIRS ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/li
 add_subdirectory(libs/paho.mqtt.cpp)
 add_subdirectory(libs/msgpack)
 
+add_subdirectory(libs/json)
 
 add_subdirectory(src)
 set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/libs/msgpack)
 
 add_subdirectory(examples)
-
