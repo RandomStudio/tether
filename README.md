@@ -10,7 +10,7 @@ Also, a set of tools and conventions built around these standards, to make it ea
 
 To be part of a Tether system, the following conventions are applied:
 
-1. A single MQTT broker with a known IP address or hostname that is reachable by all other agents
+1. A single MQTT broker with a known IP address or hostname that is reachable by all Tether agents
 2. A standardised, 3 part topic route convention (`agent-role/grouping-or-id/plug-name`)
 3. The expectation that MessagePack will be used for the contents of the messages
 
