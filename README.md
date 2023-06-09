@@ -18,6 +18,8 @@ The Tether approach is about abstracting the underlying hardware and software so
     - [Putting it all together: Topic pattern matching](#putting-it-all-together-topic-pattern-matching)
   - [3. MessagePack](#3-messagepack)
 - [Goals and benefits of using Tether](#goals-and-benefits-of-using-tether)
+  - [Example with diagrams](#example)
+  - [Ecosystem](#ecosystem)
 - [Structure of this repository](#structure-of-this-repository)
 
 ---
@@ -148,6 +150,20 @@ Unlike JSON, you can even provide "bare" data instead of nested objects. For exa
 As long as client applications conform to the standards outlined here, they will be able to function as Tether Agents, publishing and subscribing to messages in a Tether system.
 
 The aim is to make it quick and easy to get messaging working within a distributed system, even with very diverse programming languages, hardware and software applications.
+
+### Example
+
+What your system diagram looks like:
+![System View](./docs/system-view.png)
+
+> There are multiple protocols and transports. Communication needs to happen between some parts and not others, and these may be on different hosts. Some data needs to pass through multiple stages before becoming useful. How should these parts find each other? What protocols should they use?
+
+What it looks like from the point of view of the Tether system:
+![Tether View](./docs/tether-view.png)
+
+> Everything connects to a single hub: the MQTT Broker. Agents only need to concern themselves with publishing certain messages and/or subscribing to certain messages. The protocols and hardware "behind" the Agents are invisible to the Tether system.
+
+### Ecosystem
 
 Various tools, naming conventions, permissions and choices of architecture can be built on top of this system. There is no guarantee that every Tether-like system will work perfectly or behave in the same way, but at least the hard part - distributed messaging - is "solved" so that developers can concentrate on more interesting concerns.
 
