@@ -11,6 +11,7 @@ The Tether approach is about abstracting the underlying hardware and software so
     - [Why MQTT?](#why-mqtt)
     - [Where is my Broker?](#where-is-my-broker)
     - [Performance considerations](#performance-considerations)
+    - [Retained messages](#retained-messages)
   - [2. The Three Part Topic](2-the-three-part-topic)
     - [Role](#agent-role)
     - [ID or Group](#id-or-group)
@@ -53,6 +54,26 @@ Or mix it up a little: a powerful machine might host the broker as well as some 
 #### Performance considerations
 
 Message Brokers such as Mosquitto are designed for extremely high throughput (tens of thousands of messages per second) and availability, so the broker itself is seldom a bottleneck. Using wired connections (ethernet) where possible and reducing unnecessary network traffic are good practices. Having a dedicated "server" host which runs the broker - and nothing else - is not required but may be useful in some scenarios.
+
+MQTT provides QOS (Quality of Service) levels to help you balance reliability/throughput for publishing and/or subscribing. There are three levels:
+
+- At most once (0)
+- At least once (1)
+- Exactly once (2).
+
+We default to QOS level 1 most of the time, but level 0 can be useful for high-frequency data where you don't mind missing a message or two, and level 2 can be useful for critical messages (state or events) that don't happen often but need solid guarantees for delivery.
+
+Read more about QOS [here](https://www.hivemq.com/blog/mqtt-essentials-part-6-mqtt-quality-of-service-levels/).
+
+#### Retained messages
+
+One very useful feature of MQTT is the ability to mark messages as "retained" - usually for as long as the Broker itself is running.
+
+This can be useful for storing configuration or state information:
+
+- Whenever state or config data changes, you only need to publish it once. And you can do this at any time, not needing to worry which Agents may or may not be "listening" at that moment.
+- Agents subscribed to the topic will get the latest version of the data as soon as they subscribe, e.g. on (re)connection. The Broker re-sends the message automatically.
+- The latest version of the data (message) can be read at any time, without affecting any other subscribers (the message will not be "consumed").
 
 ### 2. The Three Part Topic
 
