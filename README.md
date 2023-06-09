@@ -6,6 +6,20 @@ Also, a set of tools and conventions built around these standards, to make it ea
 
 The Tether approach is about abstracting the underlying hardware and software so that everything from the point of view of the "system" is an **Agent** that can communicate using standardised **Messages**.
 
+- [What defines a Tether system](#what-defines-a-tether-system)
+  - [1. The Broker](#1-the-broker)
+    - [Why MQTT?](#why-mqtt)
+    - [Where is my Broker?](#where-is-my-broker)
+    - [Performance considerations](#performance-considerations)
+  - [2. The Three Part Topic](2-the-three-part-topic)
+    - [Role](#agent-role)
+    - [ID or Group](#id-or-group)
+    - [Plug Name](#plug-name)
+    - [Putting it all together: Topic pattern matching](#putting-it-all-together-topic-pattern-matching)
+  - [3. MessagePack](#3-messagepack)
+- [Goals and benefits of using Tether](#goals-and-benefits-of-using-tether)
+- [Structure of this repository](#structure-of-this-repository)
+
 ---
 
 ## What defines a Tether system
@@ -18,6 +32,14 @@ To be part of a Tether system, the following conventions are applied:
 
 ### 1. The Broker
 
+#### Why MQTT?
+
+- Widely-supported standard, especially for IOT and distributed systems
+- Supports flexible publish/subscribe patterns (one to one, one to many, many to many, etc.)
+- Works via TCP sockets as well as WebSocket; therefore usable from many different environments and programming languages, as well as the browser
+
+#### Where is my broker?
+
 For our purposes, a single broker per installation/system is typically sufficient. It's convenient to use Docker to provide a pre-configured instance, so anything that can run Docker (a Mac, a Raspberry Pi, a Linux PC, a Windows PC) is suitable.
 
 The broker could be running on the same machine as the other agents, in which case all connections can point at `localhost` - the lowest-latency option, and useful for a development / testing / simulation environment.
@@ -25,6 +47,8 @@ The broker could be running on the same machine as the other agents, in which ca
 The broker could, in theory, be hosted on the Internet, but for our installations it usually makes sense to have it on a local network "on premises" - this guarantees easy accessibility by other devices/hosts and low latency.
 
 Or use any combination of the above. As a convention, TCP connections are accepted at port `1883` and websocket at `15675`.
+
+#### Performance considerations
 
 Message Brokers such as Mosquitto are designed for extremely high throughput (tens of thousands of messages per second) and availability, so the broker itself is seldom a bottleneck. Using wired connections (ethernet) where possible and reducing unnecessary network traffic are good practices. Having a dedicated "server" host which runs the broker - and nothing else - is not required but may be useful in some scenarios.
 
@@ -83,9 +107,7 @@ The concept of a "plug" is simply a convention, such that:
   - an **Output Plug**: publish on a particular topic
   - ..._never both_
 
----
-
-## Putting it all together: topic pattern matching
+### Putting it all together: topic pattern matching
 
 MQTT topics are broken up by zero or multiple forward-slash `/` characters. In Tether systems, we **always** have three-part topics, hence `role/id/plug`.
 
@@ -113,21 +135,15 @@ In the JS Base Agent, we create an InputPlug or OutputPlug object that provides 
 
 In other languages, it may make more sense to use utility functions that can parse the topic to give you **role**, **ID** or just **plugName** depending on your matching requirements.
 
----
+### 3. MessagePack
 
-## Why MQTT
-
-- Widely-supported standard, especially for IOT and distributed systems
-- Supports flexible publish/subscribe patterns (one to one, one to many, many to many, etc.)
-- Works via TCP sockets as well as WebSocket; therefore usable from many different environments and programming languages, as well as the browser
-
-## Why MessagePack
-
-A good compromise in terms of performance, message size and the ability to structure data (e.g. in nested objects with named keys, and/or arrays), but without needing a schema in order to serialise/deserialise data. Has most of the obvious advantages of JSON but more efficient: MessagePack data is encoded directly as bytes rather than a "String".
+We used MessagePack because it represents a good compromise in terms of performance, message size and the ability to structure data (e.g. in nested objects with named keys, and/or arrays), but without needing a schema in order to serialise/deserialise data. Has most of the obvious advantages of JSON but more efficient: MessagePack data is encoded directly as bytes rather than a "String".
 
 Unlike JSON, you can even provide "bare" data instead of nested objects. For example, you can send a message with a single boolean (`true` or `false`) value instead of something more verbose like `{ "state": true }`. What you lose in explicitness (you ought to use the plug name to describe the messages well, in this case) you gain in terse data representation: MessagePack will literally encode such a message as a single byte!
 
-## Goals
+---
+
+## Goals and benefits of using Tether
 
 As long as client applications conform to the standards outlined here, they will be able to function as Tether Agents, publishing and subscribing to messages in a Tether system.
 
