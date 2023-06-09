@@ -4,6 +4,8 @@ A standardised way of using [MQTT](https://mqtt.org/) (for message publishing an
 
 Also, a set of tools and conventions built around these standards, to make it easy to set up distributed systems where more than one piece of software needs to communicate with others in a coordinated way, whether on the same host or multiple hosts/devices.
 
+The Tether approach is about abstracting the underlying hardware and software so that everything from the point of view of the "system" is an **Agent** that can communicate using standardised **Messages**.
+
 ---
 
 ## What defines a Tether system
@@ -34,9 +36,9 @@ Message Brokers such as Mosquitto are designed for extremely high throughput (te
 
 An **agent** is simply a way of defining some "part" of a Tether system. You could think of it as an "actor" in an Actor Model.
 
-It is usually a single piece of software. Multiple agents (even _all_ of them!) might be running on one host, or the actors are distributed between multiple microcontrollers or Mac/Win/Linux hosts.
+It is usually a single piece of software. Multiple agents (even _all_ of them!) might be running on one host, or the agents are distributed between multiple microcontrollers or Mac/Win/Linux hosts.
 
-Each Agent is therefore expected to have a single "role" in the system. A short indication of the role is used as top level of the topic hierarchy.
+Each Agent is therefore expected to have a single "role" in the system. A short indication of the role is used as the top level of the topic hierarchy.
 
 Some examples of Agent roles:
 
@@ -76,13 +78,16 @@ The concept of a "plug" is simply a convention, such that:
 
 - Only one type of message is expected to be published on that topic
 - The plug name attempts to describe the contents, utility or purpose of the messages that will be published there
-- From the point of view of a given Agent, a plug is either an Input (subscribe to a particular topic) or an Output (publish on a particular topic) - never both
+- From the point of view of a given Agent, a plug is either
+  - an **Input Plug**: subscribe to a particular topic, including wildcard/pattern matches (see below)
+  - an **Output Plug**: publish on a particular topic
+  - ..._never both_
 
 ---
 
 ## Putting it all together: topic pattern matching
 
-MQTT topics are broken up by zero or multiple `/` characters. In Tether systems, we always have three-part topics, hence `role/id/plug`.
+MQTT topics are broken up by zero or multiple forward-slash `/` characters. In Tether systems, we **always** have three-part topics, hence `role/id/plug`.
 
 Topics subscriptions can use wildcards. Most importantly:
 
@@ -102,11 +107,11 @@ The conventions are often applied automatically by the various Base Agents we pr
   - Remember that you cannot _publish_ on a topic with wildcards!
 - We typically require you to only provide the **plug name** when creating an **Input Plug**
   - By default, we assume you don't care to distinguish by **role** or **ID**, so we automatically subscribe to a topic like `+/+/whateverPlugNameYouProvided`
-  - Of course you can override this by providing your own topic string
+  - Of course you can override this by providing your own topic string, but don't break the conventions!
 
 In the JS Base Agent, we create an InputPlug or OutputPlug object that provides callbacks such as `.onMessage` (for InputPlug) and `.publish` (for OutputPlug).
 
-In other languages, it may make more sense to use utility functions that can parse the topic to give you **role**, **ID** or just **plugName** depending on how your matching requirements.
+In other languages, it may make more sense to use utility functions that can parse the topic to give you **role**, **ID** or just **plugName** depending on your matching requirements.
 
 ---
 
@@ -124,13 +129,15 @@ Unlike JSON, you can even provide "bare" data instead of nested objects. For exa
 
 ## Goals
 
-As long as client applications conform to the above standards, they will be able to publish and read messages in a Tether system. The aim is to make it quick and easy to get messaging working within a distributed system, even with very diverse programming languages, hardware and software applications.
+As long as client applications conform to the standards outlined here, they will be able to function as Tether Agents, publishing and subscribing to messages in a Tether system.
+
+The aim is to make it quick and easy to get messaging working within a distributed system, even with very diverse programming languages, hardware and software applications.
 
 Various tools, naming conventions, permissions and choices of architecture can be built on top of this system. There is no guarantee that every Tether-like system will work perfectly or behave in the same way, but at least the hard part - distributed messaging - is "solved" so that developers can concentrate on more interesting concerns.
 
 The combination of MQTT and MessagePack means that a Tether system is just about the _easiest and quickest_ way to get parts of a distributed system talking to each other. It requires very little code, minimal APIs and very little network configuration.
 
-Other approaches (websocket servers, OSC, etc.) may sometimes appear easier to reach for in certain circumstances, but typically do not offer the flexibility of a "pub/sub" messaging system or a structured (but very transparent) data structure in the messages.
+Other approaches (HTTP requests, websocket servers, OSC, etc.) may sometimes appear easier to reach for in certain circumstances, but typically do not offer the flexibility of a "pub/sub" messaging system or a structured (but very transparent) data structure in the messages.
 
 The technology can be integrated very easily in everything from websites to microcontrollers to game engines. Translating in and out from other protocols/transports (e.g. MIDI, OSC, serial data) is convenient enough that software which is "not Tether-native" can be plugged in without much effort.
 
