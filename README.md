@@ -26,7 +26,7 @@ The Tether approach is about abstracting the underlying hardware and software so
 
 ## What defines a Tether system
 
-To be part of a Tether system, the following conventions are applied:
+To make a Tether system, the following conventions are applied:
 
 1. A single MQTT broker with a known IP address or hostname that is reachable by all Tether agents
 2. A standardised, 3 part topic route convention (`agent-role/grouping-or-id/plug-name`)
