@@ -24,7 +24,7 @@ The broker could, in theory, be hosted on the Internet, but for our installation
 
 Or use any combination of the above. As a convention, TCP connections are accepted at port `1883` and websocket at `15675`.
 
-Message Brokers such as Mosquitto are designed for extremely high throughput (tens of thousands of messages per second) and availability, so the broker itself is seldom a bottleneck. Using wired connections (ethernet) where possible and reducing unnecessary network traffic are good practices.
+Message Brokers such as Mosquitto are designed for extremely high throughput (tens of thousands of messages per second) and availability, so the broker itself is seldom a bottleneck. Using wired connections (ethernet) where possible and reducing unnecessary network traffic are good practices. Having a dedicated "server" host which runs the broker - and nothing else - is not required but may be useful in some scenarios.
 
 ### 2. The Three Part Topic
 
