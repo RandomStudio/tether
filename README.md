@@ -46,7 +46,7 @@ The broker could be running on the same machine as the other agents, in which ca
 
 The broker could, in theory, be hosted on the Internet, but for our installations it usually makes sense to have it on a local network "on premises" - this guarantees easy accessibility by other devices/hosts and low latency.
 
-Or use any combination of the above. As a convention, TCP connections are accepted at port `1883` and websocket at `15675`.
+Or mix it up a little: a powerful machine might host the broker as well as some other Agents (which connect to `localhost`), while a few dedicated machines run other Agents and connect to the broker using an IP address on the LAN. As a convention, TCP connections are accepted at port `1883` and websocket at `15675`.
 
 #### Performance considerations
 
