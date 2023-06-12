@@ -31,7 +31,7 @@ To make a Tether system, the following conventions are applied:
 
 1. All communication passes through a MQTT message broker
 2. A standardised, 3 part topic route convention (`agent-role/grouping-or-id/plug-name`) is applied
-3. MessagePack is be used for the contents of the messages
+3. MessagePack is used for the contents of the messages
 
 ### 1. The MQTT Broker
 
