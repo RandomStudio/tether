@@ -7,8 +7,9 @@ By using Tether, we can approach digital art/media installations as **distribute
 The Tether approach is about abstracting the underlying hardware and software so that everything from the point of view of the "system" is an **Agent** that can communicate using standardised **Messages**.
 
 - [What defines a Tether system](#what-defines-a-tether-system)
-  - [1. The Broker](#1-the-broker)
-    - [Why MQTT?](#why-mqtt)
+  - [1. The MQTT Broker](#1-the-broker)
+    - [Why Pub/Sub?](#why-pubsub)
+    - [Why MQTT specifically?](#why-mqtt)
     - [Where is my Broker?](#where-is-my-broker)
     - [Performance considerations](#performance-considerations)
     - [Retained messages](#retained-messages)
@@ -44,6 +45,8 @@ The [Publish-subscribe pattern](https://en.wikipedia.org/wiki/Publish%E2%80%93su
 > The Publish Subscribe model enables event-driven architectures and asynchronous parallel processing, while improving performance, reliability and scalability.
 
 In our experience, this is a good fit for on-site digital art/media "installations" as well, since these are often composed of multiple pieces of software and hardware devices. These individual pieces are often completely independent (they run in parallel) and yet need to communicate with one another. Careful coordination of all the parts is what allows us to build systems that function as complete "experiences" - robust and seamless.
+
+This is a _push_ messaging system. Therefore, no polling is required, and Agents need to be prepared to handle messages whenever they come in.
 
 Messages are organised under "topics", so that:
 
