@@ -1,8 +1,8 @@
 # Tether
 
-A standardised way of using [MQTT](https://mqtt.org/) (for message publishing and subscribing) and [MessagePack](https://msgpack.org/index.html) (for serialised data in message payloads).
+Tether is a standardised way of using [MQTT](https://mqtt.org/) (for message publishing and subscribing) and [MessagePack](https://msgpack.org/index.html) (for serialised data in message payloads).
 
-Also, a set of tools and conventions built around these standards, to make it easy to set up distributed systems where more than one piece of software needs to communicate with others in a coordinated way, whether on the same host or multiple hosts/devices.
+By using Tether, we can approach digital art/media installations as **distributed systems**, and apply a **Publish Subscribe pattern** and **event-based programming** to coordinate the independent pieces of software and hardware that commonly comprise these systems.
 
 The Tether approach is about abstracting the underlying hardware and software so that everything from the point of view of the "system" is an **Agent** that can communicate using standardised **Messages**.
 
@@ -29,17 +29,33 @@ The Tether approach is about abstracting the underlying hardware and software so
 
 To make a Tether system, the following conventions are applied:
 
-1. A single MQTT broker with a known IP address or hostname that is reachable by all Tether agents
-2. A standardised, 3 part topic route convention (`agent-role/grouping-or-id/plug-name`)
-3. The expectation that MessagePack will be used for the contents of the messages
+1. All communication passes through a MQTT message broker
+2. A standardised, 3 part topic route convention (`agent-role/grouping-or-id/plug-name`) is applied
+3. MessagePack is be used for the contents of the messages
 
-### 1. The Broker
+### 1. The MQTT Broker
 
-#### Why MQTT?
+#### Why Pub/Sub?
 
-- Widely-supported standard, especially for IOT and distributed systems
-- Supports flexible publish/subscribe patterns (one to one, one to many, many to many, etc.)
-- Works via TCP sockets as well as WebSocket; therefore usable from many different environments and programming languages, as well as the browser
+The [Publish-subscribe pattern](https://en.wikipedia.org/wiki/Publish%E2%80%93subscribe_pattern) ("Pub/Sub") is a well-established approach that allows for flexible network topologies and an "event-based" architecture. It is most commonly used in distributed systems; for example, [Amazon AWS describes the benefits](https://aws.amazon.com/pub-sub-messaging/benefits/) as follows:
+
+> In modern cloud architecture, applications are decoupled into smaller, independent building blocks that are easier to develop, deploy and maintain. Publish/Subscribe (Pub/Sub) messaging provides instant event notifications for these distributed applications.
+
+> The Publish Subscribe model enables event-driven architectures and asynchronous parallel processing, while improving performance, reliability and scalability.
+
+In our experience, this is a good fit for on-site digital art/media "installations" as well, since these are often composed of multiple pieces of software and hardware devices. These individual pieces are often completely independent (they run in parallel) and yet need to communicate with one another. Careful coordination of all the parts is what allows us to build systems that function as complete "experiences" - robust and seamless.
+
+Messages are organised under "topics", so that:
+
+- Agents publish messages without needing to worry about the Agents (if any) that will actually receive them
+- Not all Agents (subscribers) need to receive and process all messages
+- Well-named topics can help describe the contents of the data in the messages
+
+#### Why MQTT specifically?
+
+- Widely-supported standard for Pub/Sub messaging, especially for IOT and distributed systems
+- Supports flexible publish/subscribe patterns (one to one, one to many, many to many, etc.) and efficient queueing of messages to facilitate this
+- Works via standard TCP sockets as well as WebSocket; therefore usable from many different environments and programming languages, as well as the browser
 
 #### Where is my broker?
 
