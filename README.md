@@ -44,15 +44,17 @@ The [Publish-subscribe pattern](https://en.wikipedia.org/wiki/Publish%E2%80%93su
 
 > The Publish Subscribe model enables event-driven architectures and asynchronous parallel processing, while improving performance, reliability and scalability.
 
-In our experience, this is a good fit for on-site digital art/media "installations" as well, since these are often composed of multiple pieces of software and hardware devices. These individual pieces are often completely independent (they run in parallel) and yet need to communicate with one another. Careful coordination of all the parts is what allows us to build systems that function as complete "experiences" - robust and seamless.
+In our experience, this is a good fit for on-site digital art/media "installations" as well, since these are often composed of multiple pieces of software and hardware devices. These individual pieces are often completely independent (they run in parallel) and yet need to communicate with one another. Some of the software might be written by ourselves, but some of it may be specialised and/or proprietary, so it is not always possible to integrate things at a deep level.
 
-This is a _push_ messaging system. Therefore, no polling is required, and Agents need to be prepared to handle messages whenever they come in.
+Careful coordination of all the parts is what allows us to build systems that function as complete "experiences" - robust and seamless. A common messaging system allows us to pick and choose the hardware and software best suited for each task, and handle the communication issues separately.
 
 Messages are organised under "topics", so that:
 
 - Agents publish messages without needing to worry about the Agents (if any) that will actually receive them
 - Not all Agents (subscribers) need to receive and process all messages
 - Well-named topics can help describe the contents of the data in the messages
+
+Finally, note that this is a _push_ messaging system. Therefore, no polling is required, and Agents need to be prepared to handle messages whenever they come in.
 
 #### Why MQTT specifically?
 
