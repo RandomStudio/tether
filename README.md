@@ -65,7 +65,7 @@ You can use `tether-send` in combination with `tether-receive` to simulate a ver
 
 ### Agents
 
-The best way to describe a Tether System is not to start with message brokers, topics and protocols; it's best to start by talking about _Agents_.
+The best way to describe a Tether System is not to start with message brokers, topics and protocols; it's best to start by talking about **Agents**.
 
 Agents in a Tether system are very much like Actors in an [Actor Model](https://en.wikipedia.org/wiki/Actor_model) for concurrent computing.
 
