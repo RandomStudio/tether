@@ -120,11 +120,10 @@ Some examples of Agent roles:
 - Mostly output:
   - `"soundscape"` for output of audio driven by remote messages, e.g. [tether-soundscape-rs](https://github.com/RandomStudio/tether-soundscape-rs)
   - `"visualisation"` could cover a range of screen-based graphical output, either via a browser frontend or some native application
+  - `"scheduler"` for emit off/on notifications for processes on a schedule, e.g [tether-scheduler](https://github.com/RandomStudio/tether-scheduler)
 - Both input and output
   - `"brain"` is a very common agent role in most of our installations. This is a process dedicated to managing state and responding to events (e.g. from sensors or time-based) and generating other events (controlling output, starting timelines, etc.). Usually these are very customised for the given project.
   - `"lidarConsolidation"` for taking sensor input (in this case, one or more "lidar2d" agents) and running clustering + perspective transformation algorithms, then outputting nicely normalised "tracking" data.
-- Utilities
-  - `"scheduler"` for managing processes (or even another process manager) on a schedule, e.g [tether-scheduler](https://github.com/RandomStudio/tether-scheduler)
 
 ### _ID_ or Group
 
