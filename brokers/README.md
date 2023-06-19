@@ -12,6 +12,6 @@ The easiest way to deploy an MQTT Broker is to use Docker. We provide Docker Com
 
 To set up Mosquitto, for example:
 
-- Make sure you have [Docker Deskto](https://www.docker.com/products/docker-desktop/) installed for your platform
+- Make sure you have [Docker Desktop](https://www.docker.com/products/docker-desktop/) installed for your platform
 - In the command line, go into the relevant directory for the broker, e.g. `cd tether/brokers/mosquitto`
 - Run Docker Compose: `docker compose up -d`
