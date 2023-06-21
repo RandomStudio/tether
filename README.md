@@ -91,13 +91,13 @@ In a Tether System, we don't connect Agents to each other _directly_.
 
 While it is _usual_ for each Output Plug to have at least one (or more) corresponding Input Plug at the "other end", we don't enforce this or assume that this is the case before things can start running.
 
-Instead, we rely on the so-called [Publish-subscribe pattern](https://en.wikipedia.org/wiki/Publish%E2%80%93subscribe_pattern) ("Pub/Sub"), a well-established approach that allows for flexible network topologies and an "event-based" architecture. It is most commonly used in distributed systems; for example, [Amazon AWS describes the benefits](https://aws.amazon.com/pub-sub-messaging/benefits/) as follows:
+Instead, we rely on the so-called [publish/subscribe pattern](https://en.wikipedia.org/wiki/Publish%E2%80%93subscribe_pattern) ("Pub/Sub"), a well-established approach that allows for flexible network topologies and an "event-based" architecture. It is most commonly used in distributed systems; for example, [Amazon AWS describes the benefits](https://aws.amazon.com/pub-sub-messaging/benefits/) as follows:
 
 > In modern cloud architecture, applications are decoupled into smaller, independent building blocks that are easier to develop, deploy and maintain. Publish/Subscribe (Pub/Sub) messaging provides instant event notifications for these distributed applications.
 
 > The Publish Subscribe model enables event-driven architectures and asynchronous parallel processing, while improving performance, reliability and scalability.
 
-In our experience, this is a good fit for on-site digital art/media "installations" as well, since these are often composed of multiple pieces of software and hardware devices. These individual pieces (we call them **Agents**, remember?) are often completely independent. They run in parallel, and they might start and stop at different times. They may be written in different programming languages and some of them might not allow any direct programmatic integration at all (SDKs or APIs) - but they need to communicate with one another somehow.
+In our experience, this is a good fit for on-site digital art/media "installations" as well, since these are often composed of multiple pieces of software and hardware devices. These individual pieces (we call them **Agents**, remember?) are often completely independent. They run in parallel, and they might start and stop at different times. They may be written in different programming languages and some of them might not allow any direct programmatic integration at all (SDKs or APIs) - but they all need to communicate with one another somehow.
 
 Careful coordination of all the parts is what allows us to build systems that function as complete "experiences" - robust and seamless. A common messaging system allows us to pick and choose the hardware and software best suited for each task, and handle the communication issues separately.
 
@@ -135,7 +135,7 @@ Or mix it up a little: a powerful machine might host the broker as well as some 
 
 Message Brokers such as Mosquitto are designed for extremely high throughput (tens of thousands of messages per second) and availability, so the broker itself is seldom a bottleneck. Using wired connections (ethernet) where possible and reducing unnecessary network traffic are good practices. Having a dedicated "server" host which runs the broker - and nothing else - is not required but may be useful in some scenarios.
 
-MQTT provides QOS (Quality of Service) levels to help you balance reliability/throughput for publishing and/or subscribing. There are three levels:
+MQTT provides QOS (Quality of Service) levels to help you balance **reliability** vs **latency** for publishing and/or subscribing. There are three levels:
 
 - At most once (0)
 - At least once (1)
@@ -149,7 +149,7 @@ Read more about QOS [here](https://www.hivemq.com/blog/mqtt-essentials-part-6-mq
 
 One very useful feature of MQTT is the ability to mark messages as "retained" - usually for as long as the Broker itself is running.
 
-This can be useful for storing configuration or state information:
+This can be useful for storing configuration or state information, almost like a database or a web server:
 
 - Whenever state or config data changes, you only need to publish it once. And you can do this at any time, not needing to worry which Agents may or may not be "listening" at that moment.
 - Agents subscribed to the topic will get the latest version of the data as soon as they subscribe, e.g. on (re)connection. The Broker re-sends the message automatically.
@@ -267,7 +267,7 @@ The technology can be integrated very easily in everything from websites to micr
 
 ### System diagram examples
 
-## A simple example
+#### A simple example
 
 This example features a microcontroller connected to a passive infrared (PIR) sensor, publishing a boolean "true" (motion detected) or "false" (timeout) message, which stops and starts a video on screen depending on the received state.
 
@@ -290,20 +290,20 @@ What this could look like as a Tether system:
 
 The separation of the `brain` (custom Agent for this installation) and the `videoPlayer` (presumably a generic remote-control video player Agent) has some advantages:
 
-- The videoPlayer Agent could be reusable in other projects
+- The "videoPlayer" and "presenceDetector" Agents could be reusable in other projects
 - Multiple video player agents could run for multiple screens; the brain could stay on one of these Pi's or even its own dedicated "server"
 - The MQTT Broker and the Brain could run on a single, dedicated "server" Pi
 - Everything is networked so cable run distances and alternative placements are no longer problematic
 - The individual Agents could be tested and/or simulated independently by replicating the messages the send or receive - no need to run the whole system with all its hardware
 
-## A more complex example
+#### A more complex example
 
-This example features 11 Agents, running on 7 or more independent hosts/devices. Input is via multiple LIDAR sensors but some remote control also comes in via an iPad interface of some kind (could be a web page). Output includes screen graphics, a scent diffuser, audio and some light animations.
+This example features 11 Agents, running on 7 or more independent hosts/devices. Input is via multiple LIDAR sensors but some remote control also comes in via an iPad interface of some kind (could be a web page). Output includes screen graphics, a scent diffuser controlled by a relay switch, audio and some light animations.
 
 What your system diagram looks like:
 ![System View](./docs/complex-system.png)
 
-> There are multiple protocols and transports. Communication needs to happen between some parts and not others, and these may be on different hosts. Some data needs to pass through multiple stages before becoming useful. How should these parts find each other? What protocols should they use?
+> There are multiple protocols and transports. Communication needs to happen between some parts and not others, and these may be on different hosts. Some data needs to pass through multiple stages before becoming useful. How should these parts find each other? What protocols should they use? How will you troubleshoot network problems or mistakes in configuration?
 
 What it looks like from the point of view of the Tether system:
 ![Tether View](./docs/complex-tether.png)
