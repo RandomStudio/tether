@@ -108,7 +108,7 @@ Finally, note that this is a _push_ messaging system. Therefore, no polling is r
 To make a Tether system, the following conventions (A, B, C) are applied:
 
 - A: All communication passes through a MQTT message broker
-- B: A standardised, 3 part topic route convention (`agent/id/plug`) is applied
+- B: Apply a standardised, 3 part topic route convention (`agent/id/plug`)
 - C: MessagePack is used for the contents of the messages
 
 ### A: The MQTT Broker
@@ -215,7 +215,7 @@ The concept of a "plug" is simply a convention, such that:
 
 Let's put these "parts" together by describing how MQTT matches actual topics (for published messages) to topic patterns (for subscribing).
 
-MQTT topics are broken up by zero or multiple forward-slash `/` characters. In Tether systems, we **always** have three-part topics, hence `role/id/plug`.
+MQTT topics are broken up by zero or multiple forward-slash `/` characters. In Tether systems, we **always** have three-part topics, hence `agent/id/plug`.
 
 Topics subscriptions can use wildcards. Most importantly:
 
