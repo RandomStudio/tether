@@ -139,7 +139,7 @@ MQTT provides QOS (Quality of Service) levels to help you balance reliability/th
 
 - At most once (0)
 - At least once (1)
-- Exactly once (2).
+- Exactly once (2)
 
 We default to QOS level 1 most of the time, but level 0 can be useful for high-frequency data where you don't mind missing a message or two, and level 2 can be useful for critical messages (state or events) that don't happen often but need solid guarantees for delivery.
 
@@ -169,7 +169,7 @@ Or, to be more descriptive: `"agent role"` / `"id or group"` / `"plug name"`. No
 
 ##### Part 1: Agent or Role
 
-Each Agent is expected to have a single "role" in the system. A short indication of the role is used as the top level of the topic hierarchy.
+Each Agent is expected to have a single "role" in the system. A short indication/naming of the role is used as the top level of the topic hierarchy.
 
 Some examples of Agent roles:
 
