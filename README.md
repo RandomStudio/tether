@@ -1,10 +1,10 @@
 # Tether
 
-Tether is a standardised way of using [MQTT](https://mqtt.org/) (for message publishing and subscribing) and [MessagePack](https://msgpack.org/index.html) (for serialised data in message payloads).
+Instead of trying to find (or build) the One True Best Creative Coding Tool, we decided to find a way to make the tools we were already using (and the ones we didn't even know about yet) work together.
 
-By using Tether, we can approach digital art/media installations as **distributed systems**, and apply a **Publish Subscribe pattern** and **event-based programming** to coordinate the independent pieces of software and hardware that commonly comprise these systems.
+By using Tether, we can approach digital art/media installations as **distributed systems**, applying a **publish / subscribe pattern** and **event-based programming** to coordinate the independent pieces of software and hardware that commonly comprise these systems.
 
-The Tether approach is about abstracting the underlying hardware and software so that everything from the point of view of the "system" is an **Agent** that can communicate using standardised **Messages**.
+Specifically, Tether is a standardised way of using existing, well established technologies such as [MQTT](https://mqtt.org/) (for messaging) and [MessagePack](https://msgpack.org/index.html) (for serialised data).
 
 - [Quick start](#quick-start)
   - [GUI](#gui)
@@ -25,7 +25,7 @@ The Tether approach is about abstracting the underlying hardware and software so
       - [Part 2: ID/Group](#part-2-id-or-group)
       - [Part 3: Plug](#part-3-plug)
     - [Topic pattern matching](#topic-pattern-matching)
-  - [C. MessagePack](#c-messagepack)
+  - [C. The MessagePack Payload](#c-the-messagepack-payload)
 - [Goals and benefits of using Tether](#goals-and-benefits-of-using-tether)
 - [System diagram examples](#system-diagram-examples)
   - [A simple example](#a-simple-example)
@@ -39,8 +39,8 @@ The Tether approach is about abstracting the underlying hardware and software so
 The most basic Tether system comprises:
 
 1. An MQTT broker (see [brokers/README](brokers/README.md) for instructions on setting one up)
-2. A Tether agent capable of _publishing_ messages encoded in MessagePack format
-3. A Tether agent capable of _receiving (subscribing to)_ messages, decoding in MessagePack format
+2. At least one Tether Agent capable of _publishing_ messages encoded in MessagePack format
+3. At least one Tether Agent capable of _receiving (subscribing to)_ messages, decoding in MessagePack format
 
 ### GUI
 
@@ -48,20 +48,22 @@ If you'd like to use a graphical / desktop application to test out Tether, try:
 
 - [Tether Egui](https://github.com/RandomStudio/tether-egui)
 
-Tether Egui acts as both an agent that publishes (by default, as "gui") but also subscribes to all topics (by default) and tries to decode the MessagePack contents. So you can use a single instance of Tether Egui to simulate an entire (very basic) Tether system, provided you are also running an MQTT Broker on your system.
+Tether Egui acts as both an Agent that publishes (by default, as "gui") but also subscribes to all topics (by default) and tries to decode the MessagePack contents. So you can use a single instance of Tether Egui to simulate an entire (very basic) Tether system, provided you are also running an MQTT Broker on your system.
 
 ### CLI
 
 Alternatively, command-line utilities are provided [here](./utilities/cli) (with instructions for installing them)
 
-- `tether-send`: by default, publishes messages as the agent "tether-send"
-- `tether-receive`: not really an "agent" in any way, but subscribes to message on all topics (by default) and tries to decode the MessagePack payload
+- `tether-send`: by default, publishes messages as the Agent "tether-send"
+- `tether-receive`: subscribes to messages on all topics (by default) and tries to decode the MessagePack payload of each one
 
-You can use `tether-send` in combination with `tether-receive` to simulate a very simple Tether system, provided you are also running an MQTT Broker on your system.
+You can use `tether-send` in combination with `tether-receive` to simulate a very simple Tether system. You can use the publicly-available MQTT broker `tether-io.dev:1883` (the default).
 
 ---
 
 ## Understanding Tether
+
+The Tether approach is about abstracting the underlying hardware and software so that everything from the point of view of the "system" is an **Agent** that can communicate using standardised **Messages**.
 
 ### Agents
 
@@ -241,7 +243,7 @@ In the JS Base Agent, we create an InputPlug or OutputPlug object that provides 
 
 In other languages, it may make more sense to use utility functions that can parse the topic to give you **role**, **ID** or just **plugName** depending on your matching requirements.
 
-### C: MessagePack
+### C: The MessagePack Payload
 
 We chose MessagePack because it represents a good compromise in terms of performance, message size and the ability to structure data (e.g. in nested objects with named keys, and/or arrays), but without needing a schema in order to serialise/deserialise data. Has most of the obvious advantages of JSON but more efficient: MessagePack data is encoded directly as bytes rather than a "String".
 
