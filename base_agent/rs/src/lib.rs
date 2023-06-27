@@ -167,10 +167,16 @@ impl TetherAgent {
 
     /// Given a plug definition and a raw (u8 buffer) payload, generate a message
     /// on an appropriate topic and with the QOS specified in the Plug Definition
-    pub fn publish(&self, plug: &PlugDefinition, payload: Option<&[u8]>) -> Result<(), ()> {
+    pub fn publish(
+        &self,
+        plug: &PlugDefinition,
+        payload: Option<&[u8]>,
+        retained: bool,
+    ) -> Result<(), ()> {
         let message = MessageBuilder::new()
             .topic(&plug.topic)
             .payload(payload.unwrap_or(&[]))
+            .retained(retained)
             .qos(plug.qos)
             .finalize();
         if let Err(e) = self.client.publish(message) {
@@ -186,9 +192,10 @@ impl TetherAgent {
         &self,
         plug: &PlugDefinition,
         data: T,
+        retained: bool,
     ) -> Result<(), ()> {
         let payload = to_vec_named(&data).unwrap();
-        self.publish(plug, Some(&payload))
+        self.publish(plug, Some(&payload), retained)
     }
 }
 
