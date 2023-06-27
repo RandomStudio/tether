@@ -8,8 +8,8 @@ use tether_agent::TetherAgent;
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 struct CustomStruct {
-    foo: String,
-    bar: f32,
+    id: usize,
+    name: String,
 }
 fn main() {
     println!("Rust Tether Agent publish example");
@@ -19,7 +19,7 @@ fn main() {
 
     debug!("Debugging is enabled; could be verbose");
 
-    let agent = TetherAgent::new("RustDemoAgent", None, None);
+    let agent = TetherAgent::new("RustDemoAgent", None, Some(String::from("localhost")));
     let (role, id) = agent.description();
     info!("Created agent OK: {}, {}", role, id);
 
@@ -42,8 +42,8 @@ fn main() {
             .unwrap();
 
         let custom_message = CustomStruct {
-            foo: "hello".into(),
-            bar: 0.42,
+            id: i,
+            name: "hello".into(),
         };
         agent
             .encode_and_publish(&custom_output, custom_message)

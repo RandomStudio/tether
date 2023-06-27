@@ -53,8 +53,14 @@ fn main() {
                 // Notice how you must give the from_slice function a type so it knows what to expect
                 let decoded = from_slice::<CustomMessage>(&message.payload());
                 match decoded {
-                    Ok(d) => { info!("Yes, we decoded the MessagePack payload as: {:?}", d)},
-                    Err(e) => { warn!("Failed to decode the payload: {}", e)}
+                    Ok(d) => {
+                        info!("Yes, we decoded the MessagePack payload as: {:?}", d);
+                        let CustomMessage { name, id } = d;
+                        debug!("Name is {} and ID is {}", name, id);
+                    }
+                    Err(e) => {
+                        warn!("Failed to decode the payload: {}", e)
+                    }
                 };
             }
             if &input_empty.name == plug_name.as_str() {
