@@ -90,5 +90,8 @@
     "queue": "cpp",
     "stack": "cpp"
   },
-  "cmake.configureOnOpen": false
+  "cmake.configureOnOpen": false,
+  "rust-analyzer.linkedProjects": [
+  "${workspaceFolder}/base_agent/rs/Cargo.toml"
+  ]
 }
