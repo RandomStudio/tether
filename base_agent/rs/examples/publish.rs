@@ -3,7 +3,7 @@ use std::{thread, time::Duration};
 use env_logger::{Builder, Env};
 use log::{debug, info};
 use serde::Serialize;
-use tether_agent::TetherAgent;
+use tether_agent::TetherAgentOptionsBuilder;
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -19,11 +19,11 @@ fn main() {
 
     debug!("Debugging is enabled; could be verbose");
 
-    let agent = TetherAgent::new("RustDemoAgent", None, Some(String::from("localhost")));
+    let agent = TetherAgentOptionsBuilder::new("RustDemoAgent")
+        .finalize()
+        .expect("failed to connect Tether");
     let (role, id) = agent.description();
     info!("Created agent OK: {}, {}", role, id);
-
-    agent.connect(None, None).expect("Failed to connect");
 
     let empty_message_output: tether_agent::PlugDefinition = agent
         .create_output_plug("nothing", None, None, None)

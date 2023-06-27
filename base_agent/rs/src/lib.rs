@@ -1,4 +1,4 @@
-use log::{debug, error, info};
+use log::{debug, error, info, warn};
 use mqtt::{Client, Message, MessageBuilder, Receiver};
 pub use paho_mqtt as mqtt;
 pub use rmp_serde;
@@ -26,6 +26,75 @@ pub struct TetherAgent {
     receiver: Receiver<Option<Message>>,
 }
 
+pub struct TetherAgentOptionsBuilder {
+    role: String,
+    id: Option<String>,
+    host: Option<String>,
+    port: Option<u16>,
+    username: Option<String>,
+    password: Option<String>,
+    auto_connect: bool,
+}
+
+impl TetherAgentOptionsBuilder {
+    /// Initialise Tether Options struct with default options; call other methods to customise.
+    /// Call `finalize()` to get the actual TetherAgent instance (and connect automatically, by default)
+    pub fn new(role: &str) -> Self {
+        TetherAgentOptionsBuilder {
+            role: String::from(role),
+            id: None,
+            host: None,
+            port: None,
+            username: None,
+            password: None,
+            auto_connect: true,
+        }
+    }
+
+    pub fn id(mut self, id: &str) -> Self {
+        self.id = Some(id.into());
+        self
+    }
+
+    pub fn finalize(&self) -> Result<TetherAgent, ()> {
+        let broker_host = self.host.clone().unwrap_or("localhost".into());
+        let broker_port = self.port.unwrap_or(1883);
+
+        let broker_uri = format!("tcp://{broker_host}:{broker_port}");
+
+        info!("Create connection for broker at {}", &broker_uri);
+
+        let create_opts = mqtt::CreateOptionsBuilder::new()
+            .server_uri(broker_uri.clone())
+            .client_id("")
+            .finalize();
+
+        // Create the client connection
+        let client = mqtt::Client::new(create_opts).unwrap();
+
+        // Initialize the consumer before connecting
+        let receiver = client.start_consuming();
+
+        let agent = TetherAgent {
+            role: self.role.clone(),
+            id: self.id.clone().unwrap_or("any".into()),
+            client,
+            broker_uri,
+            receiver,
+        };
+
+        if self.auto_connect {
+            match agent.connect(self.username.clone(), self.password.clone()) {
+                Ok(()) => Ok(agent),
+                Err(_) => Err(()),
+            }
+        } else {
+            warn!("Auto-connect disabled; you must call .connect explicitly");
+            Ok(agent)
+        }
+    }
+}
+
 impl TetherAgent {
     pub fn is_connected(&self) -> bool {
         self.client.is_connected()
@@ -48,33 +117,6 @@ impl TetherAgent {
 
     pub fn set_id(&mut self, id: &str) {
         self.id = id.into();
-    }
-
-    pub fn new(role: &str, id: Option<&str>, broker_host: Option<String>) -> Self {
-        let tether_host = broker_host.unwrap_or("localhost".into());
-
-        let broker_uri = format!("tcp://{tether_host}:1883");
-
-        info!("Attempt connection broker at {}", &broker_uri);
-
-        let create_opts = mqtt::CreateOptionsBuilder::new()
-            .server_uri(broker_uri.clone())
-            .client_id("")
-            .finalize();
-
-        // Create the client connection
-        let client = mqtt::Client::new(create_opts).unwrap();
-
-        // Initialize the consumer before connecting
-        let receiver = client.start_consuming();
-
-        TetherAgent {
-            role: String::from(role),
-            id: String::from(id.unwrap_or("any")),
-            client,
-            receiver,
-            broker_uri,
-        }
     }
 
     pub fn connect(
