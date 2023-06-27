@@ -5,10 +5,7 @@ pub use rmp_serde;
 use rmp_serde::to_vec_named;
 pub use serde;
 use serde::{Deserialize, Serialize};
-use std::{
-    net::{IpAddr, Ipv4Addr},
-    time::Duration,
-};
+use std::time::Duration;
 
 const TIMEOUT_SECONDS: u64 = 10;
 
@@ -52,8 +49,8 @@ impl TetherAgent {
         self.id = id.into();
     }
 
-    pub fn new(role: &str, id: Option<&str>, broker_host: Option<IpAddr>) -> Self {
-        let tether_host = broker_host.unwrap_or(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)));
+    pub fn new(role: &str, id: Option<&str>, broker_host: Option<String>) -> Self {
+        let tether_host = broker_host.unwrap_or("localhost".into());
 
         let broker_uri = format!("tcp://{tether_host}:1883");
 
