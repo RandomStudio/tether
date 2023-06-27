@@ -43,7 +43,7 @@ fn main() {
         a.create_input_plug("one", None, None)
             .expect("failed to create Input Plug");
         let plug = a
-            .create_output_plug("one", None, None)
+            .create_output_plug("one", None, None, None)
             .expect("failed to create Output Plug");
         output_plug = Some(plug);
     } else {

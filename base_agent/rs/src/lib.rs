@@ -18,6 +18,7 @@ pub struct PlugDefinition {
     pub name: String,
     pub topic: String,
     pub qos: i32,
+    pub retain: bool,
 }
 
 pub struct TetherAgent {
@@ -75,7 +76,7 @@ impl TetherAgent {
             id: String::from(id.unwrap_or("any")),
             client,
             receiver,
-            broker_uri: broker_uri.clone(),
+            broker_uri,
         }
     }
 
@@ -123,7 +124,12 @@ impl TetherAgent {
         match self.client.subscribe(&topic, qos) {
             Ok(_res) => {
                 info!("Subscribed to topic {} OK", &topic);
-                let plug = PlugDefinition { name, topic, qos };
+                let plug = PlugDefinition {
+                    name,
+                    topic,
+                    qos,
+                    retain: false,
+                };
                 debug!("Creating plug: {:?}", &plug);
                 // self.input_plugs.push(plug);
                 Ok(plug)
@@ -139,14 +145,21 @@ impl TetherAgent {
         &self,
         name: &str,
         qos: Option<i32>,
+        retain: Option<bool>,
         override_topic: Option<&str>,
     ) -> Result<PlugDefinition, ()> {
         let name = String::from(name);
         let topic =
             String::from(override_topic.unwrap_or(&build_topic(&self.role, &self.id, &name)));
         let qos = qos.unwrap_or(1);
+        let retain = retain.unwrap_or(false);
 
-        let plug = PlugDefinition { name, topic, qos };
+        let plug = PlugDefinition {
+            name,
+            topic,
+            qos,
+            retain,
+        };
         debug!("Adding output plug: {:?}", &plug);
         Ok(plug)
     }
@@ -167,16 +180,11 @@ impl TetherAgent {
 
     /// Given a plug definition and a raw (u8 buffer) payload, generate a message
     /// on an appropriate topic and with the QOS specified in the Plug Definition
-    pub fn publish(
-        &self,
-        plug: &PlugDefinition,
-        payload: Option<&[u8]>,
-        retained: bool,
-    ) -> Result<(), ()> {
+    pub fn publish(&self, plug: &PlugDefinition, payload: Option<&[u8]>) -> Result<(), ()> {
         let message = MessageBuilder::new()
             .topic(&plug.topic)
             .payload(payload.unwrap_or(&[]))
-            .retained(retained)
+            .retained(plug.retain)
             .qos(plug.qos)
             .finalize();
         if let Err(e) = self.client.publish(message) {
@@ -192,10 +200,9 @@ impl TetherAgent {
         &self,
         plug: &PlugDefinition,
         data: T,
-        retained: bool,
     ) -> Result<(), ()> {
         let payload = to_vec_named(&data).unwrap();
-        self.publish(plug, Some(&payload), retained)
+        self.publish(plug, Some(&payload))
     }
 }
 
@@ -217,7 +224,7 @@ pub fn parse_agent_id(topic: &str) -> Option<&str> {
 
 pub fn parse_agent_role(topic: &str) -> Option<&str> {
     let parts: Vec<&str> = topic.split('/').collect();
-    match parts.get(0) {
+    match parts.first() {
         Some(s) => Some(*s),
         None => None,
     }
