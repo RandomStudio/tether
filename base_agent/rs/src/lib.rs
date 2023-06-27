@@ -9,13 +9,98 @@ use std::time::Duration;
 
 const TIMEOUT_SECONDS: u64 = 10;
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct PlugDefinition {
+#[derive(Debug, Clone)]
+pub struct PlugDefinitionCommon {
     pub name: String,
     pub topic: String,
     pub qos: i32,
-    pub retain: bool,
+}
+
+/// This is the definition of an Input or Output Plug
+/// You should never use this directly; call finalize()
+/// to get a usable Plug
+enum PlugDefinition<'a> {
+    InputPlug {
+        common: PlugDefinitionCommon,
+        tether_agent: &'a TetherAgent,
+    },
+    OutputPlug {
+        common: PlugDefinitionCommon,
+        retain: bool,
+    },
+}
+
+pub struct Plug<'a> {
+    pub definition: PlugDefinition<'a>,
+}
+
+impl PlugDefinition<'_> {
+    fn common(&mut self) -> &mut PlugDefinitionCommon {
+        match self {
+            PlugDefinition::InputPlug { common, .. } => common,
+            PlugDefinition::OutputPlug { common, retain: _ } => common,
+        }
+    }
+
+    pub fn new_input<'a>(tether_agent: &'a TetherAgent, name: &str) -> PlugDefinition<'a> {
+        PlugDefinition::InputPlug {
+            common: PlugDefinitionCommon {
+                name: name.into(),
+                topic: default_subscribe_topic(&name),
+                qos: 1,
+            },
+            tether_agent,
+        }
+    }
+
+    pub fn new_output<'a>(tether_agent: &TetherAgent, name: &str) -> PlugDefinition<'a> {
+        PlugDefinition::OutputPlug {
+            common: PlugDefinitionCommon {
+                name: name.into(),
+                topic: build_topic(&tether_agent.role, &tether_agent.id, &name),
+                qos: 1,
+            },
+            retain: false,
+        }
+    }
+
+    pub fn qos(mut self, qos: i32) -> Self {
+        self.common().qos = qos;
+        self
+    }
+
+    pub fn topic(mut self, override_topic: &str) -> Self {
+        self.common().topic = override_topic.into();
+        self
+    }
+
+    pub fn retain(mut self, should_retain: bool) -> Self {
+        match self {
+            Self::InputPlug {
+                common,
+                tether_agent,
+            } => {
+                panic!("Cannot set retain flag on Input Plug / subscription")
+            }
+            Self::OutputPlug { common, mut retain } => {
+                retain = should_retain;
+                self
+            }
+        }
+    }
+
+    pub fn finalize<'a>(self) -> Plug<'a> {
+        match self {
+            PlugDefinition::InputPlug {
+                common,
+                tether_agent,
+            } => {
+                tether_agent.client.subscribe(&common.topic, common.qos);
+                Plug { definition: self }
+            }
+            PlugDefinition::OutputPlug { common, retain } => Plug { definition: self },
+        }
+    }
 }
 
 pub struct TetherAgent {
@@ -81,7 +166,7 @@ impl TetherAgentOptionsBuilder {
         self
     }
 
-    pub fn finalize(&self) -> Result<TetherAgent, ()> {
+    pub fn finalize(self) -> Result<TetherAgent, ()> {
         let broker_host = self.host.clone().unwrap_or("localhost".into());
         let broker_port = self.port.unwrap_or(1883);
 
@@ -175,58 +260,50 @@ impl TetherAgent {
         }
     }
 
-    pub fn create_input_plug(
-        &self,
-        name: &str,
-        qos: Option<i32>,
-        override_topic: Option<&str>,
-    ) -> Result<PlugDefinition, ()> {
-        let name = String::from(name);
-        let topic = String::from(override_topic.unwrap_or(&default_subscribe_topic(&name)));
-        let qos = qos.unwrap_or(1);
+    // pub fn create_input_plug(&self, name: &str) -> PlugDefinition {
+    //     let name = String::from(name);
+    //     let topic = String::from(override_topic.unwrap_or(&default_subscribe_topic(&name)));
+    //     let qos = qos.unwrap_or(1);
 
-        match self.client.subscribe(&topic, qos) {
-            Ok(_res) => {
-                info!("Subscribed to topic {} OK", &topic);
-                let plug = PlugDefinition {
-                    name,
-                    topic,
-                    qos,
-                    retain: false,
-                };
-                debug!("Creating plug: {:?}", &plug);
-                // self.input_plugs.push(plug);
-                Ok(plug)
-            }
-            Err(e) => {
-                error!("Error subscribing to topic {}: {:?}", &topic, e);
-                Err(())
-            }
-        }
-    }
+    //     match self.client.subscribe(&topic, qos) {
+    //         Ok(_res) => {
+    //             info!("Subscribed to topic {} OK", &topic);
+    //             let plug = PlugDefinition::InputPlug {
+    //                 common: PlugDefinitionCommon { name, topic, qos },
+    //             };
+    //             debug!("Creating plug: {:?}", &plug);
+    //             // self.input_plugs.push(plug);
+    //             Ok(plug)
+    //         }
+    //         Err(e) => {
+    //             error!("Error subscribing to topic {}: {:?}", &topic, e);
+    //             Err(())
+    //         }
+    //     }
+    // }
 
-    pub fn create_output_plug(
-        &self,
-        name: &str,
-        qos: Option<i32>,
-        retain: Option<bool>,
-        override_topic: Option<&str>,
-    ) -> Result<PlugDefinition, ()> {
-        let name = String::from(name);
-        let topic =
-            String::from(override_topic.unwrap_or(&build_topic(&self.role, &self.id, &name)));
-        let qos = qos.unwrap_or(1);
-        let retain = retain.unwrap_or(false);
+    // pub fn create_output_plug(
+    //     &self,
+    //     name: &str,
+    //     qos: Option<i32>,
+    //     retain: Option<bool>,
+    //     override_topic: Option<&str>,
+    // ) -> Result<PlugDefinition, ()> {
+    //     let name = String::from(name);
+    //     let topic =
+    //         String::from(override_topic.unwrap_or(&build_topic(&self.role, &self.id, &name)));
+    //     let qos = qos.unwrap_or(1);
+    //     let retain = retain.unwrap_or(false);
 
-        let plug = PlugDefinition {
-            name,
-            topic,
-            qos,
-            retain,
-        };
-        debug!("Adding output plug: {:?}", &plug);
-        Ok(plug)
-    }
+    //     let plug = PlugDefinition {
+    //         name,
+    //         topic,
+    //         qos,
+    //         retain,
+    //     };
+    //     debug!("Adding output plug: {:?}", &plug);
+    //     Ok(plug)
+    // }
 
     /// If a message is waiting return Plug Name, Message (String, Message)
     pub fn check_messages(&self) -> Option<(String, Message)> {
@@ -244,27 +321,31 @@ impl TetherAgent {
 
     /// Given a plug definition and a raw (u8 buffer) payload, generate a message
     /// on an appropriate topic and with the QOS specified in the Plug Definition
-    pub fn publish(&self, plug: &PlugDefinition, payload: Option<&[u8]>) -> Result<(), ()> {
-        let message = MessageBuilder::new()
-            .topic(&plug.topic)
-            .payload(payload.unwrap_or(&[]))
-            .retained(plug.retain)
-            .qos(plug.qos)
-            .finalize();
-        if let Err(e) = self.client.publish(message) {
-            error!("Error publishing: {:?}", e);
-            Err(())
-        } else {
-            Ok(())
+    pub fn publish<'a>(&self, plug: &Plug, payload: Option<&[u8]>) -> Result<(), ()> {
+        match &plug.definition {
+            PlugDefinition::InputPlug {
+                common: _,
+                tether_agent: _,
+            } => panic!("You cannot publish using an Input Plug"),
+            PlugDefinition::OutputPlug { common, retain } => {
+                let message = MessageBuilder::new()
+                    .topic(&common.topic)
+                    .payload(payload.unwrap_or(&[]))
+                    .retained(*retain)
+                    .qos(common.qos)
+                    .finalize();
+                if let Err(e) = self.client.publish(message) {
+                    error!("Error publishing: {:?}", e);
+                    Err(())
+                } else {
+                    Ok(())
+                }
+            }
         }
     }
 
     /// Similar to `publish` but serializes the data automatically before sending
-    pub fn encode_and_publish<T: Serialize>(
-        &self,
-        plug: &PlugDefinition,
-        data: T,
-    ) -> Result<(), ()> {
+    pub fn encode_and_publish<T: Serialize>(&self, plug: &Plug, data: T) -> Result<(), ()> {
         let payload = to_vec_named(&data).unwrap();
         self.publish(plug, Some(&payload))
     }
