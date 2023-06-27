@@ -56,6 +56,31 @@ impl TetherAgentOptionsBuilder {
         self
     }
 
+    pub fn host(mut self, host: &str) -> Self {
+        self.host = Some(host.into());
+        self
+    }
+
+    pub fn port(mut self, port: u16) -> Self {
+        self.port = Some(port);
+        self
+    }
+
+    pub fn username(mut self, username: &str) -> Self {
+        self.username = Some(username.into());
+        self
+    }
+
+    pub fn password(mut self, password: &str) -> Self {
+        self.password = Some(password.into());
+        self
+    }
+
+    pub fn auto_connect(mut self, should_auto_connect: bool) -> Self {
+        self.auto_connect = should_auto_connect;
+        self
+    }
+
     pub fn finalize(&self) -> Result<TetherAgent, ()> {
         let broker_host = self.host.clone().unwrap_or("localhost".into());
         let broker_port = self.port.unwrap_or(1883);
