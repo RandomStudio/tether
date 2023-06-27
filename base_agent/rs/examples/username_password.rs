@@ -19,11 +19,7 @@ fn main() {
 
     debug!("Debugging is enabled; could be verbose");
 
-    let agent = TetherAgent::new(
-        "RustDemoAgent",
-        None,
-        Some(std::net::IpAddr::V4(Ipv4Addr::new(10, 112, 10, 10))),
-    );
+    let agent = TetherAgent::new("RustDemoAgent", None, Some("10.112.10.10".into()));
     let (role, id) = agent.description();
     info!("Created agent OK: {}, {}", role, id);
 
