@@ -1,10 +1,10 @@
-use log::{debug, error, info, warn};
+use log::{error, info, warn};
 use mqtt::{Client, Message, MessageBuilder, Receiver};
 pub use paho_mqtt as mqtt;
 pub use rmp_serde;
 use rmp_serde::to_vec_named;
 pub use serde;
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use std::time::Duration;
 
 const TIMEOUT_SECONDS: u64 = 10;
@@ -16,52 +16,55 @@ pub struct PlugDefinitionCommon {
     pub qos: i32,
 }
 
+pub struct InputPlug {
+    common: PlugDefinitionCommon,
+}
+
+pub struct OutputPlug {
+    common: PlugDefinitionCommon,
+    retain: bool,
+}
+
 /// This is the definition of an Input or Output Plug
 /// You should never use this directly; call finalize()
 /// to get a usable Plug
-enum PlugDefinition<'a> {
-    InputPlug {
-        common: PlugDefinitionCommon,
-        tether_agent: &'a TetherAgent,
-    },
-    OutputPlug {
-        common: PlugDefinitionCommon,
-        retain: bool,
-    },
+enum PlugOptionsBuilder {
+    InputPlugDefinition(InputPlug),
+    OutputPlugDefinition(OutputPlug),
 }
 
-pub struct Plug<'a> {
-    pub definition: PlugDefinition<'a>,
+pub enum PlugDefinition {
+    InputPlugDefinition(InputPlug),
+    OutputPlugDefinition(OutputPlug),
 }
 
-impl PlugDefinition<'_> {
+impl PlugOptionsBuilder {
     fn common(&mut self) -> &mut PlugDefinitionCommon {
         match self {
-            PlugDefinition::InputPlug { common, .. } => common,
-            PlugDefinition::OutputPlug { common, retain: _ } => common,
+            PlugOptionsBuilder::InputPlugDefinition(plug) => &mut plug.common,
+            PlugOptionsBuilder::OutputPlugDefinition(plug) => &mut plug.common,
         }
     }
 
-    pub fn new_input<'a>(tether_agent: &'a TetherAgent, name: &str) -> PlugDefinition<'a> {
-        PlugDefinition::InputPlug {
+    pub fn create_input(name: &str) -> PlugOptionsBuilder {
+        PlugOptionsBuilder::InputPlugDefinition(InputPlug {
             common: PlugDefinitionCommon {
                 name: name.into(),
                 topic: default_subscribe_topic(&name),
                 qos: 1,
             },
-            tether_agent,
-        }
+        })
     }
 
-    pub fn new_output<'a>(tether_agent: &TetherAgent, name: &str) -> PlugDefinition<'a> {
-        PlugDefinition::OutputPlug {
+    pub fn create_output(tether_agent: &TetherAgent, name: &str) -> PlugOptionsBuilder {
+        PlugOptionsBuilder::OutputPlugDefinition(OutputPlug {
             common: PlugDefinitionCommon {
                 name: name.into(),
                 topic: build_topic(&tether_agent.role, &tether_agent.id, &name),
                 qos: 1,
             },
             retain: false,
-        }
+        })
     }
 
     pub fn qos(mut self, qos: i32) -> Self {
@@ -74,31 +77,31 @@ impl PlugDefinition<'_> {
         self
     }
 
-    pub fn retain(mut self, should_retain: bool) -> Self {
+    pub fn retain(self, should_retain: bool) -> Self {
         match self {
-            Self::InputPlug {
-                common,
-                tether_agent,
-            } => {
+            Self::InputPlugDefinition(_) => {
                 panic!("Cannot set retain flag on Input Plug / subscription")
             }
-            Self::OutputPlug { common, mut retain } => {
-                retain = should_retain;
-                self
+            Self::OutputPlugDefinition(plug) => {
+                PlugOptionsBuilder::OutputPlugDefinition(OutputPlug {
+                    common: plug.common,
+                    retain: should_retain,
+                })
             }
         }
     }
 
-    pub fn finalize<'a>(self) -> Plug<'a> {
+    pub fn finalize(self, tether_agent: &TetherAgent) -> PlugDefinition {
         match self {
-            PlugDefinition::InputPlug {
-                common,
-                tether_agent,
-            } => {
-                tether_agent.client.subscribe(&common.topic, common.qos);
-                Plug { definition: self }
+            Self::InputPlugDefinition(plug) => {
+                let PlugDefinitionCommon { topic, qos, .. } = &plug.common;
+                tether_agent
+                    .client
+                    .subscribe(&*topic, *qos)
+                    .expect(&format!("failed to subscribe to topic {}", topic));
+                PlugDefinition::InputPlugDefinition(plug)
             }
-            PlugDefinition::OutputPlug { common, retain } => Plug { definition: self },
+            Self::OutputPlugDefinition(plug) => PlugDefinition::OutputPlugDefinition(plug),
         }
     }
 }
@@ -260,10 +263,8 @@ impl TetherAgent {
         }
     }
 
-    // pub fn create_input_plug(&self, name: &str) -> PlugDefinition {
-    //     let name = String::from(name);
-    //     let topic = String::from(override_topic.unwrap_or(&default_subscribe_topic(&name)));
-    //     let qos = qos.unwrap_or(1);
+    // pub fn create_input_plug(&self, definition: InputPlug) -> PlugDefinition {
+    //     let PlugDefinitionCommon { name, topic, qos } = definition.common;
 
     //     match self.client.subscribe(&topic, qos) {
     //         Ok(_res) => {
@@ -321,18 +322,22 @@ impl TetherAgent {
 
     /// Given a plug definition and a raw (u8 buffer) payload, generate a message
     /// on an appropriate topic and with the QOS specified in the Plug Definition
-    pub fn publish<'a>(&self, plug: &Plug, payload: Option<&[u8]>) -> Result<(), ()> {
-        match &plug.definition {
-            PlugDefinition::InputPlug {
-                common: _,
-                tether_agent: _,
-            } => panic!("You cannot publish using an Input Plug"),
-            PlugDefinition::OutputPlug { common, retain } => {
+    pub fn publish(
+        &self,
+        plug_definition: &PlugDefinition,
+        payload: Option<&[u8]>,
+    ) -> Result<(), ()> {
+        match plug_definition {
+            PlugDefinition::InputPlugDefinition(_) => {
+                panic!("You cannot publish using an Input Plug")
+            }
+            PlugDefinition::OutputPlugDefinition(definition) => {
+                let PlugDefinitionCommon { topic, qos, .. } = &definition.common;
                 let message = MessageBuilder::new()
-                    .topic(&common.topic)
+                    .topic(*&topic)
                     .payload(payload.unwrap_or(&[]))
-                    .retained(*retain)
-                    .qos(common.qos)
+                    .retained(definition.retain)
+                    .qos(*qos)
                     .finalize();
                 if let Err(e) = self.client.publish(message) {
                     error!("Error publishing: {:?}", e);
@@ -345,9 +350,13 @@ impl TetherAgent {
     }
 
     /// Similar to `publish` but serializes the data automatically before sending
-    pub fn encode_and_publish<T: Serialize>(&self, plug: &Plug, data: T) -> Result<(), ()> {
+    pub fn encode_and_publish<T: Serialize>(
+        &self,
+        plug_definition: &PlugDefinition,
+        data: T,
+    ) -> Result<(), ()> {
         let payload = to_vec_named(&data).unwrap();
-        self.publish(plug, Some(&payload))
+        self.publish(plug_definition, Some(&payload))
     }
 }
 
