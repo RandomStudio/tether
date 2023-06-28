@@ -1,9 +1,9 @@
-use std::{net::Ipv4Addr, thread, time::Duration};
+use std::{thread, time::Duration};
 
 use env_logger::{Builder, Env};
 use log::{debug, info};
 use serde::Serialize;
-use tether_agent::TetherAgent;
+use tether_agent::{PlugOptionsBuilder, TetherAgent, TetherAgentOptionsBuilder};
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -19,30 +19,26 @@ fn main() {
 
     debug!("Debugging is enabled; could be verbose");
 
-    let agent = TetherAgent::new("RustDemoAgent", None, Some("10.112.10.10".into()));
-    let (role, id) = agent.description();
+    let tether_agent = TetherAgentOptionsBuilder::new("RustDemoAgent")
+        .host("10.112.10.10")
+        .username("connected.space")
+        .password("connected.space")
+        .finalize()
+        .expect("Failed to initialise and connect");
+    let (role, id) = tether_agent.description();
     info!("Created agent OK: {}, {}", role, id);
 
-    agent
-        .connect(
-            Some("connected.space".into()),
-            Some("connected.space".into()),
-        )
-        .expect("Failed to connect");
-
-    let empty_message_output: tether_agent::PlugDefinition = agent
-        .create_output_plug("nothing", None, None, None)
-        .unwrap();
-    let boolean_message_output = agent.create_output_plug("one", None, None, None).unwrap();
-    let custom_output = agent.create_output_plug("two", None, None, None).unwrap();
+    let empty_message_output = PlugOptionsBuilder::create_output("nothing").finalize(&tether_agent);
+    let boolean_message_output = PlugOptionsBuilder::create_output("one").finalize(&tether_agent);
+    let custom_output = PlugOptionsBuilder::create_output("two").finalize(&tether_agent);
 
     for i in 1..=10 {
         info!("#{i}: Sending empty message...");
-        agent.publish(&empty_message_output, None).unwrap();
+        tether_agent.publish(&empty_message_output, None).unwrap();
 
         let bool = i % 2 == 0;
         info!("#{i}: Sending boolean message...");
-        agent
+        tether_agent
             .publish(&boolean_message_output, Some(&[bool.into()]))
             .unwrap();
 
@@ -50,7 +46,7 @@ fn main() {
             foo: "hello".into(),
             bar: 0.42,
         };
-        agent
+        tether_agent
             .encode_and_publish(&custom_output, custom_message)
             .unwrap();
 

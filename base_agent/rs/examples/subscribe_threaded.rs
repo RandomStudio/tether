@@ -20,22 +20,21 @@ use std::{
     time::Duration,
 };
 
-use tether_agent::TetherAgent;
+use tether_agent::{PlugOptionsBuilder, TetherAgent, TetherAgentOptionsBuilder};
 
 fn main() {
     println!("Rust Tether Agent subscribe example");
 
-    let agent = Arc::new(Mutex::new(TetherAgent::new(
-        "RustDemoAgent",
-        Some("example"),
-        None,
-    )));
+    let tether_agent = Arc::new(Mutex::new(
+        TetherAgentOptionsBuilder::new("RustDemoAgent")
+            .id("example")
+            .finalize()
+            .expect("failed to init/connect"),
+    ));
 
-    match agent.lock() {
+    match tether_agent.lock() {
         Ok(a) => {
-            a.connect(None, None).expect("failed to connect");
-            a.create_input_plug("one", None, None)
-                .expect("failed to create Input Plug");
+            let _input_plug = PlugOptionsBuilder::create_output("one").finalize(&a);
         }
         Err(e) => {
             panic!("Failed to acquire lock for Tether Agent setup: {}", e);
@@ -44,7 +43,7 @@ fn main() {
 
     let (tx, rx) = mpsc::channel();
 
-    let receiver_agent = Arc::clone(&agent);
+    let receiver_agent = Arc::clone(&tether_agent);
     thread::spawn(move || {
         println!("Checking messages every 1s, 10x...");
 

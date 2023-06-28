@@ -140,7 +140,7 @@ impl PlugOptionsBuilder {
                 tether_agent
                     .client
                     .subscribe(&final_topic, final_qos)
-                    .expect(&format!("failed to subscribe to topic {}", &final_topic));
+                    .expect("failed to subscribe!");
                 PlugDefinition::InputPlugDefinition(InputPlugDefinition {
                     common: PlugDefinitionCommon {
                         name: plug.common.name,
@@ -260,7 +260,7 @@ impl TetherAgentOptionsBuilder {
         };
 
         if self.auto_connect {
-            match agent.connect(self.username.clone(), self.password.clone()) {
+            match agent.connect(self.username, self.password) {
                 Ok(()) => Ok(agent),
                 Err(_) => Err(()),
             }
@@ -397,7 +397,7 @@ impl TetherAgent {
             PlugDefinition::OutputPlugDefinition(definition) => {
                 let PlugDefinitionCommon { topic, qos, .. } = &definition.common;
                 let message = MessageBuilder::new()
-                    .topic(*&topic)
+                    .topic(topic)
                     .payload(payload.unwrap_or(&[]))
                     .retained(definition.retain)
                     .qos(*qos)

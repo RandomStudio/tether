@@ -43,7 +43,7 @@ fn main() {
                 message.topic(),
                 plug_name
             );
-            if &input_one.name() == &plug_name {
+            if &plug_name == input_one.name() {
                 info!(
                     "******** INPUT ONE:\n Received a message from plug named \"{}\" on topic {} with length {} bytes",
                     input_one.name(),
@@ -51,7 +51,7 @@ fn main() {
                     message.payload().len()
                 );
             }
-            if &input_two.name() == &plug_name {
+            if &plug_name == input_two.name() {
                 info!(
                     "******** INPUT TWO:\n Received a message from plug named \"{}\" on topic {} with length {} bytes",
                     input_two.name(),
@@ -71,7 +71,7 @@ fn main() {
                     }
                 };
             }
-            if &input_empty.name() == &plug_name {
+            if &plug_name == input_empty.name() {
                 info!(
                     "******** EMPTY MESSAGE:\n Received a message from plug named \"{}\" on topic {} with length {} bytes",
                     input_empty.name(),
