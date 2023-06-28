@@ -3,7 +3,7 @@ use std::{thread, time::Duration};
 use env_logger::{Builder, Env};
 use log::{debug, info};
 use serde::Serialize;
-use tether_agent::TetherAgentOptionsBuilder;
+use tether_agent::{PlugOptionsBuilder, TetherAgentOptionsBuilder};
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -25,11 +25,11 @@ fn main() {
     let (role, id) = agent.description();
     info!("Created agent OK: {}, {}", role, id);
 
-    let empty_message_output: tether_agent::PlugDefinition = agent
-        .create_output_plug("nothing", None, None, None)
-        .unwrap();
-    let boolean_message_output = agent.create_output_plug("one", None, None, None).unwrap();
-    let custom_output = agent.create_output_plug("two", None, None, None).unwrap();
+    let empty_message_output =
+        PlugOptionsBuilder::create_output(&agent, "nothing").finalize(&agent);
+
+    let boolean_message_output = PlugOptionsBuilder::create_output(&agent, "one").finalize(&agent);
+    let custom_output = PlugOptionsBuilder::create_output(&agent, "two").finalize(&agent);
 
     for i in 1..=10 {
         info!("#{i}: Sending empty message...");
