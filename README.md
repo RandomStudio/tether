@@ -6,6 +6,10 @@ By using Tether, we can approach digital art/media installations as **distribute
 
 Specifically, Tether is a standardised way of using existing, well established technologies such as [MQTT](https://mqtt.org/) (for messaging) and [MessagePack](https://msgpack.org/index.html) (for serialised data).
 
+---
+
+## Table of Contents
+
 - [Quick start](#quick-start)
   - [GUI](#gui)
   - [CLI](#cli)
@@ -27,10 +31,10 @@ Specifically, Tether is a standardised way of using existing, well established t
     - [Topic pattern matching](#topic-pattern-matching)
   - [C. The MessagePack Payload](#c-the-messagepack-payload)
 - [Goals and benefits of using Tether](#goals-and-benefits-of-using-tether)
-- [System diagram examples](#system-diagram-examples)
-  - [A simple example](#a-simple-example)
-  - [A more complex example](#a-more-complex-example)
-    [Structure of this repository](#structure-of-this-repository)
+  - [System diagram examples](#system-diagram-examples)
+    - [A simple example](#a-simple-example)
+    - [A more complex example](#a-more-complex-example)
+- [Structure of this repository](#structure-of-this-repository)
 
 ---
 
