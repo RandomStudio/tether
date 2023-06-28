@@ -28,7 +28,7 @@ pub struct OutputPlug {
 /// This is the definition of an Input or Output Plug
 /// You should never use this directly; call finalize()
 /// to get a usable Plug
-enum PlugOptionsBuilder {
+pub enum PlugOptionsBuilder {
     InputPlugDefinition(InputPlug),
     OutputPlugDefinition(OutputPlug),
 }
