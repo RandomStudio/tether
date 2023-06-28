@@ -326,49 +326,6 @@ impl TetherAgent {
         }
     }
 
-    // pub fn create_input_plug(&self, definition: InputPlug) -> PlugDefinition {
-    //     let PlugDefinitionCommon { name, topic, qos } = definition.common;
-
-    //     match self.client.subscribe(&topic, qos) {
-    //         Ok(_res) => {
-    //             info!("Subscribed to topic {} OK", &topic);
-    //             let plug = PlugDefinition::InputPlug {
-    //                 common: PlugDefinitionCommon { name, topic, qos },
-    //             };
-    //             debug!("Creating plug: {:?}", &plug);
-    //             // self.input_plugs.push(plug);
-    //             Ok(plug)
-    //         }
-    //         Err(e) => {
-    //             error!("Error subscribing to topic {}: {:?}", &topic, e);
-    //             Err(())
-    //         }
-    //     }
-    // }
-
-    // pub fn create_output_plug(
-    //     &self,
-    //     name: &str,
-    //     qos: Option<i32>,
-    //     retain: Option<bool>,
-    //     override_topic: Option<&str>,
-    // ) -> Result<PlugDefinition, ()> {
-    //     let name = String::from(name);
-    //     let topic =
-    //         String::from(override_topic.unwrap_or(&build_topic(&self.role, &self.id, &name)));
-    //     let qos = qos.unwrap_or(1);
-    //     let retain = retain.unwrap_or(false);
-
-    //     let plug = PlugDefinition {
-    //         name,
-    //         topic,
-    //         qos,
-    //         retain,
-    //     };
-    //     debug!("Adding output plug: {:?}", &plug);
-    //     Ok(plug)
-    // }
-
     /// If a message is waiting return Plug Name, Message (String, Message)
     pub fn check_messages(&self) -> Option<(String, Message)> {
         if let Some(message) = self.receiver.try_iter().find_map(|m| m) {
