@@ -25,11 +25,9 @@ fn main() {
     let (role, id) = agent.description();
     info!("Created agent OK: {}, {}", role, id);
 
-    let empty_message_output =
-        PlugOptionsBuilder::create_output(&agent, "nothing").finalize(&agent);
-
-    let boolean_message_output = PlugOptionsBuilder::create_output(&agent, "one").finalize(&agent);
-    let custom_output = PlugOptionsBuilder::create_output(&agent, "two").finalize(&agent);
+    let empty_message_output = PlugOptionsBuilder::create_output("nothing").finalize(&agent);
+    let boolean_message_output = PlugOptionsBuilder::create_output("one").finalize(&agent);
+    let custom_output = PlugOptionsBuilder::create_output("two").finalize(&agent);
 
     for i in 1..=10 {
         info!("#{i}: Sending empty message...");
@@ -41,6 +39,7 @@ fn main() {
             .publish(&boolean_message_output, Some(&[bool.into()]))
             .unwrap();
 
+        info!("#{i}: Sending custom struct message...");
         let custom_message = CustomStruct {
             id: i,
             name: "hello".into(),

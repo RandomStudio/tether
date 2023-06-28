@@ -1,4 +1,4 @@
-use log::{error, info, warn};
+use log::{debug, error, info, warn};
 use mqtt::{Client, Message, MessageBuilder, Receiver};
 pub use paho_mqtt as mqtt;
 pub use rmp_serde;
@@ -10,82 +10,116 @@ use std::time::Duration;
 const TIMEOUT_SECONDS: u64 = 10;
 
 #[derive(Debug, Clone)]
+struct PlugOptionsCommon {
+    pub name: String,
+    pub topic: Option<String>,
+    pub qos: Option<i32>,
+}
+
+impl PlugOptionsCommon {
+    fn new(name: &str) -> Self {
+        PlugOptionsCommon {
+            name: name.into(),
+            topic: None,
+            qos: None,
+        }
+    }
+}
+
 pub struct PlugDefinitionCommon {
     pub name: String,
     pub topic: String,
     pub qos: i32,
 }
 
-pub struct InputPlug {
-    common: PlugDefinitionCommon,
+pub struct InputPlugOptions {
+    common: PlugOptionsCommon,
 }
 
-pub struct OutputPlug {
-    common: PlugDefinitionCommon,
-    retain: bool,
+pub struct OutputPlugOptions {
+    common: PlugOptionsCommon,
+    retain: Option<bool>,
 }
 
 /// This is the definition of an Input or Output Plug
 /// You should never use this directly; call finalize()
 /// to get a usable Plug
 pub enum PlugOptionsBuilder {
-    InputPlugDefinition(InputPlug),
-    OutputPlugDefinition(OutputPlug),
+    InputPlugOptions(InputPlugOptions),
+    OutputPlugOptions(OutputPlugOptions),
+}
+
+pub struct InputPlugDefinition {
+    common: PlugDefinitionCommon,
+}
+
+pub struct OutputPlugDefinition {
+    common: PlugDefinitionCommon,
+    retain: bool,
 }
 
 pub enum PlugDefinition {
-    InputPlugDefinition(InputPlug),
-    OutputPlugDefinition(OutputPlug),
+    InputPlugDefinition(InputPlugDefinition),
+    OutputPlugDefinition(OutputPlugDefinition),
+}
+
+impl PlugDefinition {
+    pub fn common(&self) -> &PlugDefinitionCommon {
+        match self {
+            PlugDefinition::InputPlugDefinition(plug) => &plug.common,
+            PlugDefinition::OutputPlugDefinition(plug) => &plug.common,
+        }
+    }
+
+    pub fn name(&self) -> &str {
+        &self.common().name
+    }
+
+    pub fn topic(&self) -> &str {
+        &self.common().topic
+    }
 }
 
 impl PlugOptionsBuilder {
-    fn common(&mut self) -> &mut PlugDefinitionCommon {
+    fn common(&mut self) -> &mut PlugOptionsCommon {
         match self {
-            PlugOptionsBuilder::InputPlugDefinition(plug) => &mut plug.common,
-            PlugOptionsBuilder::OutputPlugDefinition(plug) => &mut plug.common,
+            PlugOptionsBuilder::InputPlugOptions(plug) => &mut plug.common,
+            PlugOptionsBuilder::OutputPlugOptions(plug) => &mut plug.common,
         }
     }
 
     pub fn create_input(name: &str) -> PlugOptionsBuilder {
-        PlugOptionsBuilder::InputPlugDefinition(InputPlug {
-            common: PlugDefinitionCommon {
-                name: name.into(),
-                topic: default_subscribe_topic(&name),
-                qos: 1,
-            },
+        PlugOptionsBuilder::InputPlugOptions(InputPlugOptions {
+            common: PlugOptionsCommon::new(name),
         })
     }
 
-    pub fn create_output(tether_agent: &TetherAgent, name: &str) -> PlugOptionsBuilder {
-        PlugOptionsBuilder::OutputPlugDefinition(OutputPlug {
-            common: PlugDefinitionCommon {
-                name: name.into(),
-                topic: build_topic(&tether_agent.role, &tether_agent.id, &name),
-                qos: 1,
-            },
-            retain: false,
+    pub fn create_output(name: &str) -> PlugOptionsBuilder {
+        PlugOptionsBuilder::OutputPlugOptions(OutputPlugOptions {
+            common: PlugOptionsCommon::new(name),
+            retain: Some(false),
         })
     }
 
     pub fn qos(mut self, qos: i32) -> Self {
-        self.common().qos = qos;
+        self.common().qos = Some(qos);
         self
     }
 
     pub fn topic(mut self, override_topic: &str) -> Self {
-        self.common().topic = override_topic.into();
+        self.common().topic = Some(override_topic.into());
         self
     }
 
     pub fn retain(self, should_retain: bool) -> Self {
         match self {
-            Self::InputPlugDefinition(_) => {
+            Self::InputPlugOptions(_) => {
                 panic!("Cannot set retain flag on Input Plug / subscription")
             }
-            Self::OutputPlugDefinition(plug) => {
-                PlugOptionsBuilder::OutputPlugDefinition(OutputPlug {
+            Self::OutputPlugOptions(plug) => {
+                PlugOptionsBuilder::OutputPlugOptions(OutputPlugOptions {
                     common: plug.common,
-                    retain: should_retain,
+                    retain: Some(should_retain),
                 })
             }
         }
@@ -93,15 +127,44 @@ impl PlugOptionsBuilder {
 
     pub fn finalize(self, tether_agent: &TetherAgent) -> PlugDefinition {
         match self {
-            Self::InputPlugDefinition(plug) => {
-                let PlugDefinitionCommon { topic, qos, .. } = &plug.common;
+            Self::InputPlugOptions(plug) => {
+                let final_topic = plug
+                    .common
+                    .topic
+                    .unwrap_or(default_subscribe_topic(&plug.common.name));
+                let final_qos = plug.common.qos.unwrap_or(1);
+                debug!(
+                    "Attempt to subscribe for plug named {} ...",
+                    plug.common.name
+                );
                 tether_agent
                     .client
-                    .subscribe(&*topic, *qos)
-                    .expect(&format!("failed to subscribe to topic {}", topic));
-                PlugDefinition::InputPlugDefinition(plug)
+                    .subscribe(&final_topic, final_qos)
+                    .expect(&format!("failed to subscribe to topic {}", &final_topic));
+                PlugDefinition::InputPlugDefinition(InputPlugDefinition {
+                    common: PlugDefinitionCommon {
+                        name: plug.common.name,
+                        topic: final_topic,
+                        qos: final_qos,
+                    },
+                })
             }
-            Self::OutputPlugDefinition(plug) => PlugDefinition::OutputPlugDefinition(plug),
+            Self::OutputPlugOptions(plug) => {
+                let final_topic = plug.common.topic.unwrap_or(build_topic(
+                    &tether_agent.role,
+                    &tether_agent.id,
+                    &plug.common.name,
+                ));
+                let final_qos = plug.common.qos.unwrap_or(1);
+                PlugDefinition::OutputPlugDefinition(OutputPlugDefinition {
+                    common: PlugDefinitionCommon {
+                        name: plug.common.name,
+                        topic: final_topic,
+                        qos: final_qos,
+                    },
+                    retain: plug.retain.unwrap_or(false),
+                })
+            }
         }
     }
 }

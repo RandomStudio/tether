@@ -4,7 +4,7 @@ use env_logger::{Builder, Env};
 use log::{debug, info, warn};
 use rmp_serde::from_slice;
 use serde::Deserialize;
-use tether_agent::TetherAgent;
+use tether_agent::{PlugOptionsBuilder, TetherAgentOptionsBuilder};
 
 #[derive(Deserialize, Debug)]
 struct CustomMessage {
@@ -22,31 +22,39 @@ fn main() {
 
     debug!("Debugging is enabled; could be verbose");
 
-    let agent = TetherAgent::new("RustDemoAgent", Some("example"), None);
+    let tether_agent = TetherAgentOptionsBuilder::new("RustDemoAgent")
+        .id("example")
+        .finalize()
+        .expect("failed to init Tether agent");
 
-    agent.connect(None, None).expect("Failed to connect");
-
-    let input_one = agent.create_input_plug("one", None, None).unwrap();
-    let input_two = agent.create_input_plug("two", None, None).unwrap();
-    let input_empty = agent.create_input_plug("nothing", None, None).unwrap();
+    let input_one = PlugOptionsBuilder::create_input("one").finalize(&tether_agent);
+    debug!("input one {} = {}", input_one.name(), input_one.topic());
+    let input_two = PlugOptionsBuilder::create_input("two").finalize(&tether_agent);
+    debug!("input two {} = {}", input_two.name(), input_two.topic());
+    let input_empty = PlugOptionsBuilder::create_input("nothing").finalize(&tether_agent);
 
     info!("Checking messages every 1s, 10x...");
 
     for i in 1..10 {
         info!("#{i}: Checking for messages...");
-        if let Some((plug_name, message)) = agent.check_messages() {
-            if &input_one.name == plug_name.as_str() {
+        while let Some((plug_name, message)) = tether_agent.check_messages() {
+            debug!(
+                "Received a message topic {} => plug name {}",
+                message.topic(),
+                plug_name
+            );
+            if &input_one.name() == &plug_name {
                 info!(
                     "******** INPUT ONE:\n Received a message from plug named \"{}\" on topic {} with length {} bytes",
-                    input_one.name,
+                    input_one.name(),
                     message.topic(),
                     message.payload().len()
                 );
             }
-            if &input_two.name == plug_name.as_str() {
+            if &input_two.name() == &plug_name {
                 info!(
                     "******** INPUT TWO:\n Received a message from plug named \"{}\" on topic {} with length {} bytes",
-                    input_two.name,
+                    input_two.name(),
                     message.topic(),
                     message.payload().len()
                 );
@@ -63,10 +71,10 @@ fn main() {
                     }
                 };
             }
-            if &input_empty.name == plug_name.as_str() {
+            if &input_empty.name() == &plug_name {
                 info!(
                     "******** EMPTY MESSAGE:\n Received a message from plug named \"{}\" on topic {} with length {} bytes",
-                    input_empty.name,
+                    input_empty.name(),
                     message.topic(),
                     message.payload().len()
                 );
