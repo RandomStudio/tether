@@ -32,7 +32,7 @@ fn main() {
     let tether_agent = Arc::new(Mutex::new(
         TetherAgentOptionsBuilder::new("RustDemoAgent")
             .id("example")
-            .finalize()
+            .build()
             .expect("failed to init/connect"),
     ));
 
@@ -42,8 +42,8 @@ fn main() {
 
     // Here we call .lock() because it is OK to block while "setting up", connecting
     if let Ok(a) = tether_agent.lock() {
-        let _input_plug = PlugOptionsBuilder::create_input("one").finalize(&a);
-        output_plug = Some(PlugOptionsBuilder::create_output("one").finalize(&a));
+        let _input_plug = PlugOptionsBuilder::create_input("one").build(&a);
+        output_plug = Some(PlugOptionsBuilder::create_output("one").build(&a));
     } else {
         panic!("Error setting up Tether Agent!");
     }

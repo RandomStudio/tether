@@ -42,7 +42,7 @@ pub struct OutputPlugOptions {
 }
 
 /// This is the definition of an Input or Output Plug
-/// You should never use this directly; call finalize()
+/// You should never use this directly; call build()
 /// to get a usable Plug
 pub enum PlugOptionsBuilder {
     InputPlugOptions(InputPlugOptions),
@@ -125,7 +125,7 @@ impl PlugOptionsBuilder {
         }
     }
 
-    pub fn finalize(self, tether_agent: &TetherAgent) -> PlugDefinition {
+    pub fn build(self, tether_agent: &TetherAgent) -> PlugDefinition {
         match self {
             Self::InputPlugOptions(plug) => {
                 let final_topic = plug
@@ -232,7 +232,7 @@ impl TetherAgentOptionsBuilder {
         self
     }
 
-    pub fn finalize(self) -> Result<TetherAgent, ()> {
+    pub fn build(self) -> Result<TetherAgent, ()> {
         let broker_host = self.host.clone().unwrap_or("localhost".into());
         let broker_port = self.port.unwrap_or(1883);
 

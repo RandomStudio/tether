@@ -23,14 +23,14 @@ fn main() {
         .host("10.112.10.10")
         .username("connected.space")
         .password("connected.space")
-        .finalize()
+        .build()
         .expect("Failed to initialise and connect");
     let (role, id) = tether_agent.description();
     info!("Created agent OK: {}, {}", role, id);
 
-    let empty_message_output = PlugOptionsBuilder::create_output("nothing").finalize(&tether_agent);
-    let boolean_message_output = PlugOptionsBuilder::create_output("one").finalize(&tether_agent);
-    let custom_output = PlugOptionsBuilder::create_output("two").finalize(&tether_agent);
+    let empty_message_output = PlugOptionsBuilder::create_output("nothing").build(&tether_agent);
+    let boolean_message_output = PlugOptionsBuilder::create_output("one").build(&tether_agent);
+    let custom_output = PlugOptionsBuilder::create_output("two").build(&tether_agent);
 
     for i in 1..=10 {
         info!("#{i}: Sending empty message...");

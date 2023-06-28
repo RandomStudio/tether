@@ -24,14 +24,14 @@ fn main() {
 
     let tether_agent = TetherAgentOptionsBuilder::new("RustDemoAgent")
         .id("example")
-        .finalize()
+        .build()
         .expect("failed to init Tether agent");
 
-    let input_one = PlugOptionsBuilder::create_input("one").finalize(&tether_agent);
+    let input_one = PlugOptionsBuilder::create_input("one").build(&tether_agent);
     debug!("input one {} = {}", input_one.name(), input_one.topic());
-    let input_two = PlugOptionsBuilder::create_input("two").finalize(&tether_agent);
+    let input_two = PlugOptionsBuilder::create_input("two").build(&tether_agent);
     debug!("input two {} = {}", input_two.name(), input_two.topic());
-    let input_empty = PlugOptionsBuilder::create_input("nothing").finalize(&tether_agent);
+    let input_empty = PlugOptionsBuilder::create_input("nothing").build(&tether_agent);
 
     info!("Checking messages every 1s, 10x...");
 

@@ -28,13 +28,13 @@ fn main() {
     let tether_agent = Arc::new(Mutex::new(
         TetherAgentOptionsBuilder::new("RustDemoAgent")
             .id("example")
-            .finalize()
+            .build()
             .expect("failed to init/connect"),
     ));
 
     match tether_agent.lock() {
         Ok(a) => {
-            let _input_plug = PlugOptionsBuilder::create_output("one").finalize(&a);
+            let _input_plug = PlugOptionsBuilder::create_output("one").build(&a);
         }
         Err(e) => {
             panic!("Failed to acquire lock for Tether Agent setup: {}", e);
