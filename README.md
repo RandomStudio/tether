@@ -183,7 +183,7 @@ Some examples of Agent roles:
   - `"lidar-person-counter"` for presence detection, e.g. [lidar-person-counter](https://github.com/RandomStudio/lidar-person-counter)
   - `"gui"` for user interface control, e.g. [tether-egui](https://github.com/RandomStudio/tether-egui)
   - `"poseDetection"` for tracking people
-  - `"colourDetection"` for detecting dominant colours from a webcam
+  - `"videoColourFinder"` for detecting dominant colours from a webcam, e.g. [Tether Colourfinder](https://github.com/RandomStudio/tether-colourfinder-web)
   - `"midi"` for turning MIDI input from a controller or keyboard into standardised Tether messages, e.g. [tether-midi-mediator](https://github.com/RandomStudio/tether-midi-mediator/tree/main)
 - Mostly output:
   - `"soundscape"` for output of audio driven by remote messages, e.g. [tether-soundscape-rs](https://github.com/RandomStudio/tether-soundscape-rs)
