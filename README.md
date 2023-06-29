@@ -31,6 +31,7 @@ Specifically, Tether is a standardised way of using existing, well established t
     - [Topic pattern matching](#topic-pattern-matching)
   - [C. The MessagePack Payload](#c-the-messagepack-payload)
 - [Goals and benefits of using Tether](#goals-and-benefits-of-using-tether)
+  - [Debugging and Troubleshooting](#debugging-and-troubleshooting)
   - [System diagram examples](#system-diagram-examples)
     - [A simple example](#a-simple-example)
     - [A more complex example](#a-more-complex-example)
@@ -259,15 +260,29 @@ Unlike JSON, you can even provide "bare" data instead of nested objects. For exa
 
 As long as client applications conform to the standards outlined here, they will be able to function as Tether Agents, publishing and subscribing to messages in a Tether system.
 
-The aim is to make it quick and easy to get messaging working within a distributed system, even with very diverse programming languages, hardware and software applications.
-
-The combination of MQTT and MessagePack means that a Tether system is just about the _easiest and quickest_ way to get parts of a distributed system talking to each other. It requires very little code, minimal APIs and very little network configuration.
+The aim is to make it quick and easy to get messaging working within a distributed system, even with very diverse programming languages, hardware and software applications. The combination of MQTT and MessagePack means that a Tether system is just about the _easiest and quickest_ way to get parts of a distributed system talking to each other. It requires very little code, minimal APIs and very little network configuration.
 
 Other approaches (HTTP requests, websocket servers, OSC, etc.) may sometimes appear easier to reach for in certain circumstances, but typically do not offer the flexibility of a "pub/sub" messaging system or a structured (but very transparent) data structure in the messages.
 
-Tether systems are super easy to debug because all messages can be subscribed to without affecting other Agents. Recording and simulating data (including "playback") is also easy to implement, which is important when developing systems that would otherwise require a lot of specialised hardware and software to be running all at once.
-
 The technology can be integrated very easily in everything from websites to microcontrollers to game engines. Translating in and out from other protocols/transports (e.g. MIDI, OSC, serial data) is convenient enough that software which is "not Tether-native" can be plugged in without much effort.
+
+### Debugging and Troubleshooting
+
+Tether systems are super easy to debug - when compared to the usual "hacked together" distributed system - because all messages can be subscribed to without affecting other Agents. Messages do not get "consumed", because the MQTT Broker is responsible for duplicating and queueing things behind the scenes.
+
+Use [Tether Egui](https://github.com/RandomStudio/tether-egui) to monitor, decode and simulate messages with an easy-to-use desktop app.
+
+![Tether Egui screenshot](./docs/tether-egui.gif)
+
+Or use the [Tether CLI](https://github.com/RandomStudio/tether/tree/main/utilities/cli) utilities to:
+
+- Subscribe to all messages passing through the MQTT Broker without affecting anything: `tether-receive --host localhost`
+- List all known Agents, Topics and Plugs on the system: `tether-topics --host localhost`
+- Record data from one or multiple Agents (even a whole system!) using `tether-record` and `tether-playback`
+
+![Tether Topics CLI screenshot](./docs/tether-topics.png)
+
+The ability to use simulated data (including timing information!) when developing systems that would otherwise require a lot of specialised hardware and software to be running all at once.
 
 ### System diagram examples
 
