@@ -4,7 +4,7 @@ pub use paho_mqtt as mqtt;
 pub use rmp_serde;
 use rmp_serde::to_vec_named;
 pub use serde;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::time::Duration;
 
 const TIMEOUT_SECONDS: u64 = 10;
@@ -26,6 +26,7 @@ impl PlugOptionsCommon {
     }
 }
 
+#[derive(Serialize, Deserialize, Debug)]
 pub struct PlugDefinitionCommon {
     pub name: String,
     pub topic: String,
@@ -49,15 +50,18 @@ pub enum PlugOptionsBuilder {
     OutputPlugOptions(OutputPlugOptions),
 }
 
+#[derive(Serialize, Deserialize, Debug)]
 pub struct InputPlugDefinition {
     common: PlugDefinitionCommon,
 }
 
+#[derive(Serialize, Deserialize, Debug)]
 pub struct OutputPlugDefinition {
     common: PlugDefinitionCommon,
     retain: bool,
 }
 
+#[derive(Serialize, Deserialize, Debug)]
 pub enum PlugDefinition {
     InputPlugDefinition(InputPlugDefinition),
     OutputPlugDefinition(OutputPlugDefinition),
@@ -68,6 +72,13 @@ impl PlugDefinition {
         match self {
             PlugDefinition::InputPlugDefinition(plug) => &plug.common,
             PlugDefinition::OutputPlugDefinition(plug) => &plug.common,
+        }
+    }
+
+    pub fn common_mut(&mut self) -> &mut PlugDefinitionCommon {
+        match self {
+            PlugDefinition::InputPlugDefinition(plug) => &mut plug.common,
+            PlugDefinition::OutputPlugDefinition(plug) => &mut plug.common,
         }
     }
 
@@ -177,6 +188,7 @@ pub struct TetherAgent {
     receiver: Receiver<Option<Message>>,
 }
 
+#[derive(Clone)]
 pub struct TetherAgentOptionsBuilder {
     role: String,
     id: Option<String>,
@@ -189,7 +201,7 @@ pub struct TetherAgentOptionsBuilder {
 
 impl TetherAgentOptionsBuilder {
     /// Initialise Tether Options struct with default options; call other methods to customise.
-    /// Call `finalize()` to get the actual TetherAgent instance (and connect automatically, by default)
+    /// Call `build()` to get the actual TetherAgent instance (and connect automatically, by default)
     pub fn new(role: &str) -> Self {
         TetherAgentOptionsBuilder {
             role: String::from(role),
@@ -260,7 +272,7 @@ impl TetherAgentOptionsBuilder {
         };
 
         if self.auto_connect {
-            match agent.connect(self.username, self.password) {
+            match agent.connect(&self) {
                 Ok(()) => Ok(agent),
                 Err(_) => Err(()),
             }
@@ -295,14 +307,12 @@ impl TetherAgent {
         self.id = id.into();
     }
 
-    pub fn connect(
-        &self,
-        user: Option<String>,
-        password: Option<String>,
-    ) -> Result<(), mqtt::Error> {
+    pub fn connect(&self, options: &TetherAgentOptionsBuilder) -> Result<(), mqtt::Error> {
+        let username = options.clone().username.unwrap_or("tether".into());
+        let password = options.clone().password.unwrap_or("sp_ceB0ss!".into());
         let conn_opts = mqtt::ConnectOptionsBuilder::new()
-            .user_name(user.unwrap_or(String::from("tether")))
-            .password(password.unwrap_or(String::from("sp_ceB0ss!")))
+            .user_name(username)
+            .password(password)
             .connect_timeout(Duration::from_secs(TIMEOUT_SECONDS))
             .keep_alive_interval(Duration::from_secs(TIMEOUT_SECONDS))
             // .mqtt_version(mqtt::MQTT_VERSION_3_1_1)
