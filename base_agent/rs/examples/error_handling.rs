@@ -47,4 +47,14 @@ fn main() {
     //     Ok(()) => panic!("Encoding: This shouldn't work!"),
     //     Err(e) => warn!("Got an encoding error as expected: {e:?}"),
     // }
+
+    let working_tether_agent = TetherAgentOptionsBuilder::new("tester")
+        .host("tether-io.dev")
+        .build()
+        .expect("this to connect to test server");
+
+    let bad_payload: &[u8; 9] = &[0x87, 0xA3, 0x69, 0x6E, 0x74, 0x01, 0xA5, 0x66, 0x6C];
+    working_tether_agent
+        .publish(&output, Some(bad_payload))
+        .expect("this will produce an error when decoding, but not checked by library");
 }
