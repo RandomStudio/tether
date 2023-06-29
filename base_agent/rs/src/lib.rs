@@ -244,7 +244,7 @@ impl TetherAgentOptionsBuilder {
         self
     }
 
-    pub fn build(self) -> Result<TetherAgent, ()> {
+    pub fn build(self) -> anyhow::Result<TetherAgent> {
         let broker_host = self.host.clone().unwrap_or("localhost".into());
         let broker_port = self.port.unwrap_or(1883);
 
@@ -274,7 +274,7 @@ impl TetherAgentOptionsBuilder {
         if self.auto_connect {
             match agent.connect(&self) {
                 Ok(()) => Ok(agent),
-                Err(_) => Err(()),
+                Err(e) => Err(e.into()),
             }
         } else {
             warn!("Auto-connect disabled; you must call .connect explicitly");
@@ -356,7 +356,7 @@ impl TetherAgent {
         &self,
         plug_definition: &PlugDefinition,
         payload: Option<&[u8]>,
-    ) -> Result<(), ()> {
+    ) -> anyhow::Result<()> {
         match plug_definition {
             PlugDefinition::InputPlugDefinition(_) => {
                 panic!("You cannot publish using an Input Plug")
@@ -371,7 +371,7 @@ impl TetherAgent {
                     .finalize();
                 if let Err(e) = self.client.publish(message) {
                     error!("Error publishing: {:?}", e);
-                    Err(())
+                    Err(e.into())
                 } else {
                     Ok(())
                 }
@@ -384,8 +384,8 @@ impl TetherAgent {
         &self,
         plug_definition: &PlugDefinition,
         data: T,
-    ) -> Result<(), ()> {
-        let payload = to_vec_named(&data).unwrap();
+    ) -> anyhow::Result<()> {
+        let payload = to_vec_named(&data)?;
         self.publish(plug_definition, Some(&payload))
     }
 }

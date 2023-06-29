@@ -20,7 +20,7 @@ use std::{
     time::Duration,
 };
 
-use tether_agent::{PlugOptionsBuilder, TetherAgent, TetherAgentOptionsBuilder};
+use tether_agent::{PlugOptionsBuilder, TetherAgentOptionsBuilder};
 
 fn main() {
     let check_interval = 0.01;

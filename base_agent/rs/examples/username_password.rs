@@ -3,7 +3,7 @@ use std::{thread, time::Duration};
 use env_logger::{Builder, Env};
 use log::{debug, info};
 use serde::Serialize;
-use tether_agent::{PlugOptionsBuilder, TetherAgent, TetherAgentOptionsBuilder};
+use tether_agent::{PlugOptionsBuilder, TetherAgentOptionsBuilder};
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
