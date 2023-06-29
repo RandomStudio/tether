@@ -20,7 +20,7 @@ use std::{
     time::Duration,
 };
 
-use tether_agent::TetherAgent;
+use tether_agent::{PlugOptionsBuilder, TetherAgent, TetherAgentOptionsBuilder};
 
 fn main() {
     let check_interval = 0.01;
@@ -29,28 +29,26 @@ fn main() {
 
     println!("Rust Tether Agent threaded publish-while-consuming example");
 
-    let agent = Arc::new(Mutex::new(TetherAgent::new(
-        "RustDemoAgent",
-        Some("example"),
-        None,
-    )));
+    let tether_agent = Arc::new(Mutex::new(
+        TetherAgentOptionsBuilder::new("RustDemoAgent")
+            .id("example")
+            .build()
+            .expect("failed to init/connect"),
+    ));
+
+    println!("Set up tether agent OK");
 
     let mut output_plug = None;
 
     // Here we call .lock() because it is OK to block while "setting up", connecting
-    if let Ok(a) = agent.lock() {
-        a.connect(None, None).expect("failed to connect");
-        a.create_input_plug("one", None, None)
-            .expect("failed to create Input Plug");
-        let plug = a
-            .create_output_plug("one", None, None, None)
-            .expect("failed to create Output Plug");
-        output_plug = Some(plug);
+    if let Ok(a) = tether_agent.lock() {
+        let _input_plug = PlugOptionsBuilder::create_input("one").build(&a);
+        output_plug = Some(PlugOptionsBuilder::create_output("one").build(&a));
     } else {
         panic!("Error setting up Tether Agent!");
     }
 
-    let receiver_agent = Arc::clone(&agent);
+    let receiver_agent = Arc::clone(&tether_agent);
     thread::spawn(move || {
         println!("Checking messages every {check_interval}s...");
 
@@ -85,7 +83,7 @@ fn main() {
         }
     });
 
-    let sending_agent = Arc::clone(&agent);
+    let sending_agent = Arc::clone(&tether_agent);
     println!(
         "Sending a message, every {}s, exactly {}x times...",
         publish_interval, publish_count_target
