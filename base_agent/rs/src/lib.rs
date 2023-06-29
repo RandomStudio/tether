@@ -385,8 +385,13 @@ impl TetherAgent {
         plug_definition: &PlugDefinition,
         data: T,
     ) -> anyhow::Result<()> {
-        let payload = to_vec_named(&data)?;
-        self.publish(plug_definition, Some(&payload))
+        match to_vec_named(&data) {
+            Ok(payload) => self.publish(plug_definition, Some(&payload)),
+            Err(e) => {
+                error!("Failed to encode: {e:?}");
+                Err(e.into())
+            }
+        }
     }
 }
 
