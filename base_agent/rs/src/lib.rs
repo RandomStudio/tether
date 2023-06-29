@@ -1,5 +1,5 @@
 use log::{debug, error, info, warn};
-use mqtt::{Client, Message, MessageBuilder, Receiver};
+use mqtt::{server_response, Client, Message, MessageBuilder, Receiver};
 pub use paho_mqtt as mqtt;
 pub use rmp_serde;
 use rmp_serde::to_vec_named;
@@ -136,7 +136,7 @@ impl PlugOptionsBuilder {
         }
     }
 
-    pub fn build(self, tether_agent: &TetherAgent) -> PlugDefinition {
+    pub fn build(self, tether_agent: &TetherAgent) -> anyhow::Result<PlugDefinition> {
         match self {
             Self::InputPlugOptions(plug) => {
                 let final_topic = plug
@@ -148,17 +148,20 @@ impl PlugOptionsBuilder {
                     "Attempt to subscribe for plug named {} ...",
                     plug.common.name
                 );
-                tether_agent
-                    .client
-                    .subscribe(&final_topic, final_qos)
-                    .expect("failed to subscribe!");
-                PlugDefinition::InputPlugDefinition(InputPlugDefinition {
-                    common: PlugDefinitionCommon {
-                        name: plug.common.name,
-                        topic: final_topic,
-                        qos: final_qos,
-                    },
-                })
+                match tether_agent.client.subscribe(&final_topic, final_qos) {
+                    Ok(res) => {
+                        debug!("This topic was fine: --{final_topic}--");
+                        debug!("Server respond OK for subscribe: {res:?}");
+                        Ok(PlugDefinition::InputPlugDefinition(InputPlugDefinition {
+                            common: PlugDefinitionCommon {
+                                name: plug.common.name,
+                                topic: final_topic,
+                                qos: final_qos,
+                            },
+                        }))
+                    }
+                    Err(e) => Err(e.into()),
+                }
             }
             Self::OutputPlugOptions(plug) => {
                 let final_topic = plug.common.topic.unwrap_or(build_topic(
@@ -167,14 +170,15 @@ impl PlugOptionsBuilder {
                     &plug.common.name,
                 ));
                 let final_qos = plug.common.qos.unwrap_or(1);
-                PlugDefinition::OutputPlugDefinition(OutputPlugDefinition {
+                // TODO: check valid topic before assuming OK?
+                Ok(PlugDefinition::OutputPlugDefinition(OutputPlugDefinition {
                     common: PlugDefinitionCommon {
                         name: plug.common.name,
                         topic: final_topic,
                         qos: final_qos,
                     },
                     retain: plug.retain.unwrap_or(false),
-                })
+                }))
             }
         }
     }
