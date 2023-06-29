@@ -1,45 +1,130 @@
 # Tether
 
-A standardised way of using [MQTT](https://mqtt.org/) (for message publishing and subscribing) and [MessagePack](https://msgpack.org/index.html) (for serialised data in message payloads).
+Instead of trying to find (or build) the One True Best Creative Coding Tool, we decided to find a way to make the tools we were already using (and the ones we didn't even know about yet) work together.
 
-Also, a set of tools and conventions built around these standards, to make it easy to set up distributed systems where more than one piece of software needs to communicate with others in a coordinated way, whether on the same host or multiple hosts/devices.
+By using Tether, we can approach digital art/media installations as **distributed systems**, applying a **publish / subscribe pattern** and **event-based programming** to coordinate the independent pieces of software and hardware that commonly comprise these systems.
 
-The Tether approach is about abstracting the underlying hardware and software so that everything from the point of view of the "system" is an **Agent** that can communicate using standardised **Messages**.
+Specifically, Tether is a standardised way of using existing, well established technologies such as [MQTT](https://mqtt.org/) (for messaging) and [MessagePack](https://msgpack.org/index.html) (for serialised data).
 
-- [What defines a Tether system](#what-defines-a-tether-system)
-  - [1. The Broker](#1-the-broker)
-    - [Why MQTT?](#why-mqtt)
+---
+
+## Table of Contents
+
+- [Quick start](#quick-start)
+  - [GUI](#gui)
+  - [CLI](#cli)
+- [Understanding Tether](#understanding-tether)
+  - [Agents](#agents)
+  - [Plugs](#plugs)
+  - [Publish/Subscribe](#publishsubscribe)
+- [Formally defining a Tether System](#formally-defining-a-tether-system)
+  - [A. The MQTT Broker](#a-the-mqtt-broker)
+    - [Why MQTT specifically?](#why-mqtt-specifically)
     - [Where is my Broker?](#where-is-my-broker)
     - [Performance considerations](#performance-considerations)
     - [Retained messages](#retained-messages)
-  - [2. The Three Part Topic](2-the-three-part-topic)
-    - [Role](#agent-role)
-    - [ID or Group](#id-or-group)
-    - [Plug Name](#plug-name)
-    - [Putting it all together: Topic pattern matching](#putting-it-all-together-topic-pattern-matching)
-  - [3. MessagePack](#3-messagepack)
+  - [B. The Three Part Topic](#b-the-three-part-topic)
+    - [Topic parts](#topic-parts)
+      - [Part 1: Agent/Role](#part-1-agent-or-role)
+      - [Part 2: ID/Group](#part-2-id-or-group)
+      - [Part 3: Plug](#part-3-plug)
+    - [Topic pattern matching](#topic-pattern-matching)
+  - [C. The MessagePack Payload](#c-the-messagepack-payload)
 - [Goals and benefits of using Tether](#goals-and-benefits-of-using-tether)
-  - [Example with diagrams](#example)
-  - [Ecosystem](#ecosystem)
+  - [Debugging and Troubleshooting](#debugging-and-troubleshooting)
+  - [System diagram examples](#system-diagram-examples)
+    - [A simple example](#a-simple-example)
+    - [A more complex example](#a-more-complex-example)
 - [Structure of this repository](#structure-of-this-repository)
 
 ---
 
-## What defines a Tether system
+## Quick start
 
-To make a Tether system, the following conventions are applied:
+The most basic Tether system comprises:
 
-1. A single MQTT broker with a known IP address or hostname that is reachable by all Tether agents
-2. A standardised, 3 part topic route convention (`agent-role/grouping-or-id/plug-name`)
-3. The expectation that MessagePack will be used for the contents of the messages
+1. An MQTT broker (see [brokers/README](brokers/README.md) for instructions on setting one up)
+2. At least one Tether Agent capable of _publishing_ messages encoded in MessagePack format
+3. At least one Tether Agent capable of _receiving (subscribing to)_ messages, decoding in MessagePack format
 
-### 1. The Broker
+### GUI
 
-#### Why MQTT?
+If you'd like to use a graphical / desktop application to test out Tether, try:
 
-- Widely-supported standard, especially for IOT and distributed systems
-- Supports flexible publish/subscribe patterns (one to one, one to many, many to many, etc.)
-- Works via TCP sockets as well as WebSocket; therefore usable from many different environments and programming languages, as well as the browser
+- [Tether Egui](https://github.com/RandomStudio/tether-egui)
+
+Tether Egui acts as both an Agent that publishes (by default, as "gui") but also subscribes to all topics (by default) and tries to decode the MessagePack contents. So you can use a single instance of Tether Egui to simulate an entire (very basic) Tether system, provided you are also running an MQTT Broker on your system.
+
+### CLI
+
+Alternatively, command-line utilities are provided [here](./utilities/cli) (with instructions for installing them)
+
+- `tether-send`: by default, publishes messages as the Agent "tether-send"
+- `tether-receive`: subscribes to messages on all topics (by default) and tries to decode the MessagePack payload of each one
+
+You can use `tether-send` in combination with `tether-receive` to simulate a very simple Tether system. You can use the publicly-available MQTT broker `tether-io.dev:1883` by passing `--host tether-io.dev` if you don't want the hassle of setting up your own MQTT Broker.
+
+---
+
+## Understanding Tether
+
+The Tether approach is about abstracting the underlying hardware and software so that everything from the point of view of the "system" is an **Agent** that can communicate using standardised **Messages**.
+
+### Agents
+
+The best way to describe a Tether System is not to start with message brokers, topics and protocols; it's best to start by talking about **Agents**.
+
+Agents in a Tether system are very much like Actors in an [Actor Model](https://en.wikipedia.org/wiki/Actor_model) for concurrent computing.
+
+Generally, every piece of software in a Tether system is an Agent. An Agent should have a single well-defined role, e.g. "publish tracking data" or "output sounds".
+
+Agents can be written in various programming languages and they could be running on the same host device or multiple devices (PCs, microcontrollers) - but they all communicate to each other in the same standardised way.
+
+### Plugs
+
+**Agents** are at the _top_ or most _general_ level of the Tether system hierarchy. At the _bottom_ or most _fine-grained_ level, we try to separate "types" of messages - we call these **Plugs**.
+
+Plugs define the "end point" of each message type - either its destination or its source.
+
+Agents might be _sending_ one or more "types" of messages - we call these **Output Plugs**. Other Agents might be _receiving_ one or more "types" of message - we call these **Input Plugs**. An Agent might have Output Plug(s) or Input Plug(s) or a combination of both. One agent can therefore have multiple Plugs.
+
+Although we can't really enforce it, a single Plug should only send/receive messages of a single "type" - format or schema. For example, if your TrackingData Plug always sends 2-element arrays of numbers that represent `[x,y]` coordinates in the range `[0;1]`, then you shouldn't expect to see a message like `{ "position": { x: 0, y: 1 }}` or an empty message.
+
+### Publish/Subscribe
+
+In a Tether System, we don't connect Agents to each other _directly_.
+
+While it is _usual_ for each Output Plug to have at least one (or more) corresponding Input Plug at the "other end", we don't enforce this or assume that this is the case before things can start running.
+
+Instead, we rely on the so-called [publish/subscribe pattern](https://en.wikipedia.org/wiki/Publish%E2%80%93subscribe_pattern) ("Pub/Sub"), a well-established approach that allows for flexible network topologies and an "event-based" architecture. It is most commonly used in distributed systems; for example, [Amazon AWS describes the benefits](https://aws.amazon.com/pub-sub-messaging/benefits/) as follows:
+
+> In modern cloud architecture, applications are decoupled into smaller, independent building blocks that are easier to develop, deploy and maintain. Publish/Subscribe (Pub/Sub) messaging provides instant event notifications for these distributed applications.
+
+> The Publish Subscribe model enables event-driven architectures and asynchronous parallel processing, while improving performance, reliability and scalability.
+
+In our experience, this is a good fit for on-site digital art/media "installations" as well, since these are often composed of multiple pieces of software and hardware devices. These individual pieces (we call them **Agents**, remember?) are often completely independent. They run in parallel, and they might start and stop at different times. They may be written in different programming languages and some of them might not allow any direct programmatic integration at all (SDKs or APIs) - but they all need to communicate with one another somehow.
+
+Careful coordination of all the parts is what allows us to build systems that function as complete "experiences" - robust and seamless. A common messaging system allows us to pick and choose the hardware and software best suited for each task, and handle the communication issues separately.
+
+In a Tether System, as with all Pub/Sub systems, messages are organised under "topics". We are a little more strict about how we name these topics, so that the concepts of Agents and Plugs are represented in the topics themselves.
+
+Finally, note that this is a _push_ messaging system. Therefore, no polling is required, and Agents need to be prepared to handle messages whenever they come in.
+
+## Formally defining a Tether System
+
+To make a Tether system, the following conventions (A, B, C) are applied:
+
+- A: All communication passes through a MQTT message broker
+- B: Apply a standardised, 3 part topic route convention (`agent/id/plug`)
+- C: MessagePack is used for the contents of the messages
+
+### A: The MQTT Broker
+
+#### Why MQTT specifically?
+
+- Widely-supported standard for Pub/Sub messaging, especially for IOT and distributed systems
+- Supports flexible publish/subscribe patterns (one to one, one to many, many to many, etc.) and efficient queueing of messages to facilitate this
+- Works via standard TCP sockets as well as WebSocket; therefore usable from many different environments and programming languages, as well as the browser
 
 #### Where is my broker?
 
@@ -55,11 +140,11 @@ Or mix it up a little: a powerful machine might host the broker as well as some 
 
 Message Brokers such as Mosquitto are designed for extremely high throughput (tens of thousands of messages per second) and availability, so the broker itself is seldom a bottleneck. Using wired connections (ethernet) where possible and reducing unnecessary network traffic are good practices. Having a dedicated "server" host which runs the broker - and nothing else - is not required but may be useful in some scenarios.
 
-MQTT provides QOS (Quality of Service) levels to help you balance reliability/throughput for publishing and/or subscribing. There are three levels:
+MQTT provides QOS (Quality of Service) levels to help you balance **reliability** vs **latency** for publishing and/or subscribing. There are three levels:
 
 - At most once (0)
 - At least once (1)
-- Exactly once (2).
+- Exactly once (2)
 
 We default to QOS level 1 most of the time, but level 0 can be useful for high-frequency data where you don't mind missing a message or two, and level 2 can be useful for critical messages (state or events) that don't happen often but need solid guarantees for delivery.
 
@@ -69,23 +154,27 @@ Read more about QOS [here](https://www.hivemq.com/blog/mqtt-essentials-part-6-mq
 
 One very useful feature of MQTT is the ability to mark messages as "retained" - usually for as long as the Broker itself is running.
 
-This can be useful for storing configuration or state information:
+This can be useful for storing configuration or state information, almost like a database or a web server:
 
 - Whenever state or config data changes, you only need to publish it once. And you can do this at any time, not needing to worry which Agents may or may not be "listening" at that moment.
 - Agents subscribed to the topic will get the latest version of the data as soon as they subscribe, e.g. on (re)connection. The Broker re-sends the message automatically.
 - The latest version of the data (message) can be read at any time, without affecting any other subscribers (the message will not be "consumed").
 
-### 2. The Three Part Topic
+### B: The Three Part Topic
 
-### `role` / `id` / `plug`
+MQTT Topics can be of varying length (`one`, `one/two` and `something/something/foo/bar/baz` are all valid topics with 1, 2 or 5 parts respectively).
 
-#### Agent _Role_
+Tether is all about naming things carefully. So we keep things standard.
 
-An **agent** is simply a way of defining some "part" of a Tether system. You could think of it as an "actor" in an Actor Model.
+Topics in Tether are therefore always composed of exactly 3 parts: `agent` / `id` / `plug`
 
-It is usually a single piece of software. Multiple agents (even _all_ of them!) might be running on one host, or the agents are distributed between multiple microcontrollers or Mac/Win/Linux hosts.
+Or, to be more descriptive: `"agent role"` / `"id or group"` / `"plug name"`. Notice that the order of the parts moves from most general (the Agent) to most specific (the Plug) as you go from left to right.
 
-Each Agent is therefore expected to have a single "role" in the system. A short indication of the role is used as the top level of the topic hierarchy.
+#### Topic Parts
+
+##### Part 1: Agent or Role
+
+Each Agent is expected to have a single "role" in the system. A short indication/naming of the role is used as the top level of the topic hierarchy.
 
 Some examples of Agent roles:
 
@@ -94,18 +183,17 @@ Some examples of Agent roles:
   - `"lidar-person-counter"` for presence detection, e.g. [lidar-person-counter](https://github.com/RandomStudio/lidar-person-counter)
   - `"gui"` for user interface control, e.g. [tether-egui](https://github.com/RandomStudio/tether-egui)
   - `"poseDetection"` for tracking people
-  - `"colourDetection"` for detecting dominant colours from a webcam
+  - `"videoColourFinder"` for detecting dominant colours from a webcam, e.g. [Tether Colourfinder](https://github.com/RandomStudio/tether-colourfinder-web)
   - `"midi"` for turning MIDI input from a controller or keyboard into standardised Tether messages, e.g. [tether-midi-mediator](https://github.com/RandomStudio/tether-midi-mediator/tree/main)
 - Mostly output:
   - `"soundscape"` for output of audio driven by remote messages, e.g. [tether-soundscape-rs](https://github.com/RandomStudio/tether-soundscape-rs)
   - `"visualisation"` could cover a range of screen-based graphical output, either via a browser frontend or some native application
+  - `"scheduler"` for emit off/on notifications for processes on a schedule, e.g [tether-scheduler](https://github.com/RandomStudio/tether-scheduler)
 - Both input and output
   - `"brain"` is a very common agent role in most of our installations. This is a process dedicated to managing state and responding to events (e.g. from sensors or time-based) and generating other events (controlling output, starting timelines, etc.). Usually these are very customised for the given project.
-  - `"lidarConsolidation"` for taking sensor input (in this case, one or more "lidar2d" agents) and running clustering + perspective transformation algorithms, then outputting nicely normalised "tracking" data.
-- Utilities
-  - `"scheduler"` for managing processes (or even another process manager) on a schedule, e.g [tether-scheduler](https://github.com/RandomStudio/tether-scheduler)
+  - `"lidarConsolidation"` for taking sensor input (in this case, one or more "lidar2d" agents) and running clustering + perspective transformation algorithms, then outputting nicely normalised "tracking" data. See [Tether Lidar2D Consolidator](https://github.com/RandomStudio/tether-lidar2d-consolidation-rs)
 
-### _ID_ or Group
+#### Part 2: ID or Group
 
 Every agent should have a single role, but in many cases there may be multiple instances of the same type of agent - to distinguish these as necessary, the second level of the topic hierarchy is therefore an **identifier**.
 
@@ -117,7 +205,7 @@ Other times, it's useful to distinguish instances. For example, the identifier p
 - MAC ID (unique network address) from microcontrollers. This could be a convenient way to distinguish instances without having to hardcode information on each device.
 - A grouping that makes sense in your installation. It might be useful to have multiple instances share the same identifier.
 
-#### _Plug_ Name
+#### Part 3: Plug
 
 Any given Agent might publish one or more distinct types of messages. This last level of the topic hierarchy we name the **plug**.
 
@@ -130,9 +218,11 @@ The concept of a "plug" is simply a convention, such that:
   - an **Output Plug**: publish on a particular topic
   - ..._never both_
 
-### Putting it all together: topic pattern matching
+### Topic pattern matching
 
-MQTT topics are broken up by zero or multiple forward-slash `/` characters. In Tether systems, we **always** have three-part topics, hence `role/id/plug`.
+Let's put these "parts" together by describing how MQTT matches actual topics (for published messages) to topic patterns (for subscribing).
+
+MQTT topics are broken up by zero or multiple forward-slash `/` characters. In Tether systems, we **always** have three-part topics, hence `agent/id/plug`.
 
 Topics subscriptions can use wildcards. Most importantly:
 
@@ -158,7 +248,7 @@ In the JS Base Agent, we create an InputPlug or OutputPlug object that provides 
 
 In other languages, it may make more sense to use utility functions that can parse the topic to give you **role**, **ID** or just **plugName** depending on your matching requirements.
 
-### 3. MessagePack
+### C: The MessagePack Payload
 
 We chose MessagePack because it represents a good compromise in terms of performance, message size and the ability to structure data (e.g. in nested objects with named keys, and/or arrays), but without needing a schema in order to serialise/deserialise data. Has most of the obvious advantages of JSON but more efficient: MessagePack data is encoded directly as bytes rather than a "String".
 
@@ -170,31 +260,74 @@ Unlike JSON, you can even provide "bare" data instead of nested objects. For exa
 
 As long as client applications conform to the standards outlined here, they will be able to function as Tether Agents, publishing and subscribing to messages in a Tether system.
 
-The aim is to make it quick and easy to get messaging working within a distributed system, even with very diverse programming languages, hardware and software applications.
-
-### Example
-
-What your system diagram looks like:
-![System View](./docs/system-view.png)
-
-> There are multiple protocols and transports. Communication needs to happen between some parts and not others, and these may be on different hosts. Some data needs to pass through multiple stages before becoming useful. How should these parts find each other? What protocols should they use?
-
-What it looks like from the point of view of the Tether system:
-![Tether View](./docs/tether-view.png)
-
-> Everything connects to a single hub: the MQTT Broker. Agents only need to concern themselves with publishing certain messages and/or subscribing to certain messages. The protocols and hardware "behind" the Agents are invisible to the Tether system.
-
-### Ecosystem
-
-Various tools, naming conventions, permissions and choices of architecture can be built on top of this system. There is no guarantee that every Tether-like system will work perfectly or behave in the same way, but at least the hard part - distributed messaging - is "solved" so that developers can concentrate on more interesting concerns.
-
-The combination of MQTT and MessagePack means that a Tether system is just about the _easiest and quickest_ way to get parts of a distributed system talking to each other. It requires very little code, minimal APIs and very little network configuration.
+The aim is to make it quick and easy to get messaging working within a distributed system, even with very diverse programming languages, hardware and software applications. The combination of MQTT and MessagePack means that a Tether system is just about the _easiest and quickest_ way to get parts of a distributed system talking to each other. It requires very little code, minimal APIs and very little network configuration.
 
 Other approaches (HTTP requests, websocket servers, OSC, etc.) may sometimes appear easier to reach for in certain circumstances, but typically do not offer the flexibility of a "pub/sub" messaging system or a structured (but very transparent) data structure in the messages.
 
-Tether systems are super easy to debug because all messages can be subscribed to without affecting other Agents. Recording and simulating data (including "playback") is also easy to implement, which is important when developing systems that would otherwise require a lot of specialised hardware and software to be running all at once.
-
 The technology can be integrated very easily in everything from websites to microcontrollers to game engines. Translating in and out from other protocols/transports (e.g. MIDI, OSC, serial data) is convenient enough that software which is "not Tether-native" can be plugged in without much effort.
+
+### Debugging and Troubleshooting
+
+Tether systems are super easy to debug - when compared to the usual "hacked together" distributed system - because all messages can be subscribed to without affecting other Agents. Messages do not get "consumed", because the MQTT Broker is responsible for duplicating and queueing things behind the scenes.
+
+Use [Tether Egui](https://github.com/RandomStudio/tether-egui) to monitor, decode and simulate messages with an easy-to-use desktop app.
+
+![Tether Egui screenshot](./docs/tether-egui.gif)
+
+Or use the [Tether CLI](https://github.com/RandomStudio/tether/tree/main/utilities/cli) utilities to:
+
+- Subscribe to all messages passing through the MQTT Broker without affecting anything: `tether-receive --host localhost`
+- List all known Agents, Topics and Plugs on the system: `tether-topics --host localhost`
+- Record data from one or multiple Agents (even a whole system!) using `tether-record` and `tether-playback`
+
+![Tether Topics CLI screenshot](./docs/tether-topics.png)
+
+The ability to use simulated data (including timing information!) when developing systems that would otherwise require a lot of specialised hardware and software to be running all at once.
+
+### System diagram examples
+
+#### A simple example
+
+This example features a microcontroller connected to a passive infrared (PIR) sensor, publishing a boolean "true" (motion detected) or "false" (timeout) message, which stops and starts a video on screen depending on the received state.
+
+What the system diagram might look like:
+![System View](./docs/simple-system.png)
+
+> This looks simple enough. You could even plug the PIR straight into the Raspberry Pi, and have one piece of software handling the electronic input as well as playing the video?
+
+Some potential drawbacks:
+
+- Maybe video playback and data reading don't run so well on a single process with the Raspberry Pi and something like Python
+- Where are the components going to be placed relative to each other? As soon as cable distances change it might make sense to have the input running on an Arduino and the output on the Pi, and how will they communicate?
+- What if you you need to use multiple sensors and/or multiple outputs?
+- None of this software would be reusable "as is", because it was all quite specific to this one scenario
+
+What this could look like as a Tether system:
+![Tether View](./docs/simple-tether.png)
+
+> This looks more complicated, but ultimately is more flexible and reusable
+
+The separation of the `brain` (custom Agent for this installation) and the `videoPlayer` (presumably a generic remote-control video player Agent) has some advantages:
+
+- The "videoPlayer" and "presenceDetector" Agents could be reusable in other projects
+- Multiple video player agents could run for multiple screens; the brain could stay on one of these Pi's or even its own dedicated "server"
+- The MQTT Broker and the Brain could run on a single, dedicated "server" Pi
+- Everything is networked so cable run distances and alternative placements are no longer problematic
+- The individual Agents could be tested and/or simulated independently by replicating the messages the send or receive - no need to run the whole system with all its hardware
+
+#### A more complex example
+
+This example features 11 Agents, running on 7 or more independent hosts/devices. Input is via multiple LIDAR sensors but some remote control also comes in via an iPad interface of some kind (could be a web page). Output includes screen graphics, a scent diffuser controlled by a relay switch, audio and some light animations.
+
+What your system diagram looks like:
+![System View](./docs/complex-system.png)
+
+> There are multiple protocols and transports. Communication needs to happen between some parts and not others, and these may be on different hosts. Some data needs to pass through multiple stages before becoming useful. How should these parts find each other? What protocols should they use? How will you troubleshoot network problems or mistakes in configuration?
+
+What it looks like from the point of view of the Tether system:
+![Tether View](./docs/complex-tether.png)
+
+> Everything connects to a single hub: the MQTT Broker. Agents only need to concern themselves with publishing certain messages and/or subscribing to certain messages. The protocols and hardware "behind" the Agents are invisible to the Tether system. The choice of hosts is much more flexible: e.g. `brain` and `screenOutput` could run on the same machine (if it's powerful enough) or two (heavy graphics might need to run on a dedicated machine), and this would make no difference to the Tether system at all!
 
 ---
 
