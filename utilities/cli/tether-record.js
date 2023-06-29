@@ -15,7 +15,7 @@ const config = parse(
   rc(appName, {
     loglevel: "info",
     protocol: "tcp",
-    host: "tether-io.dev",
+    host: "localhost",
     port: 1883,
     topic: "#",
     username: "tether",
@@ -56,8 +56,9 @@ const setupSubsription = (client) => {
     path.resolve(basePath, baseName) +
     (nameIncludesTimestamp ? `_${Date.now()}` : "") +
     ".json";
-  logger.info("Will write to", filePath);
-  logger.debug("Subscribing to client with topic", config.topic, "...");
+  logger.info(
+    `Will record from topic "${topic}; will write to file ${filePath}`
+  );
   client.subscribe(config.topic);
 
   fs.writeFileSync(filePath, "[\n");
