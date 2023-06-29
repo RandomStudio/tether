@@ -28,9 +28,15 @@ fn main() {
     let (role, id) = tether_agent.description();
     info!("Created agent OK: {}, {}", role, id);
 
-    let empty_message_output = PlugOptionsBuilder::create_output("nothing").build(&tether_agent);
-    let boolean_message_output = PlugOptionsBuilder::create_output("one").build(&tether_agent);
-    let custom_output = PlugOptionsBuilder::create_output("two").build(&tether_agent);
+    let empty_message_output = PlugOptionsBuilder::create_output("nothing")
+        .build(&tether_agent)
+        .expect("failed to create output");
+    let boolean_message_output = PlugOptionsBuilder::create_output("one")
+        .build(&tether_agent)
+        .expect("failed to create output");
+    let custom_output = PlugOptionsBuilder::create_output("two")
+        .build(&tether_agent)
+        .expect("failed to create output");
 
     for i in 1..=10 {
         info!("#{i}: Sending empty message...");

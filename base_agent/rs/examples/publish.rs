@@ -25,9 +25,15 @@ fn main() {
     let (role, id) = agent.description();
     info!("Created agent OK: {}, {}", role, id);
 
-    let empty_message_output = PlugOptionsBuilder::create_output("nothing").build(&agent);
-    let boolean_message_output = PlugOptionsBuilder::create_output("one").build(&agent);
-    let custom_output = PlugOptionsBuilder::create_output("two").build(&agent);
+    let empty_message_output = PlugOptionsBuilder::create_output("nothing")
+        .build(&agent)
+        .expect("failed to create output");
+    let boolean_message_output = PlugOptionsBuilder::create_output("one")
+        .build(&agent)
+        .expect("failed to create output");
+    let custom_output = PlugOptionsBuilder::create_output("two")
+        .build(&agent)
+        .expect("failed to create input/subscribe");
 
     for i in 1..=10 {
         info!("#{i}: Sending empty message...");
