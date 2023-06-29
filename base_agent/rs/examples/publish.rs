@@ -3,13 +3,13 @@ use std::{thread, time::Duration};
 use env_logger::{Builder, Env};
 use log::{debug, info};
 use serde::Serialize;
-use tether_agent::TetherAgent;
+use tether_agent::{PlugOptionsBuilder, TetherAgentOptionsBuilder};
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 struct CustomStruct {
-    foo: String,
-    bar: f32,
+    id: usize,
+    name: String,
 }
 fn main() {
     println!("Rust Tether Agent publish example");
@@ -19,16 +19,15 @@ fn main() {
 
     debug!("Debugging is enabled; could be verbose");
 
-    let agent = TetherAgent::new("RustDemoAgent", None, None);
+    let agent = TetherAgentOptionsBuilder::new("RustDemoAgent")
+        .build()
+        .expect("failed to connect Tether");
     let (role, id) = agent.description();
     info!("Created agent OK: {}, {}", role, id);
 
-    agent.connect(None, None).expect("Failed to connect");
-
-    let empty_message_output: tether_agent::PlugDefinition =
-        agent.create_output_plug("nothing", None, None).unwrap();
-    let boolean_message_output = agent.create_output_plug("one", None, None).unwrap();
-    let custom_output = agent.create_output_plug("two", None, None).unwrap();
+    let empty_message_output = PlugOptionsBuilder::create_output("nothing").build(&agent);
+    let boolean_message_output = PlugOptionsBuilder::create_output("one").build(&agent);
+    let custom_output = PlugOptionsBuilder::create_output("two").build(&agent);
 
     for i in 1..=10 {
         info!("#{i}: Sending empty message...");
@@ -40,9 +39,10 @@ fn main() {
             .publish(&boolean_message_output, Some(&[bool.into()]))
             .unwrap();
 
+        info!("#{i}: Sending custom struct message...");
         let custom_message = CustomStruct {
-            foo: "hello".into(),
-            bar: 0.42,
+            id: i,
+            name: "hello".into(),
         };
         agent
             .encode_and_publish(&custom_output, custom_message)
