@@ -4,7 +4,7 @@ pub use paho_mqtt as mqtt;
 pub use rmp_serde;
 use rmp_serde::to_vec_named;
 pub use serde;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::time::Duration;
 
 const TIMEOUT_SECONDS: u64 = 10;
@@ -26,6 +26,7 @@ impl PlugOptionsCommon {
     }
 }
 
+#[derive(Serialize, Deserialize, Debug)]
 pub struct PlugDefinitionCommon {
     pub name: String,
     pub topic: String,
@@ -49,15 +50,18 @@ pub enum PlugOptionsBuilder {
     OutputPlugOptions(OutputPlugOptions),
 }
 
+#[derive(Serialize, Deserialize, Debug)]
 pub struct InputPlugDefinition {
     common: PlugDefinitionCommon,
 }
 
+#[derive(Serialize, Deserialize, Debug)]
 pub struct OutputPlugDefinition {
     common: PlugDefinitionCommon,
     retain: bool,
 }
 
+#[derive(Serialize, Deserialize, Debug)]
 pub enum PlugDefinition {
     InputPlugDefinition(InputPlugDefinition),
     OutputPlugDefinition(OutputPlugDefinition),
