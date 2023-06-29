@@ -23,7 +23,7 @@ const config = parse(
   rc(appName, {
     loglevel: "info",
     protocol: "tcp",
-    host: "tether-io.dev",
+    host: "localhost",
     port: 1883,
     username: "tether",
     password: "sp_ceB0ss!",
@@ -31,6 +31,7 @@ const config = parse(
     file: "./demo.json",
     loops: 1,
     loopInfinite: false,
+    overrideTopic: "",
   })
 );
 
@@ -38,6 +39,13 @@ const logger = getLogger(appName);
 logger.level = config.loglevel;
 
 logger.debug(appName, "launched with config", JSON.stringify(config, null, 2));
+
+logger.debug(
+  "overrideTopic",
+  config.overrideTopic,
+  typeof config.overrideTopic,
+  config.overrideTopic === ""
+);
 
 const main = async () => {
   const filePath = path.resolve(config.path, config.file);
@@ -98,7 +106,10 @@ const startPlayback = async (client, filePath) =>
     const delayedMessages$ = messages$.pipe(
       concatMap((message) => of(message).pipe(delay(message.deltaTime))),
       tap((entry) => {
-        client.publish(entry.topic, Buffer.from(entry.message.data));
+        const topic =
+          config.overrideTopic === "" ? entry.topic : config.overrideTopic;
+        logger.debug("Using topic", topic, "vs", entry.topic);
+        client.publish(topic, Buffer.from(entry.message.data));
         logger.trace("Send after", entry.deltaTime);
       }),
       finalize(() => {
