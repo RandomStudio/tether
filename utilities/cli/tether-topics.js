@@ -13,7 +13,7 @@ const config = parse(
   rc("tetherTopics", {
     loglevel: "info",
     protocol: "tcp",
-    host: "tether-io.dev",
+    host: "localhost",
     port: 1883,
     username: "tether",
     password: "sp_ceB0ss!",
