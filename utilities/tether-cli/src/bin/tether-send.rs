@@ -1,10 +1,10 @@
 use cli_shared::defaults::{AGENT_ID, AGENT_ROLE};
 use env_logger::{Builder, Env};
-use log::{debug, info, warn};
+use log::{debug, error, info, warn};
 use serde::Serialize;
 use tether_agent::{PlugOptionsBuilder, TetherAgentOptionsBuilder};
 
-#[derive(Serialize)]
+#[derive(Serialize, Debug)]
 struct DummyData {
     id: usize,
     a_float: f32,
@@ -37,6 +37,10 @@ pub struct Cli {
 
     #[arg(long = "loglevel",default_value_t=String::from("info"))]
     pub log_level: String,
+
+    /// Optionally provide a custom message. Provide this as a valid JSON string.
+    #[arg(long = "message")]
+    pub custom_message: Option<String>,
 }
 
 fn main() {
@@ -72,13 +76,32 @@ fn main() {
         .topic(&publish_topic)
         .build(&tether_agent);
 
-    let dummy_data = DummyData {
-        id: 0,
-        a_float: 42.0,
-        an_int_array: vec![1, 2, 3, 4],
-        a_string: "hello world".into(),
-    };
-    tether_agent
-        .encode_and_publish(&output, &dummy_data)
-        .expect("failed to publish");
+    if let Some(custom_message) = cli.custom_message {
+        debug!(
+            "Attempting to decode provided custom message \"{}\"",
+            &custom_message
+        );
+        match serde_json::from_str::<serde_json::Value>(&custom_message) {
+            Ok(encoded) => {
+                let payload = rmp_serde::to_vec_named(&encoded).expect("failed to encode msgpack");
+                tether_agent
+                    .publish(&output, Some(&payload))
+                    .expect("failed to publish");
+            }
+            Err(e) => {
+                error!("Could not serialise String -> JSON; error: {}", e);
+            }
+        }
+    } else {
+        let payload = DummyData {
+            id: 0,
+            a_float: 42.0,
+            an_int_array: vec![1, 2, 3, 4],
+            a_string: "hello world".into(),
+        };
+        info!("Sending dummy data {:?}", payload);
+        tether_agent
+            .encode_and_publish(&output, &payload)
+            .expect("failed to publish");
+    }
 }
