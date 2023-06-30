@@ -1,9 +1,7 @@
 use log::{debug, error, info, warn};
 use mqtt::{Client, Message, MessageBuilder, Receiver};
 pub use paho_mqtt as mqtt;
-pub use rmp_serde;
 use rmp_serde::to_vec_named;
-pub use serde;
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
 

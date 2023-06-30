@@ -12,3 +12,6 @@ name = "tether-send"
 
 [dependencies]
 tether-agent = { path = "../../base_agent/rs"}
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0.91"
+rmp-serde = "1.1.1"
