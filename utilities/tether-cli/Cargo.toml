@@ -3,12 +3,16 @@ name = "tether-cli"
 version = "0.1.0"
 edition = "2021"
 
+[workspace]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [[bin]]
 name = "tether-receive"
 
 [[bin]]
 name = "tether-send"
+
+[lib]
+name = "cli_shared"
 
 [dependencies]
 tether-agent = { path = "../../base_agent/rs"}
@@ -18,3 +22,5 @@ rmp-serde = "1.1.1"
 log = "0.4.17"
 env_logger = "0.7"
 rmpv = { version = "0.4", features = ["with-serde"] }
+clap = { version = "4.1.1", features = ["derive"] }
+

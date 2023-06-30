@@ -93,6 +93,6 @@
   "cmake.configureOnOpen": false,
   "rust-analyzer.linkedProjects": [
     "${workspaceFolder}/base_agent/rs/Cargo.toml",
-    "${workspaceFolder}/utilities/tether-cli/Cargo.toml"
-    ]
+    "${workspaceFolder}/utilities/tether-cli/Cargo.toml",
+  ]
 }
