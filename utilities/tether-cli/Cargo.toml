@@ -11,6 +11,9 @@ name = "tether-receive"
 [[bin]]
 name = "tether-send"
 
+[[bin]]
+name = "tether-topics"
+
 [lib]
 name = "cli_shared"
 
