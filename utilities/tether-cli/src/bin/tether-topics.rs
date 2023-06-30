@@ -36,7 +36,7 @@ pub struct Insights {
     roles: Vec<String>,
     ids: Vec<String>,
     plugs: Vec<String>,
-    message_count: u64,
+    // message_count: u64,
 }
 
 impl Insights {
@@ -46,22 +46,12 @@ impl Insights {
             roles: Vec::new(),
             ids: Vec::new(),
             plugs: Vec::new(),
-            message_count: 0,
+            // message_count: 0,
         }
     }
 
     pub fn update(&mut self, _plug_name: &str, message: &Message) {
-        self.message_count += 1;
-        let bytes = message.payload();
-        // if bytes.is_empty() {
-        //     self.message_log
-        //         .push_back((message.topic().into(), "[EMPTY_MESSAGE]".into()));
-        // } else {
-        //     let value: rmpv::Value =
-        //         rmp_serde::from_slice(bytes).expect("failed to decode msgpack");
-        //     let json = serde_json::to_string(&value).expect("failed to stringify JSON");
-        //     self.message_log.push_back((message.topic().into(), json));
-        // }
+        // self.message_count += 1;
 
         // Collect some stats...
         add_if_unique(message.topic(), &mut self.topics);
@@ -110,7 +100,7 @@ fn main() {
     loop {
         while let Some((plug_name, message)) = tether_agent.check_messages() {
             insights.update(&plug_name, &message);
-            debug!("Insights update: {:?}", insights);
+            info!("{:#?}", insights);
         }
     }
 }
