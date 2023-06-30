@@ -1,11 +1,26 @@
 # Tether Base Agent
 
-JavaScript base agent for the browser and NodeJS.
+Tether is a standardised MQTT+MessagePack system for inter-process communication, created, maintained and actively in use by [Random Studio](https://random.studio).
+
+Read more about Tether in the [main Tether repo](https://github.com/RandomStudio/tether).
+
+## Use in NodeJS / Browser
+
+This package is JavaScript base agent for the browser and NodeJS.
 
 The JS Base Agent can be used by both NodeJS scripts and web pages, with minor differences:
 
 - In NodeJS, the default MQTT protocol over TCP socket works as normal, although it is possible to use websockets as well
-- In the browser, only MQTT-over-Websocket will work, which requires specifying either `ws` or `wss` as the protocol, and typically changing the port as well (15675 instead of the usual 1883)
+- In the browser, only MQTT-over-Websocket will work, but you must make some changes to the standard configuration - see example below
+
+```js
+TetherAgent.create("myTetherAgent", {
+  protocol: "ws",
+  port: 15675,
+  host: "localhost",
+  path: "/ws",
+});
+```
 
 In future, we might detect which environment javascript is running in, and switch to some sensible defaults without any further configuration needed by the end-user developer.
 
