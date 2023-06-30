@@ -17,6 +17,17 @@ use clap::{command, Parser};
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
 pub struct Cli {
+    #[arg(long = "tether.host", default_value_t=String::from("localhost"))]
+    pub tether_host: String,
+
+    #[arg(long = "tether.port", default_value_t = 1883)]
+    pub tether_port: u16,
+
+    #[arg(long = "tether.username", default_value_t=String::from("tether"))]
+    pub tether_username: String,
+
+    #[arg(long = "tether.password", default_value_t=String::from("sp_ceB0ss!"))]
+    pub tether_password: String,
     /// Specify an Agent Role; this will be used for the auto-generated publish topic
     /// (ignored if you provide your own plug.topic)
     #[arg(long = "agent.role", default_value_t=String::from(AGENT_ROLE))]
@@ -67,8 +78,11 @@ fn main() {
         }
     };
 
-    let tether_agent = TetherAgentOptionsBuilder::new(&cli.agent_role)
-        .id(&cli.agent_id)
+    let tether_agent = TetherAgentOptionsBuilder::new(AGENT_ROLE)
+        .host(&cli.tether_host)
+        .port(cli.tether_port)
+        .username(&cli.tether_username)
+        .password(&cli.tether_password)
         .build()
         .expect("failed to connect Tether");
 
