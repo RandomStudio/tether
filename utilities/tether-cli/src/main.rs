@@ -202,7 +202,7 @@ fn send(cli: &Cli, options: &SendOptions) {
             "Attempting to decode provided custom message \"{}\"",
             &custom_message
         );
-        match serde_json::from_str::<serde_json::Value>(&custom_message) {
+        match serde_json::from_str::<serde_json::Value>(custom_message) {
             Ok(encoded) => {
                 let payload = rmp_serde::to_vec_named(&encoded).expect("failed to encode msgpack");
                 tether_agent
