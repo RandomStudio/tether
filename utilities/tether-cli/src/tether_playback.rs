@@ -24,7 +24,7 @@ struct SimulationMessage {
 struct SimulationRow {
     topic: String,
     message: SimulationMessage,
-    delta_time: u128,
+    delta_time: u64,
 }
 
 #[derive(Args)]
@@ -78,6 +78,9 @@ fn parse_json_rows(filename: &str, tether_agent: &TetherAgent) {
         } = &row;
 
         let payload = &message.data;
+
+        debug!("Sleeping {}ms ...", delta_time);
+        std::thread::sleep(std::time::Duration::from_millis(*delta_time));
 
         tether_agent
             .publish_raw(&topic, payload, None, None)
