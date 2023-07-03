@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use clap::Args;
 use log::{debug, info};
 use tether_agent::{PlugOptionsBuilder, TetherAgentOptionsBuilder};
@@ -25,7 +27,9 @@ pub fn receive(cli: &Cli, options: &ReceiveOptions) {
         .build(&tether_agent);
 
     loop {
+        let mut did_work = false;
         while let Some((plug_name, message)) = tether_agent.check_messages() {
+            did_work = true;
             debug!("Received message on plug {}: {:?}", plug_name, message);
             info!("Received message on topic \"{}\"", message.topic());
             let bytes = message.payload();
@@ -37,6 +41,9 @@ pub fn receive(cli: &Cli, options: &ReceiveOptions) {
                 let json = serde_json::to_string(&value).expect("failed to stringify JSON");
                 info!("Decoded MessagePack payload: {}", json);
             }
+        }
+        if !did_work {
+            std::thread::sleep(Duration::from_micros(100)); //0.1 ms
         }
     }
 }

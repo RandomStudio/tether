@@ -91,10 +91,15 @@ pub fn topics(cli: &Cli, options: &TopicOptions) {
     let mut insights = Insights::new();
 
     loop {
+        let mut did_work = false;
         while let Some((plug_name, message)) = tether_agent.check_messages() {
+            did_work = true;
             if insights.update(&plug_name, &message) {
                 info!("{:#?}", insights);
             }
+        }
+        if !did_work {
+            std::thread::sleep(std::time::Duration::from_millis(1));
         }
     }
 }
