@@ -57,7 +57,14 @@ pub fn playback(cli: &Cli, options: &PlaybackOptions) {
     //     .topic(&publish_topic)
     //     .build(&tether_agent);
 
-    parse_json_rows(&options.file_path, &tether_agent);
+    if options.loop_infinite {
+        info!("Infinite loops requested; Press Ctr+C to stop");
+        loop {
+            parse_json_rows(&options.file_path, &tether_agent);
+        }
+    } else {
+        parse_json_rows(&options.file_path, &tether_agent);
+    }
 }
 
 fn parse_json_rows(filename: &str, tether_agent: &TetherAgent) {
