@@ -24,7 +24,8 @@ pub fn receive(cli: &Cli, options: &ReceiveOptions) {
 
     let _input = PlugOptionsBuilder::create_input("all")
         .topic(&options.subscribe_topic)
-        .build(&tether_agent);
+        .build(&tether_agent)
+        .expect("failed to create input plug");
 
     loop {
         let mut did_work = false;

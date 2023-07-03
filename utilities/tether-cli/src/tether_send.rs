@@ -69,7 +69,8 @@ pub fn send(cli: &Cli, options: &SendOptions) {
 
     let output = PlugOptionsBuilder::create_output(&options.plug_name)
         .topic(&publish_topic)
-        .build(&tether_agent);
+        .build(&tether_agent)
+        .expect("failed to create output plug");
 
     if let Some(custom_message) = &options.custom_message {
         debug!(
