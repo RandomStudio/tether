@@ -395,6 +395,27 @@ impl TetherAgent {
             }
         }
     }
+
+    pub fn publish_raw(
+        &self,
+        topic: &str,
+        payload: &[u8],
+        qos: Option<i32>,
+        retained: Option<bool>,
+    ) -> anyhow::Result<()> {
+        let message = MessageBuilder::new()
+            .topic(topic)
+            .payload(payload)
+            .retained(retained.unwrap_or(false))
+            .qos(qos.unwrap_or(1))
+            .finalize();
+        if let Err(e) = self.client.publish(message) {
+            error!("Error publishing: {:?}", e);
+            Err(e.into())
+        } else {
+            Ok(())
+        }
+    }
 }
 
 pub fn parse_plug_name(topic: &str) -> Option<&str> {
