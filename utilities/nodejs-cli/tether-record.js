@@ -51,7 +51,7 @@ const main = async () => {
 };
 
 const setupSubsription = (client) => {
-  const { basePath, baseName, nameIncludesTimestamp } = config.file;
+  const { basePath, baseName, nameIncludesTimestamp, topic } = config.file;
   const filePath =
     path.resolve(basePath, baseName) +
     (nameIncludesTimestamp ? `_${Date.now()}` : "") +
