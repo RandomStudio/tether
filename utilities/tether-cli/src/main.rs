@@ -1,5 +1,6 @@
 use env_logger::{Builder, Env};
-use log::{debug, info};
+use log::{debug, error, info, warn};
+use serde::Serialize;
 use tether_agent::{PlugOptionsBuilder, TetherAgentOptionsBuilder};
 
 use clap::{Args, Parser, Subcommand};
@@ -57,6 +58,14 @@ struct SendOptions {
     custom_message: Option<String>,
 }
 
+#[derive(Serialize, Debug)]
+struct DummyData {
+    id: usize,
+    a_float: f32,
+    an_int_array: Vec<usize>,
+    a_string: String,
+}
+
 #[derive(Args)]
 struct TopicOptions {
     #[arg(long = "topic", default_value_t=String::from("#"))]
@@ -108,6 +117,65 @@ fn receive(cli: &Cli, options: &ReceiveOptions) {
 
 fn send(cli: &Cli, options: &SendOptions) {
     info!("Tether Send Utility");
+
+    let publish_topic = match &options.plug_topic {
+        Some(override_topic) => {
+            warn!(
+                "Using override topic \"{}\"; agent role, agent ID and plug name will be ignored",
+                override_topic
+            );
+            String::from(override_topic)
+        }
+        None => {
+            let auto_generated_topic: String = format!(
+                "{}/{}/{}",
+                &options.agent_role, &options.agent_id, &options.plug_name
+            );
+            info!("Using auto-generated topic \"{}\"", &auto_generated_topic);
+            auto_generated_topic
+        }
+    };
+
+    let tether_agent = TetherAgentOptionsBuilder::new(defaults::AGENT_ROLE)
+        .host(&cli.tether_host)
+        .port(cli.tether_port)
+        .username(&cli.tether_username)
+        .password(&cli.tether_password)
+        .build()
+        .expect("failed to connect Tether");
+
+    let output = PlugOptionsBuilder::create_output(&options.plug_name)
+        .topic(&publish_topic)
+        .build(&tether_agent);
+
+    if let Some(custom_message) = &options.custom_message {
+        debug!(
+            "Attempting to decode provided custom message \"{}\"",
+            &custom_message
+        );
+        match serde_json::from_str::<serde_json::Value>(&custom_message) {
+            Ok(encoded) => {
+                let payload = rmp_serde::to_vec_named(&encoded).expect("failed to encode msgpack");
+                tether_agent
+                    .publish(&output, Some(&payload))
+                    .expect("failed to publish");
+            }
+            Err(e) => {
+                error!("Could not serialise String -> JSON; error: {}", e);
+            }
+        }
+    } else {
+        let payload = DummyData {
+            id: 0,
+            a_float: 42.0,
+            an_int_array: vec![1, 2, 3, 4],
+            a_string: "hello world".into(),
+        };
+        info!("Sending dummy data {:?}", payload);
+        tether_agent
+            .encode_and_publish(&output, &payload)
+            .expect("failed to publish");
+    }
 }
 
 fn topics(cli: &Cli, options: &TopicOptions) {
