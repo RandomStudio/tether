@@ -33,29 +33,43 @@ impl Insights {
         }
     }
 
-    pub fn update(&mut self, _plug_name: &str, message: &Message) {
+    pub fn update(&mut self, _plug_name: &str, message: &Message) -> bool {
         // self.message_count += 1;
+        let mut did_change = false;
 
         // Collect some stats...
-        add_if_unique(message.topic(), &mut self.topics);
-        add_if_unique(
+        if add_if_unique(message.topic(), &mut self.topics) {
+            did_change = true;
+        }
+        if add_if_unique(
             parse_agent_role(message.topic()).unwrap_or("unknown"),
             &mut self.roles,
-        );
-        add_if_unique(
+        ) {
+            did_change = true;
+        }
+        if add_if_unique(
             parse_agent_id(message.topic()).unwrap_or("unknown"),
             &mut self.ids,
-        );
-        add_if_unique(
+        ) {
+            did_change = true;
+        }
+        if add_if_unique(
             parse_plug_name(message.topic()).unwrap_or("unknown"),
             &mut self.plugs,
-        );
+        ) {
+            did_change = true;
+        }
+
+        did_change
     }
 }
 
-fn add_if_unique(item: &str, list: &mut Vec<String>) {
+fn add_if_unique(item: &str, list: &mut Vec<String>) -> bool {
     if !list.iter().any(|i| i.eq(item)) {
         list.push(String::from(item));
+        return true;
+    } else {
+        false
     }
 }
 
@@ -78,8 +92,9 @@ pub fn topics(cli: &Cli, options: &TopicOptions) {
 
     loop {
         while let Some((plug_name, message)) = tether_agent.check_messages() {
-            insights.update(&plug_name, &message);
-            info!("{:#?}", insights);
+            if insights.update(&plug_name, &message) {
+                info!("{:#?}", insights);
+            }
         }
     }
 }
