@@ -1,4 +1,3 @@
-use cli_shared::defaults::AGENT_ROLE;
 use env_logger::{Builder, Env};
 use log::{debug, info};
 use tether_agent::{PlugOptionsBuilder, TetherAgentOptionsBuilder};

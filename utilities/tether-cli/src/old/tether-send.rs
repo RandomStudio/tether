@@ -28,6 +28,7 @@ pub struct Cli {
 
     #[arg(long = "tether.password", default_value_t=String::from("sp_ceB0ss!"))]
     pub tether_password: String,
+
     /// Specify an Agent Role; this will be used for the auto-generated publish topic
     /// (ignored if you provide your own plug.topic)
     #[arg(long = "agent.role", default_value_t=String::from(AGENT_ROLE))]
