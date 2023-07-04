@@ -32,7 +32,7 @@ brew install tether
 
 ## Send
 
-- Run with defaults: `tether receive`
+- Run with defaults: `tether send`
 - More options can be found using `tether send --help`
 
 ### Note on `--message`:
@@ -42,10 +42,12 @@ This will be automatically converted into a MessagePack payload if it is valid J
 Example:
 
 ```
---message \{\"hello\":\"world\"\,\"arr\":\[1,2,3\]\}
+tether send --message \{\"hello\":\"world\"\,\"arr\":\[1,2,3\]\}
 ```
 
 ## Topics
+
+Super useful for seeing which Agents are online, and how message topics are being parsed according to Agent Role, Agent ID and Plug Name. This utility can't see into the past (except in the case of retained messages), so keep this in mind for Agents that don't publish frequently.
 
 - Run with defaults: `tether topics`
 - More options can be found using `tether topics --help`
@@ -62,6 +64,6 @@ By default, a file named `recording-00000000.json` (where the numbers are a time
 - Run with defaults: `tether playback`
 - More options can be found using `tether playback --help`
 
-If you don't specify a file with `--file.path`, an included demo file (`demo.json`) will be used instead. You probably want to specify a path to a real file, in most cases.
+If you don't specify a file with `--file.path`, an included demo file (`demo.json`) will be used instead. **You probably want to specify a path to a real file, in most cases.**
 
 > 💡Tip: loop the playback infinitely by passing `--loops.infinite`
