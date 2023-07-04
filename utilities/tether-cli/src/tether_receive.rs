@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use clap::Args;
-use log::{debug, info};
+use log::{debug, error, info, warn};
 use tether_agent::{PlugOptionsBuilder, TetherAgentOptionsBuilder};
 
 use crate::{defaults, Cli};
@@ -12,7 +12,7 @@ pub struct ReceiveOptions {
     subscribe_topic: String,
 }
 
-pub fn receive(cli: &Cli, options: &ReceiveOptions) {
+pub fn receive(cli: &Cli, options: &ReceiveOptions) -> ! {
     info!("Tether Receive Utility");
     let tether_agent = TetherAgentOptionsBuilder::new(defaults::AGENT_ROLE)
         .host(&cli.tether_host)
@@ -37,10 +37,17 @@ pub fn receive(cli: &Cli, options: &ReceiveOptions) {
             if bytes.is_empty() {
                 info!("Empty message payload");
             } else {
-                let value: rmpv::Value =
-                    rmp_serde::from_slice(bytes).expect("failed to decode msgpack");
-                let json = serde_json::to_string(&value).expect("failed to stringify JSON");
-                info!("Decoded MessagePack payload: {}", json);
+                if let Ok(value) = rmp_serde::from_slice::<rmpv::Value>(bytes) {
+                    let json = serde_json::to_string(&value).expect("failed to stringify JSON");
+                    info!("Decoded MessagePack payload: {}", json);
+                } else {
+                    warn!("Failed to decode MessagePack payload");
+                    if let Ok(s) = String::from_utf8(bytes.to_vec()) {
+                        warn!("String representation of payload: \"{}\"", s);
+                    } else {
+                        error!("Could not decode payload bytes as string, either");
+                    }
+                }
             }
         }
         if !did_work {
