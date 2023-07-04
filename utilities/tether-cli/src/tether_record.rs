@@ -123,7 +123,7 @@ pub fn record(cli: &Cli, options: &RecordOptions) {
     let mut first_message_time = SystemTime::now();
     let mut previous_message_time = SystemTime::now();
 
-    let mut count = 0;
+    let mut count: i128 = 0;
     let should_stop = Arc::new(AtomicBool::new(false));
     let should_stop_clone = Arc::clone(&should_stop);
 
