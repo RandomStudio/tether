@@ -11,22 +11,22 @@ use crate::{defaults, Cli};
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
-struct SimulationMessage {
-    r#type: String,
-    data: Vec<u8>,
+pub struct SimulationMessage {
+    pub r#type: String,
+    pub data: Vec<u8>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
-struct SimulationRow {
-    topic: String,
-    message: SimulationMessage,
-    delta_time: u64,
+pub struct SimulationRow {
+    pub topic: String,
+    pub message: SimulationMessage,
+    pub delta_time: u64,
 }
 
 #[derive(Args)]
 pub struct PlaybackOptions {
-    /// Overide any original topics saved in the file, to use with every published message
+    /// Specify the full path to the JSON file containing recorded messages
     #[arg(long = "file.path", default_value_t=String::from("./demo.json"))]
     file_path: String,
 

@@ -50,3 +50,8 @@ Example:
 Run with defaults: `tether topics`
 
 More options can be found using `tether topics --help`
+
+## TODO
+
+- [ ] Tether Record
+- [ ] Tether Record could include options for delayed start, timed end

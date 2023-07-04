@@ -5,15 +5,17 @@ use clap::{Parser, Subcommand};
 
 mod tether_playback;
 mod tether_receive;
+mod tether_record;
 mod tether_send;
 mod tether_topics;
 
 use tether_playback::PlaybackOptions;
 use tether_receive::{receive, ReceiveOptions};
+use tether_record::RecordOptions;
 use tether_send::{send, SendOptions};
 use tether_topics::{topics, TopicOptions};
 
-use crate::tether_playback::playback;
+use crate::{tether_playback::playback, tether_record::record};
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
@@ -43,6 +45,7 @@ enum Commands {
     Send(SendOptions),
     Topics(TopicOptions),
     Playback(PlaybackOptions),
+    Record(RecordOptions),
 }
 
 mod defaults {
@@ -63,5 +66,6 @@ fn main() {
         Commands::Send(options) => send(&cli, options),
         Commands::Topics(options) => topics(&cli, options),
         Commands::Playback(options) => playback(&cli, options),
+        Commands::Record(options) => record(&cli, options),
     }
 }

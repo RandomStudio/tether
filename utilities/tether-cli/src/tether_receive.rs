@@ -1,5 +1,3 @@
-use std::time::Duration;
-
 use clap::Args;
 use log::{debug, error, info, warn};
 use tether_agent::{PlugOptionsBuilder, TetherAgentOptionsBuilder};
@@ -8,11 +6,12 @@ use crate::{defaults, Cli};
 
 #[derive(Args)]
 pub struct ReceiveOptions {
+    /// Topic to subscribe; by default we recording everything
     #[arg(long = "topic", default_value_t=String::from("#"))]
     subscribe_topic: String,
 }
 
-pub fn receive(cli: &Cli, options: &ReceiveOptions) -> ! {
+pub fn receive(cli: &Cli, options: &ReceiveOptions) {
     info!("Tether Receive Utility");
     let tether_agent = TetherAgentOptionsBuilder::new(defaults::AGENT_ROLE)
         .host(&cli.tether_host)
@@ -51,7 +50,7 @@ pub fn receive(cli: &Cli, options: &ReceiveOptions) -> ! {
             }
         }
         if !did_work {
-            std::thread::sleep(Duration::from_micros(100)); //0.1 ms
+            std::thread::sleep(std::time::Duration::from_micros(100)); //0.1 ms
         }
     }
 }
