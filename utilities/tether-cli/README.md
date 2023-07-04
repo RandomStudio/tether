@@ -6,7 +6,7 @@ This CLI utility tool, written in Rust, provides a single binary with subcommand
 - [send](#send): Publish a single message with optional custom payload
 - [topics](#topics): Subscribe to all/some messages and parse the topic parts such as Agent Role, Agent ID and Plug Name
 - [record](#record): Record messages to disk. Useful for simulation, in combination with `playback` below
-- [playback](#playback):
+- [playback](#playback): Playback messages with their original topics and timing, to simulate one or more Agents
 
 You can find common options by appending `--help` _before_ the subcommand.
 
