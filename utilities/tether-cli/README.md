@@ -53,5 +53,5 @@ More options can be found using `tether topics --help`
 
 ## TODO
 
-- [ ] Tether Record
-- [ ] Tether Record could include options for delayed start, timed end
+- [x] Tether Record
+- [ ] Tether Record could include options for delayed start, timed end, zero at first entry (default)
