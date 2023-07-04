@@ -14,7 +14,7 @@ You can find common options by appending `--help` _before_ the subcommand.
 
 ## Installation
 
-The simplest installation method is using the [homebrew](https://brew.sh/) pacaage manager for Mac. Simply run the following two commands:
+The simplest installation method is using the [homebrew](https://brew.sh/) package manager for Mac. Simply run the following two commands:
 
 ```
 brew tap randomstudio/tether
