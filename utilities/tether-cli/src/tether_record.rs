@@ -40,6 +40,21 @@ pub struct RecordOptions {
     /// Topic to subscribe; by default we recording everything
     #[arg(long = "topic", default_value_t=String::from("#"))]
     subscribe_topic: String,
+
+    /// Flag to disable zero-ing of the first entry's deltaTime; using this
+    /// flag will count time from launch, not first message received
+    #[arg(long = "timing.nonzeroStart")]
+    timing_nonzero_start: bool,
+
+    /// Time (in seconds) to delay writing anything to disk, even if messages are
+    /// received
+    #[arg(long = "timing.delay")]
+    timing_delay: Option<f32>,
+
+    /// Duration (in seconds) to stop recording even if Ctrl+C has not been encountered
+    /// yet
+    #[arg(long = "timing.duration")]
+    timing_duration: Option<f32>,
 }
 
 pub fn record(cli: &Cli, options: &RecordOptions) {
@@ -79,8 +94,33 @@ pub fn record(cli: &Cli, options: &RecordOptions) {
     let buf = b"[";
     file.write_all(buf).expect("failed to write first line");
 
-    warn!("This utility runs until you press Ctrl+C ...");
+    let max_duration = match options.timing_duration {
+        Some(dur) => {
+            warn!(
+                "Max duration was set to {}s; Ctr+C to stop before that point ...",
+                dur
+            );
+            Some(Duration::from_secs_f32(dur))
+        }
+        None => {
+            warn!("No duration provided; recording runs until you press Ctrl+C ...");
+            None
+        }
+    };
 
+    let start_delay = match options.timing_delay {
+        Some(dur) => {
+            warn!("Recording will only start after {}s", dur);
+            Some(Duration::from_secs_f32(dur))
+        }
+        None => {
+            debug!("No start delay set");
+            None
+        }
+    };
+
+    let start_application_time = SystemTime::now();
+    let mut first_message_time = SystemTime::now();
     let mut previous_message_time = SystemTime::now();
 
     let mut count = 0;
@@ -94,8 +134,34 @@ pub fn record(cli: &Cli, options: &RecordOptions) {
     .expect("Error setting Ctrl-C handler");
 
     loop {
+        if let Some(delay) = start_delay {
+            if let Ok(elapsed) = start_application_time.elapsed() {
+                if elapsed < delay {
+                    continue;
+                }
+            }
+        }
+
+        if let Some(dur) = max_duration {
+            if let Ok(elapsed) = first_message_time.elapsed() {
+                if elapsed > dur {
+                    if count == 0 && !options.timing_nonzero_start {
+                        debug!("Ignore duration; nothing received yet")
+                    } else {
+                        warn!(
+                            "Exceeded the max duration specified ({}s); will stop now...",
+                            dur.as_secs_f32()
+                        );
+                        should_stop.store(true, Ordering::Relaxed);
+                    }
+                }
+            }
+        }
         if should_stop.load(Ordering::Relaxed) {
-            info!("Stopping; end file cleanly, wait then exit");
+            info!(
+                "Stopping after {} entries written to disk; end file cleanly, wait then exit",
+                count
+            );
             file.write_all(b"\n]")
                 .expect("failed to close JSON file properly");
             file.flush().unwrap();
@@ -106,8 +172,15 @@ pub fn record(cli: &Cli, options: &RecordOptions) {
             let mut did_work = false;
             while let Some((_plug_name, message)) = tether_agent.check_messages() {
                 did_work = true;
-                let delta_time = previous_message_time.elapsed().unwrap_or_default();
+
+                let delta_time = if count == 0 && !options.timing_nonzero_start {
+                    first_message_time = SystemTime::now();
+                    Duration::ZERO
+                } else {
+                    previous_message_time.elapsed().unwrap_or_default()
+                };
                 previous_message_time = SystemTime::now();
+
                 debug!("Received message on topic \"{}\"", message.topic());
                 let bytes = message.payload();
                 let row = SimulationRow {
@@ -121,6 +194,7 @@ pub fn record(cli: &Cli, options: &RecordOptions) {
 
                 if count == 0 {
                     file.write_all(b"\n").unwrap(); // line break only
+                    info!("First message written to disk");
                 } else {
                     file.write_all(b",\n").unwrap(); // comma, line break
                 }
