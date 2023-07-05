@@ -20,7 +20,7 @@ docker run -d \
 or straight up with the default credentials (`tether`:`sp_ceB0ss!`):
 
 ```
-docker run -p 9001:15675 -p 1883:1883 randomstudiotools/tether-broker
+docker run -p 15675:9001 -p 1883:1883 randomstudiotools/tether-broker
 ```
 
 We also provide Docker Compose configurations for 3 popular Brokers, namely
