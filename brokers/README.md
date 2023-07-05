@@ -12,7 +12,7 @@ You can use our public `tether-broker` Docker container, running it as follows u
 docker run -d \
   -e "USERNAME=my_user" \
   -e "PASSWORD=my_pass" \
-  -p 9001:15675 \
+  -p 15675:9001 \
   -p 1883:1883 \
   randomstudiotools/tether-broker
 ```
