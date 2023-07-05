@@ -33,4 +33,4 @@ EXPOSE 15675
 EXPOSE 1883
 
 # use shell script as entrypoint
-ENTRYPOINT /mosquitto/config/entrypoint.sh ${USERNAME:-"guest"} ${PASSWORD:-"guest"}
+ENTRYPOINT /mosquitto/config/entrypoint.sh ${USERNAME:-"tether"} ${PASSWORD:-"sp_ceB0ss!"}

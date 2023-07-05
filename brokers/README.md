@@ -17,7 +17,7 @@ docker run -d \
   tether-broker
 ```
 
-or straight up with the default credentials (`guest`:`guest`):
+or straight up with the default credentials (`tether`:`sp_ceB0ss!`):
 
 ```
 docker run -p 9001:15675 -p 1883:1883 tether-broker
