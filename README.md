@@ -276,9 +276,9 @@ Use [Tether Egui](https://github.com/RandomStudio/tether-egui) to monitor, decod
 
 Or use the [Tether CLI](https://github.com/RandomStudio/tether/tree/main/utilities/cli) utilities to:
 
-- Subscribe to all messages passing through the MQTT Broker without affecting anything: `tether-receive --host localhost`
-- List all known Agents, Topics and Plugs on the system: `tether-topics --host localhost`
-- Record data from one or multiple Agents (even a whole system!) using `tether-record` and `tether-playback`
+- Subscribe to all messages passing through the MQTT Broker without affecting anything: `tether receive`
+- List all known Agents, Topics and Plugs on the system: `tether topics`
+- Record data from one or multiple Agents (even a whole system!) using `tether record` and `tether playback`
 
 ![Tether Topics CLI screenshot](./docs/tether-topics.png)
 
