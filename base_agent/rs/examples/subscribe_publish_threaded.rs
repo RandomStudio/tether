@@ -20,7 +20,7 @@ use std::{
     time::Duration,
 };
 
-use tether_agent::{PlugOptionsBuilder, TetherAgent, TetherAgentOptionsBuilder};
+use tether_agent::{PlugOptionsBuilder, TetherAgentOptionsBuilder};
 
 fn main() {
     let check_interval = 0.01;
@@ -43,7 +43,11 @@ fn main() {
     // Here we call .lock() because it is OK to block while "setting up", connecting
     if let Ok(a) = tether_agent.lock() {
         let _input_plug = PlugOptionsBuilder::create_input("one").build(&a);
-        output_plug = Some(PlugOptionsBuilder::create_output("one").build(&a));
+        output_plug = Some(
+            PlugOptionsBuilder::create_output("one")
+                .build(&a)
+                .expect("failed to create output plug"),
+        );
     } else {
         panic!("Error setting up Tether Agent!");
     }

@@ -20,7 +20,7 @@ use std::{
     time::Duration,
 };
 
-use tether_agent::{PlugOptionsBuilder, TetherAgent, TetherAgentOptionsBuilder};
+use tether_agent::{PlugOptionsBuilder, TetherAgentOptionsBuilder};
 
 fn main() {
     println!("Rust Tether Agent subscribe example");
@@ -48,10 +48,10 @@ fn main() {
         println!("Checking messages every 1s, 10x...");
 
         let mut message_count = 0;
-        let mut i = 0;
+        // let mut i = 0;
 
         loop {
-            i += 1;
+            // i += 1;
             // println!("#{i}: Checking messages...");
             match receiver_agent.try_lock() {
                 Ok(a) => {

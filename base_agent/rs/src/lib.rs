@@ -1,5 +1,5 @@
 use log::{debug, error, info, warn};
-use mqtt::{Client, Message, MessageBuilder, Receiver};
+use mqtt::{server_response, Client, Message, MessageBuilder, Receiver};
 pub use paho_mqtt as mqtt;
 pub use rmp_serde;
 use rmp_serde::to_vec_named;
@@ -136,7 +136,7 @@ impl PlugOptionsBuilder {
         }
     }
 
-    pub fn build(self, tether_agent: &TetherAgent) -> PlugDefinition {
+    pub fn build(self, tether_agent: &TetherAgent) -> anyhow::Result<PlugDefinition> {
         match self {
             Self::InputPlugOptions(plug) => {
                 let final_topic = plug
@@ -148,17 +148,20 @@ impl PlugOptionsBuilder {
                     "Attempt to subscribe for plug named {} ...",
                     plug.common.name
                 );
-                tether_agent
-                    .client
-                    .subscribe(&final_topic, final_qos)
-                    .expect("failed to subscribe!");
-                PlugDefinition::InputPlugDefinition(InputPlugDefinition {
-                    common: PlugDefinitionCommon {
-                        name: plug.common.name,
-                        topic: final_topic,
-                        qos: final_qos,
-                    },
-                })
+                match tether_agent.client.subscribe(&final_topic, final_qos) {
+                    Ok(res) => {
+                        debug!("This topic was fine: --{final_topic}--");
+                        debug!("Server respond OK for subscribe: {res:?}");
+                        Ok(PlugDefinition::InputPlugDefinition(InputPlugDefinition {
+                            common: PlugDefinitionCommon {
+                                name: plug.common.name,
+                                topic: final_topic,
+                                qos: final_qos,
+                            },
+                        }))
+                    }
+                    Err(e) => Err(e.into()),
+                }
             }
             Self::OutputPlugOptions(plug) => {
                 let final_topic = plug.common.topic.unwrap_or(build_topic(
@@ -167,14 +170,15 @@ impl PlugOptionsBuilder {
                     &plug.common.name,
                 ));
                 let final_qos = plug.common.qos.unwrap_or(1);
-                PlugDefinition::OutputPlugDefinition(OutputPlugDefinition {
+                // TODO: check valid topic before assuming OK?
+                Ok(PlugDefinition::OutputPlugDefinition(OutputPlugDefinition {
                     common: PlugDefinitionCommon {
                         name: plug.common.name,
                         topic: final_topic,
                         qos: final_qos,
                     },
                     retain: plug.retain.unwrap_or(false),
-                })
+                }))
             }
         }
     }
@@ -244,7 +248,7 @@ impl TetherAgentOptionsBuilder {
         self
     }
 
-    pub fn build(self) -> Result<TetherAgent, ()> {
+    pub fn build(self) -> anyhow::Result<TetherAgent> {
         let broker_host = self.host.clone().unwrap_or("localhost".into());
         let broker_port = self.port.unwrap_or(1883);
 
@@ -274,7 +278,7 @@ impl TetherAgentOptionsBuilder {
         if self.auto_connect {
             match agent.connect(&self) {
                 Ok(()) => Ok(agent),
-                Err(_) => Err(()),
+                Err(e) => Err(e.into()),
             }
         } else {
             warn!("Auto-connect disabled; you must call .connect explicitly");
@@ -356,7 +360,7 @@ impl TetherAgent {
         &self,
         plug_definition: &PlugDefinition,
         payload: Option<&[u8]>,
-    ) -> Result<(), ()> {
+    ) -> anyhow::Result<()> {
         match plug_definition {
             PlugDefinition::InputPlugDefinition(_) => {
                 panic!("You cannot publish using an Input Plug")
@@ -371,7 +375,7 @@ impl TetherAgent {
                     .finalize();
                 if let Err(e) = self.client.publish(message) {
                     error!("Error publishing: {:?}", e);
-                    Err(())
+                    Err(e.into())
                 } else {
                     Ok(())
                 }
@@ -384,9 +388,14 @@ impl TetherAgent {
         &self,
         plug_definition: &PlugDefinition,
         data: T,
-    ) -> Result<(), ()> {
-        let payload = to_vec_named(&data).unwrap();
-        self.publish(plug_definition, Some(&payload))
+    ) -> anyhow::Result<()> {
+        match to_vec_named(&data) {
+            Ok(payload) => self.publish(plug_definition, Some(&payload)),
+            Err(e) => {
+                error!("Failed to encode: {e:?}");
+                Err(e.into())
+            }
+        }
     }
 }
 
