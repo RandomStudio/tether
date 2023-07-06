@@ -8,9 +8,22 @@ This CLI utility tool, written in Rust, provides a single binary with subcommand
 - [record](#record): Record messages to disk. Useful for simulation, in combination with `playback` below
 - [playback](#playback): Playback messages with their original topics and timing, to simulate one or more Agents
 
-You can find common options by appending `--help` _before_ the subcommand.
+## Passing arguments
 
-> 💡Tip: append `--tether.host tether-io.dev` to use a preconfigured test server if you don't want to set up an MQTT Broker on you own machine.
+There are always **two parts** to the CLI command
+
+- The main command `tether`
+  - Followed by optional parameters _for general configuration_ such as `--tether.host` or `--loglevel`
+- The subcommand `receive`, `send`, `topics`, `record` or `playback`
+  - Followed by optional paramaters _relating to the specific subcommand_
+
+### Example
+
+Here's an example of using the `receive` subcommand but specifying some non-default details for the MQTT Broker, and a non-default topic:
+
+```
+tether --tether.host 10.0.0.1 --tether.username myUserName --tether.password myPaSsWorD! receive --topic +/+/someSpecificPlug
+```
 
 ## Installation
 
