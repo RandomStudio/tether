@@ -23,6 +23,8 @@ or straight up with the default credentials (`tether`:`sp_ceB0ss!`):
 docker run -p 15675:9001 -p 1883:1883 randomstudiotools/tether-broker
 ```
 
+Note: in case you need to run the Tether broker on a Linux ARMv7 system (e.g. Raspberry Pi 3), you can use the `randomstudiotools/tether-broker:armv7` version of the image.
+
 We also provide Docker Compose configurations for 3 popular Brokers, namely
 
 - Mosquitto (recommended)
