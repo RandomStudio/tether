@@ -1,9 +1,7 @@
 use log::{debug, error, info, warn};
-use mqtt::{server_response, Client, Message, MessageBuilder, Receiver};
+use mqtt::{Client, Message, MessageBuilder, Receiver};
 pub use paho_mqtt as mqtt;
-pub use rmp_serde;
 use rmp_serde::to_vec_named;
-pub use serde;
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
 
@@ -395,6 +393,27 @@ impl TetherAgent {
                 error!("Failed to encode: {e:?}");
                 Err(e.into())
             }
+        }
+    }
+
+    pub fn publish_raw(
+        &self,
+        topic: &str,
+        payload: &[u8],
+        qos: Option<i32>,
+        retained: Option<bool>,
+    ) -> anyhow::Result<()> {
+        let message = MessageBuilder::new()
+            .topic(topic)
+            .payload(payload)
+            .retained(retained.unwrap_or(false))
+            .qos(qos.unwrap_or(1))
+            .finalize();
+        if let Err(e) = self.client.publish(message) {
+            error!("Error publishing: {:?}", e);
+            Err(e.into())
+        } else {
+            Ok(())
         }
     }
 }
