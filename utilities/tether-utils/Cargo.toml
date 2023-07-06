@@ -11,7 +11,7 @@ name = "tether"
 path = "./src/main.rs"
 
 [dependencies]
-tether-agent = { path = "../../base_agent/rs", version = "0.8.2"}
+tether-agent = { path = "../../base_agent/rs", version = "0.8.3"}
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0.91"
 rmp-serde = "1.1.1"
