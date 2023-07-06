@@ -1,5 +1,5 @@
 use log::{debug, error, info, warn};
-use mqtt::{Client, Message, MessageBuilder, Receiver};
+use mqtt::{server_response, Client, Message, MessageBuilder, Receiver};
 pub use paho_mqtt as mqtt;
 use rmp_serde::to_vec_named;
 use serde::{Deserialize, Serialize};
