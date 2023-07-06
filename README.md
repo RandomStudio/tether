@@ -57,7 +57,7 @@ Tether Egui acts as both an Agent that publishes (by default, as "gui") but also
 
 ### CLI
 
-Alternatively, command-line utilities are provided [here](./utilities/tether-cli) (with instructions for installing them)
+Alternatively, command-line utilities are provided [here](./utilities/tether-utils) (with instructions for installing them)
 
 - `tether send`: by default, publishes messages as the Agent "tether-send"
 - `tether receive`: subscribes to messages on all topics (by default) and tries to decode the MessagePack payload of each one
