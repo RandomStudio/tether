@@ -67,7 +67,7 @@ impl Insights {
 fn add_if_unique(item: &str, list: &mut Vec<String>) -> bool {
     if !list.iter().any(|i| i.eq(item)) {
         list.push(String::from(item));
-        return true;
+        true
     } else {
         false
     }

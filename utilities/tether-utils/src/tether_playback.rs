@@ -78,7 +78,7 @@ pub fn playback(cli: &Cli, options: &PlaybackOptions) {
 }
 
 fn parse_json_rows(filename: &str, tether_agent: &TetherAgent, override_topic: &Option<String>) {
-    let file = File::open(filename).expect(&format!("failed to open file {}", filename));
+    let file = File::open(filename).unwrap_or_else(|_| panic!("failed to open file {}", filename));
     let reader = BufReader::new(file);
     let deserializer = serde_json::Deserializer::from_reader(reader);
     // let mut rows: Vec<T> = vec![];

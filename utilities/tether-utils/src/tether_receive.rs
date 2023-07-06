@@ -35,17 +35,15 @@ pub fn receive(cli: &Cli, options: &ReceiveOptions) {
             let bytes = message.payload();
             if bytes.is_empty() {
                 info!("Empty message payload");
+            } else if let Ok(value) = rmp_serde::from_slice::<rmpv::Value>(bytes) {
+                let json = serde_json::to_string(&value).expect("failed to stringify JSON");
+                info!("Decoded MessagePack payload: {}", json);
             } else {
-                if let Ok(value) = rmp_serde::from_slice::<rmpv::Value>(bytes) {
-                    let json = serde_json::to_string(&value).expect("failed to stringify JSON");
-                    info!("Decoded MessagePack payload: {}", json);
+                warn!("Failed to decode MessagePack payload");
+                if let Ok(s) = String::from_utf8(bytes.to_vec()) {
+                    warn!("String representation of payload: \"{}\"", s);
                 } else {
-                    warn!("Failed to decode MessagePack payload");
-                    if let Ok(s) = String::from_utf8(bytes.to_vec()) {
-                        warn!("String representation of payload: \"{}\"", s);
-                    } else {
-                        error!("Could not decode payload bytes as string, either");
-                    }
+                    error!("Could not decode payload bytes as string, either");
                 }
             }
         }
