@@ -670,7 +670,20 @@ dependencies = [
 ]
 
 [[package]]
-name = "tether"
+name = "tether-agent"
+version = "0.8.2"
+dependencies = [
+ "anyhow",
+ "env_logger",
+ "log",
+ "paho-mqtt",
+ "rmp-serde",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "tether-utils"
 version = "0.3.1"
 dependencies = [
  "clap",
@@ -682,19 +695,6 @@ dependencies = [
  "serde",
  "serde_json",
  "tether-agent",
-]
-
-[[package]]
-name = "tether-agent"
-version = "0.8.2"
-dependencies = [
- "anyhow",
- "env_logger",
- "log",
- "paho-mqtt",
- "rmp-serde",
- "serde",
- "serde_json",
 ]
 
 [[package]]
