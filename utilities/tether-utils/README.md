@@ -1,5 +1,7 @@
 # Tether CLI Utilities
 
+Utilities for [Tether](https://github.com/RandomStudio/tether), a standardised MQTT+MessagePack system for inter-process communication.
+
 This CLI utility tool, written in Rust, provides a single binary with subcommands:
 
 - [receive](#receive): Subscribe to all/some messages and attempt to decode them
@@ -27,7 +29,11 @@ tether --tether.host 10.0.0.1 --tether.username myUserName --tether.password myP
 
 ## Installation
 
-The simplest installation method is using the [homebrew](https://brew.sh/) package manager for Mac. Simply run the following two commands:
+### Using homebrew
+
+The simplest installation method is using the [homebrew](https://brew.sh/) package manager for Mac. This is currently only working for MacOS running Apple Silicon.
+
+Simply run the following two commands:
 
 ```
 brew tap randomstudio/tether
@@ -35,6 +41,16 @@ brew install tether
 ```
 
 (The formula and release files are hosted at https://github.com/RandomStudio/homebrew-tether - but you don't need to know that.)
+
+### Using Cargo
+
+If you have the Rust toolchain installed, you can install the executable using...
+
+```
+cargo install tether-utils
+```
+
+... This has the advantage of re-compiling for your architecture automatically. The crate is published at https://crates.io/crates/tether-utils
 
 ---
 
