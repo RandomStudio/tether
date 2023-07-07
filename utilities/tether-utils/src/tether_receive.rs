@@ -1,8 +1,6 @@
 use clap::Args;
 use log::{debug, error, info, warn};
-use tether_agent::{PlugOptionsBuilder, TetherAgentOptionsBuilder};
-
-use crate::{defaults, Cli};
+use tether_agent::{PlugOptionsBuilder, TetherAgent};
 
 #[derive(Args)]
 pub struct ReceiveOptions {
@@ -11,19 +9,12 @@ pub struct ReceiveOptions {
     subscribe_topic: String,
 }
 
-pub fn receive(cli: &Cli, options: &ReceiveOptions) {
+pub fn receive(options: &ReceiveOptions, tether_agent: &TetherAgent) {
     info!("Tether Receive Utility");
-    let tether_agent = TetherAgentOptionsBuilder::new(defaults::AGENT_ROLE)
-        .host(&cli.tether_host)
-        .port(cli.tether_port)
-        .username(&cli.tether_username)
-        .password(&cli.tether_password)
-        .build()
-        .expect("failed to connect Tether");
 
     let _input = PlugOptionsBuilder::create_input("all")
         .topic(&options.subscribe_topic)
-        .build(&tether_agent)
+        .build(tether_agent)
         .expect("failed to create input plug");
 
     loop {

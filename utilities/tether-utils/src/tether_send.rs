@@ -1,22 +1,10 @@
 use clap::Args;
 use log::{debug, error, info, warn};
 use serde::Serialize;
-use tether_agent::{PlugOptionsBuilder, TetherAgentOptionsBuilder};
-
-use crate::{defaults, Cli};
+use tether_agent::{build_topic, PlugOptionsBuilder, TetherAgent};
 
 #[derive(Args)]
 pub struct SendOptions {
-    /// Specify an Agent Role; this will be used for the auto-generated publish topic
-    /// (ignored if you provide your own plug.topic)
-    #[arg(long = "agent.role", default_value_t=String::from(defaults::AGENT_ROLE))]
-    agent_role: String,
-
-    /// Specify an Agent ID or Group; this will be used for the auto-generated publish topic
-    /// (ignored if you provide your own plug.topic)
-    #[arg(long = "agent.id", default_value_t=String::from(defaults::AGENT_ID))]
-    agent_id: String,
-
     /// Overide the auto-generated topic with your own, to use with every published message
     #[arg(long = "plug.name", default_value_t=String::from("testMessages"))]
     plug_name: String,
@@ -38,8 +26,10 @@ struct DummyData {
     a_string: String,
 }
 
-pub fn send(cli: &Cli, options: &SendOptions) {
+pub fn send(options: &SendOptions, tether_agent: &TetherAgent) {
     info!("Tether Send Utility");
+
+    let (role, id) = tether_agent.description();
 
     let publish_topic = match &options.plug_topic {
         Some(override_topic) => {
@@ -50,26 +40,15 @@ pub fn send(cli: &Cli, options: &SendOptions) {
             String::from(override_topic)
         }
         None => {
-            let auto_generated_topic: String = format!(
-                "{}/{}/{}",
-                &options.agent_role, &options.agent_id, &options.plug_name
-            );
+            let auto_generated_topic = build_topic(role, id, &options.plug_name);
             info!("Using auto-generated topic \"{}\"", &auto_generated_topic);
             auto_generated_topic
         }
     };
 
-    let tether_agent = TetherAgentOptionsBuilder::new(defaults::AGENT_ROLE)
-        .host(&cli.tether_host)
-        .port(cli.tether_port)
-        .username(&cli.tether_username)
-        .password(&cli.tether_password)
-        .build()
-        .expect("failed to connect Tether");
-
     let output = PlugOptionsBuilder::create_output(&options.plug_name)
         .topic(&publish_topic)
-        .build(&tether_agent)
+        .build(tether_agent)
         .expect("failed to create output plug");
 
     if let Some(custom_message) = &options.custom_message {

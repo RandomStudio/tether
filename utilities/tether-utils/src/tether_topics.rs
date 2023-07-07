@@ -2,10 +2,8 @@ use clap::Args;
 use log::info;
 use tether_agent::{
     mqtt::Message, parse_agent_id, parse_agent_role, parse_plug_name, PlugOptionsBuilder,
-    TetherAgentOptionsBuilder,
+    TetherAgent,
 };
-
-use crate::{defaults, Cli};
 
 #[derive(Args)]
 pub struct TopicOptions {
@@ -73,20 +71,12 @@ fn add_if_unique(item: &str, list: &mut Vec<String>) -> bool {
     }
 }
 
-pub fn topics(cli: &Cli, options: &TopicOptions) {
+pub fn topics(options: &TopicOptions, tether_agent: &TetherAgent) {
     info!("Tether Topics Parsing Utility");
-
-    let tether_agent = TetherAgentOptionsBuilder::new(defaults::AGENT_ROLE)
-        .host(&cli.tether_host)
-        .port(cli.tether_port)
-        .username(&cli.tether_username)
-        .password(&cli.tether_password)
-        .build()
-        .expect("failed to connect Tether");
 
     let _input = PlugOptionsBuilder::create_input("all")
         .topic(&options.subscribe_topic)
-        .build(&tether_agent);
+        .build(tether_agent);
 
     let mut insights = Insights::new();
 

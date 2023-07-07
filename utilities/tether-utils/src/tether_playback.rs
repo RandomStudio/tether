@@ -5,9 +5,7 @@ use log::{debug, info, warn};
 
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use tether_agent::{TetherAgent, TetherAgentOptionsBuilder};
-
-use crate::{defaults, Cli};
+use tether_agent::TetherAgent;
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -43,25 +41,17 @@ pub struct PlaybackOptions {
     loop_infinite: bool,
 }
 
-pub fn playback(cli: &Cli, options: &PlaybackOptions) {
+pub fn playback(options: &PlaybackOptions, tether_agent: &TetherAgent) {
     info!("Tether Playback Utility");
 
     if let Some(t) = &options.override_topic {
         warn!("Override topic provided; ALL topics in JSON entries will be ignored and replaced with \"{}\"",t);
     }
 
-    let tether_agent = TetherAgentOptionsBuilder::new(defaults::AGENT_ROLE)
-        .host(&cli.tether_host)
-        .port(cli.tether_port)
-        .username(&cli.tether_username)
-        .password(&cli.tether_password)
-        .build()
-        .expect("failed to connect Tether");
-
     if options.loop_infinite {
         loop {
             warn!("Infinite loops requested; Press Ctr+C to stop");
-            parse_json_rows(&options.file_path, &tether_agent, &options.override_topic);
+            parse_json_rows(&options.file_path, tether_agent, &options.override_topic);
         }
     } else {
         let mut count = 0;
@@ -71,7 +61,7 @@ pub fn playback(cli: &Cli, options: &PlaybackOptions) {
                 "Finite loops requested: starting loop {}/{}",
                 count, options.loop_count
             );
-            parse_json_rows(&options.file_path, &tether_agent, &options.override_topic);
+            parse_json_rows(&options.file_path, tether_agent, &options.override_topic);
         }
         info!("All {} loops completed", options.loop_count);
     }

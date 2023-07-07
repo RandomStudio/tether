@@ -11,13 +11,9 @@ use std::{
 
 use clap::Args;
 use log::{debug, info, warn};
-use tether_agent::{PlugOptionsBuilder, TetherAgentOptionsBuilder};
+use tether_agent::{PlugOptionsBuilder, TetherAgent};
 
-use crate::{
-    defaults,
-    tether_playback::{SimulationMessage, SimulationRow},
-    Cli,
-};
+use crate::tether_playback::{SimulationMessage, SimulationRow};
 
 #[derive(Args)]
 pub struct RecordOptions {
@@ -57,19 +53,12 @@ pub struct RecordOptions {
     timing_duration: Option<f32>,
 }
 
-pub fn record(cli: &Cli, options: &RecordOptions) {
+pub fn record(options: &RecordOptions, tether_agent: &TetherAgent) {
     info!("Tether Record Utility");
-    let tether_agent = TetherAgentOptionsBuilder::new(defaults::AGENT_ROLE)
-        .host(&cli.tether_host)
-        .port(cli.tether_port)
-        .username(&cli.tether_username)
-        .password(&cli.tether_password)
-        .build()
-        .expect("failed to connect Tether");
 
     let _input = PlugOptionsBuilder::create_input("all")
         .topic(&options.subscribe_topic)
-        .build(&tether_agent)
+        .build(tether_agent)
         .expect("failed to create input plug");
 
     let file_path = match &options.file_override_path {

@@ -1,5 +1,5 @@
 use env_logger::{Builder, Env};
-use log::debug;
+use log::{debug, error, warn};
 
 use clap::{Parser, Subcommand};
 
@@ -9,6 +9,7 @@ mod tether_record;
 mod tether_send;
 mod tether_topics;
 
+use tether_agent::TetherAgentOptionsBuilder;
 use tether_playback::PlaybackOptions;
 use tether_receive::{receive, ReceiveOptions};
 use tether_record::RecordOptions;
@@ -35,6 +36,14 @@ pub struct Cli {
     #[arg(long = "tether.password", default_value_t=String::from("sp_ceB0ss!"))]
     pub tether_password: String,
 
+    /// Role to use for any auto-generated topics on publish
+    #[arg(long = "tether.role", default_value_t=String::from("utils"))]
+    pub tether_role: String,
+
+    /// ID/Group to use for any auto-generated topics on publish
+    #[arg(long = "tether.id", default_value_t=String::from("any"))]
+    pub tether_id: String,
+
     #[arg(long = "loglevel",default_value_t=String::from("info"))]
     pub log_level: String,
 }
@@ -48,24 +57,35 @@ enum Commands {
     Record(RecordOptions),
 }
 
-mod defaults {
-    pub const AGENT_ROLE: &str = "testAgent";
-    pub const AGENT_ID: &str = "any";
-}
-
 fn main() {
     let cli = Cli::parse();
 
-    let mut builder = Builder::from_env(Env::default().default_filter_or(&cli.log_level));
-    builder.init();
+    let mut env_builder = Builder::from_env(Env::default().default_filter_or(&cli.log_level));
+    env_builder.init();
 
     debug!("Debugging is enabled; could be verbose");
 
+    let tether_agent = TetherAgentOptionsBuilder::new(&cli.tether_role)
+        .id(&cli.tether_id)
+        .host(&cli.tether_host)
+        .port(cli.tether_port)
+        .username(&cli.tether_username)
+        .password(&cli.tether_password)
+        .build()
+        .unwrap_or_else(|_| {
+            error!("Failed to initialise and/or connect the Tether Agent");
+            warn!(
+                "Check your Tether settings and ensure that you have a correctly-configured MQTT broker running at {}:{}",
+                cli.tether_host, cli.tether_port
+            );
+            panic!("Failed to init/connect Tether Agent")
+        });
+
     match &cli.command {
-        Commands::Receive(options) => receive(&cli, options),
-        Commands::Send(options) => send(&cli, options),
-        Commands::Topics(options) => topics(&cli, options),
-        Commands::Playback(options) => playback(&cli, options),
-        Commands::Record(options) => record(&cli, options),
+        Commands::Receive(options) => receive(options, &tether_agent),
+        Commands::Send(options) => send(options, &tether_agent),
+        Commands::Topics(options) => topics(options, &tether_agent),
+        Commands::Playback(options) => playback(options, &tether_agent),
+        Commands::Record(options) => record(options, &tether_agent),
     }
 }
