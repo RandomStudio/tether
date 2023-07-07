@@ -121,7 +121,7 @@ Sometimes the use of the words **Input** and **Output** can be confusing dependi
 
 Here are some examples that should clear up the terminology.
 
-- An Agent that **gets** data from the outside world (e.g. sensor input or user control)
+- An Agent that **gets** data from the outside world (e.g. sensor input or user interfaces)
   - ...Will **get** the data "in" from other devices and systems
   - ...Will convert this data into Tether Messages, and mostly **publish** these messages **to** the Tether System
   - ...It will therefore have mostly (or exclusively) **OUTPUT PLUGS**
