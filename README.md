@@ -212,6 +212,7 @@ Some examples of Agent roles:
   - `"videoColourFinder"` for detecting dominant colours from a webcam, e.g. [Tether Colourfinder](https://github.com/RandomStudio/tether-colourfinder-web)
   - `"midi"` for turning MIDI input from a controller or keyboard into standardised Tether messages, e.g. [tether-midi-mediator](https://github.com/RandomStudio/tether-midi-mediator/tree/main)
   - `"scheduler"` for emitting off/on notifications for processes on a schedule, e.g [tether-scheduler](https://github.com/RandomStudio/tether-scheduler)
+  - `"fusionIMU"` for emitting orientation and acceleration data from a microcontroller equipped with an Intertial Measurement Unit (IMU), e.g. https://github.com/RandomStudio/tether-imu
 - Mostly Input Plugs -> **OUTPUT** Role:
   - `"soundscape"` for output of audio driven by remote messages, e.g. [tether-soundscape-rs](https://github.com/RandomStudio/tether-soundscape-rs)
   - `"visualisation"` could cover a range of screen-based graphical output, either via a browser frontend or some native application
