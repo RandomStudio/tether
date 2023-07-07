@@ -115,7 +115,11 @@ Finally, note that this is a _push_ messaging system. Therefore, no polling is r
 
 Sometimes the use of the words **Input** and **Output** can be confusing depending on the context. "An agent whose role is mostly input will have mostly output plugs" ... what?
 
-> 💡 TIP: Think from the point of view of the Tether System. Everything coming in from the outside world is "input" and everything going to the outside world is "output".
+When talking about **Messages**, it's easy to see that an Input Plug is for receiving messages and an Output Plug is for sending messages. But from the point of view of the Installation or the System as a whole, the Role of the Agent might be described in precisely the opposite way!
+
+So, the first thing to clarify is whether you are talking about "messages" or something else ("data", "graphics", sound", etc.).
+
+> 💡 TIP: Think from the point of view of the Tether System. Everything (data, user control, etc.) coming in from the outside world is "input" and everything going to the outside world (graphics, sound, etc.) is "output".
 
 ![Input vs Output in a diagram](./docs/input-brain-output.png)
 
