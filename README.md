@@ -17,6 +17,7 @@ Specifically, Tether is a standardised way of using existing, well established t
   - [Agents](#agents)
   - [Plugs](#plugs)
   - [Publish/Subscribe](#publishsubscribe)
+  - [Input/Output Roles vs Input/Output Plugs?](#inputoutput-roles-vs-inputoutput-plugs)
 - [Formally defining a Tether System](#formally-defining-a-tether-system)
   - [A. The MQTT Broker](#a-the-mqtt-broker)
     - [Why MQTT specifically?](#why-mqtt-specifically)
@@ -110,6 +111,29 @@ In a Tether System, as with all Pub/Sub systems, messages are organised under "t
 
 Finally, note that this is a _push_ messaging system. Therefore, no polling is required, and Agents need to be prepared to handle messages whenever they come in.
 
+### Input/Output Roles vs Input/Output Plugs?
+
+Sometimes the use of the words **Input** and **Output** can be confusing depending on the context. "An agent whose role is mostly input will have mostly output plugs" ... what?
+
+> 💡 TIP: Think from the point of view of the Tether System. Everything coming in from the outside world is "input" and everything going to the outside world is "output".
+
+![Input vs Output in a diagram](./docs/input-brain-output.png)
+
+Here are some examples that should clear up the terminology.
+
+- An Agent that **gets** data from the outside world (e.g. sensor input or user control)
+  - ...Will **get** the data "in" from other devices and systems
+  - ...Will convert this data into Tether Messages, and mostly **publish** these messages **to** the Tether System
+  - ...It will therefore have mostly (or exclusively) **OUTPUT PLUGS**
+  - Nevertheless, we say its **role** is essentially **INPUT**
+- An Agent that **outputs** graphics, lights, sound, data, etc.
+  - ...Will **send** data "out" to other devices, displays, specialised software, etc.
+  - ...Will mostly **subscribe** to Tether Messages **from** other parts of the Tether System, e.g instructions on what to do next, events that need to be responded to, or state that must be represented
+  - ...It will therefore have mostly (or exclusively) **INPUT PLUGS**
+  - ...Nevertheless, we say its role is essentially **OUTPUT**
+
+Some Agents will do a bit of both "input" _and_ "output". See the section on [Agent Roles](#part-1-agent-or-role) for more detail and examples of these.
+
 ## Formally defining a Tether System
 
 To make a Tether system, the following conventions (A, B, C) are applied:
@@ -176,20 +200,25 @@ Or, to be more descriptive: `"agent role"` / `"id or group"` / `"plug name"`. No
 
 Each Agent is expected to have a single "role" in the system. A short indication/naming of the role is used as the top level of the topic hierarchy.
 
+> 💡 TIP: If the distinction between a mostly "Output" role and "Input" role seems confusing, review the section on [Input/Output Roles vs Input/Output Plugs](#inputoutput-roles-vs-inputoutput-plugs).
+
 Some examples of Agent roles:
 
-- Mostly input:
+- Mostly **INPUT** Role -> Output Plugs:
   - `"lidar2d"` for LIDAR data, e.g. [tether-lidar-rs](https://github.com/RandomStudio/tether-rplidar-rs). Note that the underlying hardware, SDK and even programming language could differ, but from the point of view of the Tether system the role is the same because the messages look the same.
   - `"lidar-person-counter"` for presence detection, e.g. [lidar-person-counter](https://github.com/RandomStudio/lidar-person-counter)
   - `"gui"` for user interface control, e.g. [tether-egui](https://github.com/RandomStudio/tether-egui)
   - `"poseDetection"` for tracking people
   - `"videoColourFinder"` for detecting dominant colours from a webcam, e.g. [Tether Colourfinder](https://github.com/RandomStudio/tether-colourfinder-web)
   - `"midi"` for turning MIDI input from a controller or keyboard into standardised Tether messages, e.g. [tether-midi-mediator](https://github.com/RandomStudio/tether-midi-mediator/tree/main)
-- Mostly output:
+  - `"scheduler"` for emitting off/on notifications for processes on a schedule, e.g [tether-scheduler](https://github.com/RandomStudio/tether-scheduler)
+- Mostly Input Plugs -> **OUTPUT** Role:
   - `"soundscape"` for output of audio driven by remote messages, e.g. [tether-soundscape-rs](https://github.com/RandomStudio/tether-soundscape-rs)
   - `"visualisation"` could cover a range of screen-based graphical output, either via a browser frontend or some native application
-  - `"scheduler"` for emit off/on notifications for processes on a schedule, e.g [tether-scheduler](https://github.com/RandomStudio/tether-scheduler)
-- Both input and output
+
+Some Agents do both "input" and "output". Data from multiple sensors might need to be integrated, for example. Or a complex combination of state management, timed animation, events, decisions might be turned into new Tether Messages.
+
+- Both **INPUT** and **OUTPUT** Roles
   - `"brain"` is a very common agent role in most of our installations. This is a process dedicated to managing state and responding to events (e.g. from sensors or time-based) and generating other events (controlling output, starting timelines, etc.). Usually these are very customised for the given project.
   - `"lidarConsolidation"` for taking sensor input (in this case, one or more "lidar2d" agents) and running clustering + perspective transformation algorithms, then outputting nicely normalised "tracking" data. See [Tether Lidar2D Consolidator](https://github.com/RandomStudio/tether-lidar2d-consolidation-rs)
 
