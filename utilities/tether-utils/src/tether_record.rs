@@ -1,7 +1,6 @@
 use std::{
     fs::File,
     io::{LineWriter, Write},
-    process::exit,
     sync::{
         atomic::{AtomicBool, Ordering},
         Arc,
@@ -122,7 +121,9 @@ pub fn record(options: &RecordOptions, tether_agent: &TetherAgent) {
     })
     .expect("Error setting Ctrl-C handler");
 
-    loop {
+    let mut finished = false;
+
+    while !finished {
         if let Some(delay) = start_delay {
             if let Ok(elapsed) = start_application_time.elapsed() {
                 if elapsed < delay {
@@ -156,7 +157,8 @@ pub fn record(options: &RecordOptions, tether_agent: &TetherAgent) {
             file.flush().unwrap();
             std::thread::sleep(Duration::from_secs(2));
             debug!("Exit now");
-            exit(0);
+            // exit(0);
+            finished = true;
         } else {
             let mut did_work = false;
             while let Some((_plug_name, message)) = tether_agent.check_messages() {
