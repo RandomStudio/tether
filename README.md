@@ -205,7 +205,7 @@ Each Agent is expected to have a single "role" in the system. A short indication
 Some examples of Agent roles:
 
 - Mostly **INPUT** Role -> Output Plugs:
-  - `"lidar2d"` for LIDAR data, e.g. [tether-lidar-rs](https://github.com/RandomStudio/tether-rplidar-rs). Note that the underlying hardware, SDK and even programming language could differ, but from the point of view of the Tether system the role is the same because the messages look the same.
+  - `"lidar2d"` for LIDAR data, e.g. [tether-lidar-rs](https://github.com/RandomStudio/tether-rplidar-rs) (in Rust) or [tether-rplidar](https://github.com/RandomStudio/tether-rplidar) (in Python). Note that the underlying hardware, SDK and even programming language could differ, but from the point of view of the Tether system the role is the same because the messages look the same.
   - `"lidar-person-counter"` for presence detection, e.g. [lidar-person-counter](https://github.com/RandomStudio/lidar-person-counter)
   - `"gui"` for user interface control, e.g. [tether-egui](https://github.com/RandomStudio/tether-egui)
   - `"poseDetection"` for tracking people
