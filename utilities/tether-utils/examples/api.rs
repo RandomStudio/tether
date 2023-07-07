@@ -1,7 +1,7 @@
 use tether_agent::{PlugOptionsBuilder, TetherAgentOptionsBuilder};
 use tether_utils::{
     tether_send::{send, SendOptions},
-    tether_topics::{topics, TopicOptions},
+    tether_topics::{subscribe, Insights, TopicOptions},
 };
 
 fn demo_receive() {
@@ -56,9 +56,16 @@ pub fn demo_topics() {
     let options = TopicOptions {
         subscribe_topic: "#".into(),
     };
-    topics(&options, &tether_agent, |res| {
-        println!("TOPICS: update: {}", res);
-    });
+
+    let mut insights = Insights::new();
+
+    let input = subscribe(&options, &tether_agent).expect("failed to subscribe");
+
+    loop {
+        if insights.check_for_updates(&input, &tether_agent) {
+            println!("Insights update: {:#?}", insights);
+        }
+    }
 }
 
 fn main() {

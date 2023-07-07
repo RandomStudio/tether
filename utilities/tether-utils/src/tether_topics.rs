@@ -1,8 +1,8 @@
 use clap::Args;
-use log::info;
+use log::*;
 use tether_agent::{
-    mqtt::Message, parse_agent_id, parse_agent_role, parse_plug_name, PlugOptionsBuilder,
-    TetherAgent,
+    mqtt::Message, parse_agent_id, parse_agent_role, parse_plug_name, PlugDefinition,
+    PlugOptionsBuilder, TetherAgent,
 };
 
 #[derive(Args)]
@@ -13,15 +13,15 @@ pub struct TopicOptions {
 
 #[derive(Debug)]
 pub struct Insights {
-    topics: Vec<String>,
-    roles: Vec<String>,
-    ids: Vec<String>,
-    plugs: Vec<String>,
+    pub topics: Vec<String>,
+    pub roles: Vec<String>,
+    pub ids: Vec<String>,
+    pub plugs: Vec<String>,
     // message_count: u64,
 }
 
 impl Insights {
-    fn new() -> Self {
+    pub fn new() -> Self {
         Insights {
             topics: Vec::new(),
             roles: Vec::new(),
@@ -31,7 +31,7 @@ impl Insights {
         }
     }
 
-    pub fn update(&mut self, _plug_name: &str, message: &Message) -> bool {
+    pub fn update(&mut self, message: &Message) -> bool {
         // self.message_count += 1;
         let mut did_change = false;
 
@@ -60,6 +60,31 @@ impl Insights {
 
         did_change
     }
+
+    pub fn check_for_updates(
+        &mut self,
+        input_plug_subscribed: &PlugDefinition,
+        tether_agent: &TetherAgent,
+    ) -> bool {
+        match input_plug_subscribed {
+            PlugDefinition::InputPlugDefinition(_) => {
+                debug!("Input Plugs are ok; make sure you have subscribed")
+            }
+            _ => panic!("You should have created an Input Plug"),
+        };
+        let mut did_work = false;
+        while let Some((_plug_name, message)) = tether_agent.check_messages() {
+            did_work = true;
+            if self.update(&message) {
+                debug!("Insights update: {:#?}", self);
+                return true;
+            }
+        }
+        if !did_work {
+            std::thread::sleep(std::time::Duration::from_millis(1));
+        }
+        false
+    }
 }
 
 fn add_if_unique(item: &str, list: &mut Vec<String>) -> bool {
@@ -71,26 +96,17 @@ fn add_if_unique(item: &str, list: &mut Vec<String>) -> bool {
     }
 }
 
-pub fn topics(options: &TopicOptions, tether_agent: &TetherAgent, on_update: fn(result: String)) {
+pub fn subscribe(
+    options: &TopicOptions,
+    tether_agent: &TetherAgent,
+) -> anyhow::Result<PlugDefinition> {
     info!("Tether Topics Parsing Utility");
 
-    let _input = PlugOptionsBuilder::create_input("all")
+    match PlugOptionsBuilder::create_input("all")
         .topic(&options.subscribe_topic)
-        .build(tether_agent);
-
-    let mut insights = Insights::new();
-
-    loop {
-        let mut did_work = false;
-        while let Some((plug_name, message)) = tether_agent.check_messages() {
-            did_work = true;
-            if insights.update(&plug_name, &message) {
-                let result = format!("{:#?}", insights);
-                on_update(result);
-            }
-        }
-        if !did_work {
-            std::thread::sleep(std::time::Duration::from_millis(1));
-        }
+        .build(tether_agent)
+    {
+        Ok(p) => Ok(p),
+        Err(e) => Err(e.into()),
     }
 }
