@@ -115,7 +115,7 @@ Finally, note that this is a _push_ messaging system. Therefore, no polling is r
 
 Sometimes the use of the words **Input** and **Output** can be confusing depending on the context. "An agent whose role is mostly input will have mostly output plugs" ... what?
 
-When talking about **Messages**, it's easy to see that an Input Plug is for receiving messages and an Output Plug is for sending messages. But from the point of view of the Installation or the System as a whole, the Role of the Agent might be described in precisely the opposite way!
+When talking about **messages**, it's easy to see that an Input Plug is for receiving messages and an Output Plug is for sending messages. But from the point of view of the Installation or the System as a whole, the Role of the Agent might be described in precisely the opposite way!
 
 So, the first thing to clarify is whether you are talking about "messages" or something else ("data", "graphics", sound", etc.).
 
@@ -208,7 +208,7 @@ Each Agent is expected to have a single "role" in the system. A short indication
 
 Some examples of Agent roles:
 
-- Mostly **INPUT** Role -> Output Plugs:
+- Mostly **INPUT** Role -> Mostly Output Plugs:
   - `"lidar2d"` for LIDAR data, e.g. [tether-lidar-rs](https://github.com/RandomStudio/tether-rplidar-rs) (in Rust) or [tether-rplidar](https://github.com/RandomStudio/tether-rplidar) (in Python). Note that the underlying hardware, SDK and even programming language could differ, but from the point of view of the Tether system the role is the same because the messages look the same.
   - `"lidar-person-counter"` for presence detection, e.g. [lidar-person-counter](https://github.com/RandomStudio/lidar-person-counter)
   - `"gui"` for user interface control, e.g. [tether-egui](https://github.com/RandomStudio/tether-egui)
@@ -217,7 +217,7 @@ Some examples of Agent roles:
   - `"midi"` for turning MIDI input from a controller or keyboard into standardised Tether messages, e.g. [tether-midi-mediator](https://github.com/RandomStudio/tether-midi-mediator/tree/main)
   - `"scheduler"` for emitting off/on notifications for processes on a schedule, e.g [tether-scheduler](https://github.com/RandomStudio/tether-scheduler)
   - `"fusionIMU"` for emitting orientation and acceleration data from a microcontroller equipped with an Intertial Measurement Unit (IMU), e.g. [Tether Wireless IMU](https://github.com/RandomStudio/tether-imu)
-- Mostly Input Plugs -> **OUTPUT** Role:
+- Mostly Input Plugs -> Mostly **OUTPUT** Role:
   - `"soundscape"` for output of audio driven by remote messages, e.g. [tether-soundscape-rs](https://github.com/RandomStudio/tether-soundscape-rs)
   - `"visualisation"` could cover a range of screen-based graphical output, either via a browser frontend or some native application
 
