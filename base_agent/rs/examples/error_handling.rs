@@ -1,5 +1,5 @@
 use env_logger::{Builder, Env};
-use log::{debug, error, info, warn};
+use log::*;
 use serde::Serialize;
 use tether_agent::{PlugOptionsBuilder, TetherAgentOptionsBuilder};
 

@@ -6,9 +6,11 @@ edition = "2021"
 license = "MIT"
 repository = "https://github.com/RandomStudio/tether"
 
+[lib]
+
 [[bin]]
 name = "tether"
-path = "./src/main.rs"
+
 
 [dependencies]
 tether-agent = { path = "../../base_agent/rs", version = "0.8.3"}

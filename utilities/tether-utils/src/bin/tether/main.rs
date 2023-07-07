@@ -3,20 +3,8 @@ use log::{debug, error, warn};
 
 use clap::{Parser, Subcommand};
 
-mod tether_playback;
-mod tether_receive;
-mod tether_record;
-mod tether_send;
-mod tether_topics;
-
 use tether_agent::TetherAgentOptionsBuilder;
-use tether_playback::PlaybackOptions;
-use tether_receive::{receive, ReceiveOptions};
-use tether_record::RecordOptions;
-use tether_send::{send, SendOptions};
-use tether_topics::{topics, TopicOptions};
-
-use crate::{tether_playback::playback, tether_record::record};
+use tether_utils::*;
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
@@ -50,11 +38,11 @@ pub struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
-    Receive(ReceiveOptions),
-    Send(SendOptions),
-    Topics(TopicOptions),
-    Playback(PlaybackOptions),
-    Record(RecordOptions),
+    Receive(tether_receive::ReceiveOptions),
+    Send(tether_send::SendOptions),
+    Topics(tether_topics::TopicOptions),
+    Playback(tether_playback::PlaybackOptions),
+    Record(tether_record::RecordOptions),
 }
 
 fn main() {
@@ -82,10 +70,10 @@ fn main() {
         });
 
     match &cli.command {
-        Commands::Receive(options) => receive(options, &tether_agent),
-        Commands::Send(options) => send(options, &tether_agent),
-        Commands::Topics(options) => topics(options, &tether_agent),
-        Commands::Playback(options) => playback(options, &tether_agent),
-        Commands::Record(options) => record(options, &tether_agent),
+        Commands::Receive(options) => tether_receive::receive(options, &tether_agent),
+        Commands::Send(options) => tether_send::send(options, &tether_agent),
+        Commands::Topics(options) => tether_topics::topics(options, &tether_agent),
+        Commands::Playback(options) => tether_playback::playback(options, &tether_agent),
+        Commands::Record(options) => tether_record::record(options, &tether_agent),
     }
 }
