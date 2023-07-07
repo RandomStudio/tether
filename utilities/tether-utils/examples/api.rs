@@ -64,6 +64,19 @@ pub fn demo_topics() {
     loop {
         if insights.check_for_updates(&input, &tether_agent) {
             println!("Insights update: {:#?}", insights);
+            let Insights {
+                topics,
+                roles,
+                ids,
+                plugs,
+            } = &insights;
+            println!(
+                "counted {} topics, {} roles, {} ids and {} plugs",
+                topics.len(),
+                roles.len(),
+                ids.len(),
+                plugs.len()
+            );
         }
     }
 }
