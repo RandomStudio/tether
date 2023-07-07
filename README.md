@@ -130,7 +130,7 @@ Here are some examples that should clear up the terminology.
   - ...Will **send** data "out" to other devices, displays, specialised software, etc.
   - ...Will mostly **subscribe** to Tether Messages **from** other parts of the Tether System, e.g instructions on what to do next, events that need to be responded to, or state that must be represented
   - ...It will therefore have mostly (or exclusively) **INPUT PLUGS**
-  - ...Nevertheless, we say its **Role** is essentially **OUTPUT**
+  - Nevertheless, we say its **Role** is essentially **OUTPUT**
 
 Some Agents will do a bit of both "input" _and_ "output". See the section on [Agent Roles](#part-1-agent-or-role) for more detail and examples of these.
 
