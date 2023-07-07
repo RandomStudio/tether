@@ -6,7 +6,7 @@ use tether_agent::{mqtt::Message, PlugOptionsBuilder, TetherAgent};
 pub struct ReceiveOptions {
     /// Topic to subscribe; by default we recording everything
     #[arg(long = "topic", default_value_t=String::from("#"))]
-    subscribe_topic: String,
+    pub subscribe_topic: String,
 }
 
 pub fn receive(

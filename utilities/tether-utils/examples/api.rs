@@ -1,5 +1,9 @@
+use std::thread::spawn;
+
 use tether_agent::{PlugOptionsBuilder, TetherAgentOptionsBuilder};
 use tether_utils::{
+    tether_playback::{playback, PlaybackOptions},
+    tether_receive::{receive, ReceiveOptions},
     tether_send::{send, SendOptions},
     tether_topics::{subscribe, Insights, TopicOptions},
 };
@@ -9,22 +13,14 @@ fn demo_receive() {
         .build()
         .expect("failed to init/connect Tether Agent");
 
-    let _input_plug = PlugOptionsBuilder::create_input("dummyData")
-        .build(&tether_agent)
-        .expect("failed to create input plug");
+    let options = ReceiveOptions {
+        subscribe_topic: "#".into(),
+    };
 
-    let mut count = 0;
-
-    loop {
-        while let Some((_plug_name, message)) = &tether_agent.check_messages() {
-            count += 1;
-            println!(
-                "RECEIVE: got message#{} on topic \"{}\"",
-                count,
-                message.topic()
-            );
-        }
-    }
+    receive(&options, &tether_agent, |_plug_name, message, decoded| {
+        let contents = decoded.unwrap_or("(empty/invalid message)".into());
+        println!("RECEIVE: \"{}\" :: {}", message.topic(), contents);
+    })
 }
 
 fn demo_send() {
@@ -81,6 +77,21 @@ pub fn demo_topics() {
     }
 }
 
+pub fn demo_playback() {
+    let tether_agent = TetherAgentOptionsBuilder::new("demoPlayback")
+        .build()
+        .expect("failed to init/connect Tether Agent");
+
+    let options = PlaybackOptions {
+        file_path: "./demo.json".into(),
+        override_topic: None,
+        loop_count: 1, // ignored anyway
+        loop_infinite: true,
+    };
+
+    playback(&options, &tether_agent);
+}
+
 fn main() {
     println!(
         "This example shows how the tether-utils library can be used programmatically, 
@@ -88,16 +99,15 @@ fn main() {
     );
     println!("Press Ctrl+C to stop");
 
-    let mut handles = Vec::new();
-    handles.push(std::thread::spawn(move || {
-        demo_receive();
-    }));
-    handles.push(std::thread::spawn(move || {
-        demo_send();
-    }));
-    handles.push(std::thread::spawn(move || {
-        demo_topics();
-    }));
+    let handles = vec![
+        spawn(|| demo_receive()),
+        spawn(|| demo_send()),
+        spawn(|| demo_topics()),
+        spawn(|| {
+            std::thread::sleep(std::time::Duration::from_secs(4));
+            demo_playback();
+        }),
+    ];
 
     for handle in handles {
         handle.join().expect("failed to join handle");

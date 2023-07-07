@@ -26,19 +26,19 @@ pub struct SimulationRow {
 pub struct PlaybackOptions {
     /// Specify the full path to the JSON file containing recorded messages
     #[arg(long = "file.path", default_value_t=String::from("./demo.json"))]
-    file_path: String,
+    pub file_path: String,
 
     /// Overide any original topics saved in the file, to use with every published message
     #[arg(long = "topic")]
-    override_topic: Option<String>,
+    pub override_topic: Option<String>,
 
     /// How many times to loop playback
     #[arg(long = "loops.count", default_value_t = 1)]
-    loop_count: usize,
+    pub loop_count: usize,
 
     /// Flag to enable infinite looping for playback (ignore loops.count if enabled)
     #[arg(long = "loops.infinite")]
-    loop_infinite: bool,
+    pub loop_infinite: bool,
 }
 
 pub fn playback(options: &PlaybackOptions, tether_agent: &TetherAgent) {
