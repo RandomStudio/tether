@@ -686,6 +686,7 @@ dependencies = [
 name = "tether-utils"
 version = "0.3.2"
 dependencies = [
+ "anyhow",
  "clap",
  "ctrlc",
  "env_logger",

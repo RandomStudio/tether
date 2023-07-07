@@ -7,15 +7,15 @@ use tether_agent::{build_topic, PlugOptionsBuilder, TetherAgent};
 pub struct SendOptions {
     /// Overide the auto-generated topic with your own, to use with every published message
     #[arg(long = "plug.name", default_value_t=String::from("testMessages"))]
-    plug_name: String,
+    pub plug_name: String,
 
     /// Overide the auto-generated topic with your own, to use with every published message
     #[arg(long = "plug.topic")]
-    plug_topic: Option<String>,
+    pub plug_topic: Option<String>,
 
     /// Optionally provide a custom message. Provide this as a valid JSON string.
     #[arg(long = "message")]
-    custom_message: Option<String>,
+    pub custom_message: Option<String>,
 }
 
 #[derive(Serialize, Debug)]
@@ -26,7 +26,7 @@ struct DummyData {
     a_string: String,
 }
 
-pub fn send(options: &SendOptions, tether_agent: &TetherAgent) {
+pub fn send(options: &SendOptions, tether_agent: &TetherAgent) -> anyhow::Result<()> {
     info!("Tether Send Utility");
 
     let (role, id) = tether_agent.description();
@@ -62,9 +62,11 @@ pub fn send(options: &SendOptions, tether_agent: &TetherAgent) {
                 tether_agent
                     .publish(&output, Some(&payload))
                     .expect("failed to publish");
+                Ok(())
             }
             Err(e) => {
                 error!("Could not serialise String -> JSON; error: {}", e);
+                Err(e.into())
             }
         }
     } else {
@@ -75,8 +77,9 @@ pub fn send(options: &SendOptions, tether_agent: &TetherAgent) {
             a_string: "hello world".into(),
         };
         info!("Sending dummy data {:?}", payload);
-        tether_agent
-            .encode_and_publish(&output, &payload)
-            .expect("failed to publish");
+        match tether_agent.encode_and_publish(&output, &payload) {
+            Ok(_) => Ok(()),
+            Err(e) => Err(e.into()),
+        }
     }
 }

@@ -8,7 +8,7 @@ use tether_agent::{
 #[derive(Args)]
 pub struct TopicOptions {
     #[arg(long = "topic", default_value_t=String::from("#"))]
-    subscribe_topic: String,
+    pub subscribe_topic: String,
 }
 
 #[derive(Debug)]
@@ -71,7 +71,7 @@ fn add_if_unique(item: &str, list: &mut Vec<String>) -> bool {
     }
 }
 
-pub fn topics(options: &TopicOptions, tether_agent: &TetherAgent) {
+pub fn topics(options: &TopicOptions, tether_agent: &TetherAgent, on_update: fn(result: String)) {
     info!("Tether Topics Parsing Utility");
 
     let _input = PlugOptionsBuilder::create_input("all")
@@ -85,7 +85,8 @@ pub fn topics(options: &TopicOptions, tether_agent: &TetherAgent) {
         while let Some((plug_name, message)) = tether_agent.check_messages() {
             did_work = true;
             if insights.update(&plug_name, &message) {
-                info!("{:#?}", insights);
+                let result = format!("{:#?}", insights);
+                on_update(result);
             }
         }
         if !did_work {

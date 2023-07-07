@@ -1,18 +1,22 @@
 use tether_agent::{PlugOptionsBuilder, TetherAgentOptionsBuilder};
+use tether_utils::{
+    tether_send::{send, SendOptions},
+    tether_topics::{topics, TopicOptions},
+};
 
 fn demo_receive() {
     let tether_agent = TetherAgentOptionsBuilder::new("demoReceive")
         .build()
         .expect("failed to init/connect Tether Agent");
 
-    let input_plug = PlugOptionsBuilder::create_input("dummyData")
+    let _input_plug = PlugOptionsBuilder::create_input("dummyData")
         .build(&tether_agent)
         .expect("failed to create input plug");
 
     let mut count = 0;
 
     loop {
-        while let Some((plug_name, message)) = &tether_agent.check_messages() {
+        while let Some((_plug_name, message)) = &tether_agent.check_messages() {
             count += 1;
             println!(
                 "RECEIVE: got message#{} on topic \"{}\"",
@@ -28,20 +32,33 @@ fn demo_send() {
         .build()
         .expect("failed to init/connect Tether Agent");
 
-    let output_plug = PlugOptionsBuilder::create_output("dummyData")
-        .build(&tether_agent)
-        .expect("failed to create output plug");
-
     let mut count = 0;
+
+    let options = SendOptions {
+        plug_name: "dummyData".into(),
+        plug_topic: None,
+        custom_message: None,
+    };
 
     loop {
         std::thread::sleep(std::time::Duration::from_secs(1));
         count += 1;
         println!("SEND: sending message #{}", count);
-        tether_agent
-            .encode_and_publish(&output_plug, count)
-            .expect("failed to publish");
+        send(&options, &tether_agent).expect("failed to send");
     }
+}
+
+pub fn demo_topics() {
+    let tether_agent = TetherAgentOptionsBuilder::new("demoTopics")
+        .build()
+        .expect("failed to init/connect Tether Agent");
+
+    let options = TopicOptions {
+        subscribe_topic: "#".into(),
+    };
+    topics(&options, &tether_agent, |res| {
+        println!("TOPICS: update: {}", res);
+    });
 }
 
 fn main() {
@@ -57,6 +74,9 @@ fn main() {
     }));
     handles.push(std::thread::spawn(move || {
         demo_send();
+    }));
+    handles.push(std::thread::spawn(move || {
+        demo_topics();
     }));
 
     for handle in handles {

@@ -1,5 +1,5 @@
 use env_logger::{Builder, Env};
-use log::{debug, error, warn};
+use log::*;
 
 use clap::{Parser, Subcommand};
 
@@ -70,9 +70,21 @@ fn main() {
         });
 
     match &cli.command {
-        Commands::Receive(options) => tether_receive::receive(options, &tether_agent),
-        Commands::Send(options) => tether_send::send(options, &tether_agent),
-        Commands::Topics(options) => tether_topics::topics(options, &tether_agent),
+        Commands::Receive(options) => {
+            tether_receive::receive(options, &tether_agent, |_plug_name, message, decoded| {
+                let contents = decoded.unwrap_or("(empty/invalid message)".into());
+                info!(
+                    "Received on topic \"{}\" :: \n{}\n",
+                    message.topic(),
+                    contents
+                );
+            })
+        }
+        Commands::Send(options) => tether_send::send(options, &tether_agent)
+            .unwrap_or_else(|e| error!("Failed to send: {}", e)),
+        Commands::Topics(options) => tether_topics::topics(options, &tether_agent, |summary| {
+            info!("Insights parsed update:\n {}", summary);
+        }),
         Commands::Playback(options) => tether_playback::playback(options, &tether_agent),
         Commands::Record(options) => tether_record::record(options, &tether_agent),
     }
