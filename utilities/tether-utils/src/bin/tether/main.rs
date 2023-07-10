@@ -95,6 +95,9 @@ fn main() {
             }
         }
         Commands::Playback(options) => tether_playback::playback(options, &tether_agent),
-        Commands::Record(options) => tether_record::record(options, &tether_agent),
+        Commands::Record(options) => {
+            let recorder = tether_record::TetherRecordUtil::new(options, tether_agent);
+            recorder.start_recording();
+        }
     }
 }

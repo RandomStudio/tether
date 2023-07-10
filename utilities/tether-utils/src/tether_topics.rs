@@ -68,7 +68,7 @@ impl Insights {
     ) -> bool {
         match input_plug_subscribed {
             PlugDefinition::InputPlugDefinition(_) => {
-                debug!("Input Plugs are ok; make sure you have subscribed")
+                // debug!("Input Plugs are ok; make sure you have subscribed")
             }
             _ => panic!("You should have created an Input Plug"),
         };
