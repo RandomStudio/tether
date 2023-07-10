@@ -4,7 +4,7 @@ use log::*;
 use clap::{Parser, Subcommand};
 
 use tether_agent::TetherAgentOptionsBuilder;
-use tether_utils::*;
+use tether_utils::{tether_playback::TetherPlaybackUtil, *};
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
@@ -93,9 +93,12 @@ fn main() {
                 }
             }
         }
-        Commands::Playback(options) => tether_playback::playback(options, &tether_agent),
+        Commands::Playback(options) => {
+            let player = TetherPlaybackUtil::new(options.clone(), tether_agent);
+            player.start();
+        }
         Commands::Record(options) => {
-            let recorder = tether_record::TetherRecordUtil::new(options, tether_agent);
+            let recorder = tether_record::TetherRecordUtil::new(options.clone(), tether_agent);
             recorder.start_recording();
         }
     }

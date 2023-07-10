@@ -2,10 +2,9 @@ use std::fmt;
 
 use circular_buffer::CircularBuffer;
 use clap::Args;
-use log::*;
 use tether_agent::{
-    mqtt::Message, parse_agent_id, parse_agent_role, parse_plug_name, PlugDefinition,
-    PlugOptionsBuilder, TetherAgent,
+    mqtt::Message, parse_agent_id, parse_agent_role, parse_plug_name, PlugOptionsBuilder,
+    TetherAgent,
 };
 
 #[derive(Args, Clone)]
@@ -67,6 +66,18 @@ impl Insights {
 
     pub fn update(&mut self, message: &Message) -> bool {
         self.message_count += 1;
+
+        let bytes = message.payload();
+        if bytes.is_empty() {
+            self.message_log
+                .push_back((message.topic().into(), "[EMPTY_MESSAGE]".into()));
+        } else {
+            let value: rmpv::Value =
+                rmp_serde::from_slice(bytes).expect("failed to decode msgpack");
+            let json = serde_json::to_string(&value).expect("failed to stringify JSON");
+            self.message_log.push_back((message.topic().into(), json));
+        }
+
         let mut did_change = false;
 
         // Collect some stats...

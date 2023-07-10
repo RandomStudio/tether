@@ -3,7 +3,7 @@ use std::{thread::spawn, time::SystemTime};
 use env_logger::{Builder, Env};
 use tether_agent::TetherAgentOptionsBuilder;
 use tether_utils::{
-    tether_playback::{playback, PlaybackOptions},
+    tether_playback::{PlaybackOptions, TetherPlaybackUtil},
     tether_receive::{receive, ReceiveOptions},
     tether_record::{RecordOptions, TetherRecordUtil},
     tether_send::{send, SendOptions},
@@ -67,18 +67,49 @@ fn demo_topics() {
 }
 
 fn demo_playback() {
-    let tether_agent = TetherAgentOptionsBuilder::new("demoPlayback")
-        .build()
-        .expect("failed to init/connect Tether Agent");
-
     let options = PlaybackOptions {
         file_path: "./demo.json".into(),
         override_topic: None,
-        loop_count: 1, // ignored anyway
+        loop_count: 1, // ignored anyway, in this case
         loop_infinite: true,
+        ignore_ctrl_c: true, // this is important for programmatic use
     };
 
-    playback(&options, &tether_agent);
+    let tether_agent = TetherAgentOptionsBuilder::new("demoTopics")
+        .build()
+        .expect("failed to init/connect Tether Agent");
+
+    let player = TetherPlaybackUtil::new(options, tether_agent);
+    let stop_request_tx = player.get_stop_tx();
+
+    let start_time = SystemTime::now();
+
+    let handles = vec![
+        spawn(move || {
+            player.start();
+        }),
+        spawn(move || {
+            let mut time_to_end = false;
+            while !time_to_end {
+                if let Ok(elapsed) = start_time.elapsed() {
+                    if elapsed > std::time::Duration::from_secs(3) {
+                        println!("Time to stop! {}s elapsed", elapsed.as_secs());
+                        stop_request_tx
+                            .send(true)
+                            .expect("failed to send stop request via channel");
+                        time_to_end = true;
+                    }
+                }
+            }
+            println!("Playback should have stopped now; wait 1 more seconds...");
+            std::thread::sleep(std::time::Duration::from_secs(1));
+
+            println!("...Bye");
+        }),
+    ];
+    for handle in handles {
+        handle.join().expect("failed to join handle");
+    }
 }
 
 fn demo_record() {
@@ -95,10 +126,10 @@ fn demo_record() {
         timing_nonzero_start: false,
         timing_delay: None,
         timing_duration: None,
-        ignore_ctrl_c: true,
+        ignore_ctrl_c: true, // this is important for programmatic use
     };
 
-    let recorder = TetherRecordUtil::new(&options, tether_agent);
+    let recorder = TetherRecordUtil::new(options, tether_agent);
     let stop_request_tx = recorder.get_stop_tx();
 
     let start_time = SystemTime::now();
@@ -126,7 +157,7 @@ fn demo_record() {
     ];
 
     for handle in handles {
-        handle.join().expect("recoder: failed to join handle");
+        handle.join().expect("RECORDER: failed to join handle");
     }
 }
 

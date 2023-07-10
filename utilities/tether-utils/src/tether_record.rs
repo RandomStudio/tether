@@ -62,7 +62,7 @@ pub struct TetherRecordUtil {
 }
 
 impl TetherRecordUtil {
-    pub fn new(options: &RecordOptions, tether_agent: TetherAgent) -> Self {
+    pub fn new(options: RecordOptions, tether_agent: TetherAgent) -> Self {
         info!("Tether Record Utility: initialise");
 
         let (tx, rx) = mpsc::channel();
@@ -70,7 +70,7 @@ impl TetherRecordUtil {
         TetherRecordUtil {
             stop_request_tx: tx,
             stop_request_rx: rx,
-            options: options.clone(),
+            options,
             tether_agent,
         }
     }
