@@ -1,7 +1,7 @@
 use std::{thread::spawn, time::SystemTime};
 
 use env_logger::{Builder, Env};
-use tether_agent::{PlugOptionsBuilder, TetherAgentOptionsBuilder};
+use tether_agent::TetherAgentOptionsBuilder;
 use tether_utils::{
     tether_playback::{playback, PlaybackOptions},
     tether_receive::{receive, ReceiveOptions},
@@ -62,18 +62,13 @@ fn demo_topics() {
     loop {
         if insights.check_for_updates(&input, &tether_agent) {
             println!("Insights update: {:#?}", insights);
-            let Insights {
-                topics,
-                roles,
-                ids,
-                plugs,
-            } = &insights;
+
             println!(
                 "counted {} topics, {} roles, {} ids and {} plugs",
-                topics.len(),
-                roles.len(),
-                ids.len(),
-                plugs.len()
+                insights.topics().len(),
+                insights.roles().len(),
+                insights.ids().len(),
+                insights.plugs().len()
             );
         }
     }

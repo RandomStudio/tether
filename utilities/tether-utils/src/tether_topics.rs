@@ -13,11 +13,11 @@ pub struct TopicOptions {
 
 #[derive(Debug)]
 pub struct Insights {
-    pub topics: Vec<String>,
-    pub roles: Vec<String>,
-    pub ids: Vec<String>,
-    pub plugs: Vec<String>,
-    // message_count: u64,
+    topics: Vec<String>,
+    roles: Vec<String>,
+    ids: Vec<String>,
+    plugs: Vec<String>,
+    message_count: u128,
 }
 
 impl Insights {
@@ -27,12 +27,12 @@ impl Insights {
             roles: Vec::new(),
             ids: Vec::new(),
             plugs: Vec::new(),
-            // message_count: 0,
+            message_count: 0,
         }
     }
 
     pub fn update(&mut self, message: &Message) -> bool {
-        // self.message_count += 1;
+        self.message_count += 1;
         let mut did_change = false;
 
         // Collect some stats...
@@ -84,6 +84,24 @@ impl Insights {
             std::thread::sleep(std::time::Duration::from_millis(1));
         }
         false
+    }
+
+    pub fn topics(&self) -> &[String] {
+        &self.topics
+    }
+
+    pub fn roles(&self) -> &[String] {
+        &self.roles
+    }
+    pub fn ids(&self) -> &[String] {
+        &self.ids
+    }
+    pub fn plugs(&self) -> &[String] {
+        &self.plugs
+    }
+
+    pub fn message_count(&self) -> u128 {
+        self.message_count
     }
 }
 
