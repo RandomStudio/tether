@@ -83,14 +83,11 @@ fn main() {
         Commands::Send(options) => tether_send::send(options, &tether_agent)
             .unwrap_or_else(|e| error!("Failed to send: {}", e)),
         Commands::Topics(options) => {
-            let mut insights = tether_topics::Insights::new();
-
-            let input =
-                tether_topics::subscribe(options, &tether_agent).expect("failed to subscribe");
+            let mut insights = tether_topics::Insights::new(&options);
 
             loop {
-                if insights.check_for_updates(&input, &tether_agent) {
-                    info!("Insights update: {:#?}", insights);
+                if insights.check_for_updates(&tether_agent) {
+                    info!("Insights update: \n{}", insights);
                 }
             }
         }

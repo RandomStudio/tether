@@ -1,3 +1,6 @@
+use std::fmt;
+
+use circular_buffer::CircularBuffer;
 use clap::Args;
 use log::*;
 use tether_agent::{
@@ -5,29 +8,48 @@ use tether_agent::{
     PlugOptionsBuilder, TetherAgent,
 };
 
-#[derive(Args)]
+#[derive(Args, Clone)]
 pub struct TopicOptions {
     #[arg(long = "topic", default_value_t=String::from("#"))]
     pub subscribe_topic: String,
 }
 
-#[derive(Debug)]
+pub const MONITOR_LOG_LENGTH: usize = 256;
+type MessageLogEntry = (String, String);
+
 pub struct Insights {
+    options: TopicOptions,
     topics: Vec<String>,
     roles: Vec<String>,
     ids: Vec<String>,
     plugs: Vec<String>,
     message_count: u128,
+    message_log: CircularBuffer<MONITOR_LOG_LENGTH, MessageLogEntry>,
+    input_plug_subscribed: Option<PlugDefinition>,
+}
+
+impl fmt::Display for Insights {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let topics = format!("x{} Topics: {:?} \n", self.topics().len(), self.topics());
+        let roles = format!("x{} Roles: {:?} \n", self.roles().len(), self.roles());
+        let ids = format!("x{} IDs: {:?} \n", self.ids().len(), self.ids());
+        let plugs = format!("x{} Plugs: {:?} \n", self.plugs().len(), self.plugs());
+        let message_count = format!("x{} Messages total \n", self.message_count());
+        write!(f, "{}{}{}{}{}", topics, roles, ids, plugs, message_count)
+    }
 }
 
 impl Insights {
-    pub fn new() -> Self {
+    pub fn new(options: &TopicOptions) -> Self {
         Insights {
+            options: options.clone(),
             topics: Vec::new(),
             roles: Vec::new(),
             ids: Vec::new(),
             plugs: Vec::new(),
+            message_log: CircularBuffer::new(),
             message_count: 0,
+            input_plug_subscribed: None,
         }
     }
 
@@ -61,25 +83,31 @@ impl Insights {
         did_change
     }
 
-    pub fn check_for_updates(
-        &mut self,
-        input_plug_subscribed: &PlugDefinition,
-        tether_agent: &TetherAgent,
-    ) -> bool {
-        match input_plug_subscribed {
-            PlugDefinition::InputPlugDefinition(_) => {
-                // debug!("Input Plugs are ok; make sure you have subscribed")
-            }
-            _ => panic!("You should have created an Input Plug"),
-        };
+    pub fn check_for_updates(&mut self, tether_agent: &TetherAgent) -> bool {
         let mut did_work = false;
-        while let Some((_plug_name, message)) = tether_agent.check_messages() {
-            did_work = true;
-            if self.update(&message) {
-                debug!("Insights update: {:#?}", self);
-                return true;
+
+        match &self.input_plug_subscribed {
+            None => {
+                debug!("Subscribe for the first time");
+                let input_plug = PlugOptionsBuilder::create_input("monitor")
+                    .topic(&self.options.subscribe_topic)
+                    .build(tether_agent)
+                    .expect("failed to connect Tether");
+                self.input_plug_subscribed = Some(input_plug);
+            }
+            Some(_input_plug) => {
+                // debug!("Checking...");
+                while let Some((_plug_name, message)) = tether_agent.check_messages() {
+                    debug!("Got message on topic \"{}\"", message.topic());
+                    did_work = true;
+                    if self.update(&message) {
+                        debug!("Insights update");
+                        return true;
+                    }
+                }
             }
         }
+
         if !did_work {
             std::thread::sleep(std::time::Duration::from_millis(1));
         }
@@ -103,6 +131,10 @@ impl Insights {
     pub fn message_count(&self) -> u128 {
         self.message_count
     }
+
+    pub fn message_log(&self) -> &CircularBuffer<MONITOR_LOG_LENGTH, MessageLogEntry> {
+        &self.message_log
+    }
 }
 
 fn add_if_unique(item: &str, list: &mut Vec<String>) -> bool {
@@ -111,20 +143,5 @@ fn add_if_unique(item: &str, list: &mut Vec<String>) -> bool {
         true
     } else {
         false
-    }
-}
-
-pub fn subscribe(
-    options: &TopicOptions,
-    tether_agent: &TetherAgent,
-) -> anyhow::Result<PlugDefinition> {
-    info!("Tether Topics Parsing Utility");
-
-    match PlugOptionsBuilder::create_input("all")
-        .topic(&options.subscribe_topic)
-        .build(tether_agent)
-    {
-        Ok(p) => Ok(p),
-        Err(e) => Err(e.into()),
     }
 }

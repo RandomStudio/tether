@@ -7,7 +7,7 @@ use tether_utils::{
     tether_receive::{receive, ReceiveOptions},
     tether_record::{RecordOptions, TetherRecordUtil},
     tether_send::{send, SendOptions},
-    tether_topics::{subscribe, Insights, TopicOptions},
+    tether_topics::{Insights, TopicOptions},
 };
 
 fn demo_receive() {
@@ -55,13 +55,11 @@ fn demo_topics() {
         subscribe_topic: "#".into(),
     };
 
-    let mut insights = Insights::new();
-
-    let input = subscribe(&options, &tether_agent).expect("failed to subscribe");
+    let mut insights = Insights::new(&options);
 
     loop {
-        if insights.check_for_updates(&input, &tether_agent) {
-            println!("Insights update: {:#?}", insights);
+        if insights.check_for_updates(&tether_agent) {
+            println!("Insights update: \n{}", insights);
 
             println!(
                 "counted {} topics, {} roles, {} ids and {} plugs",
@@ -145,7 +143,7 @@ fn main() {
     );
     println!("Press Ctrl+C to stop");
 
-    let mut env_builder = Builder::from_env(Env::default().default_filter_or("debug"));
+    let mut env_builder = Builder::from_env(Env::default().default_filter_or("info"));
     env_builder.init();
 
     let handles = vec![
