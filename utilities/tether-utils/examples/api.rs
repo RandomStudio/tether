@@ -55,19 +55,13 @@ fn demo_topics() {
         subscribe_topic: "#".into(),
     };
 
-    let mut insights = Insights::new(&options);
+    let mut insights = Insights::new(&options, &tether_agent);
 
     loop {
-        if insights.check_for_updates(&tether_agent) {
-            println!("Insights update: \n{}", insights);
-
-            println!(
-                "counted {} topics, {} roles, {} ids and {} plugs",
-                insights.topics().len(),
-                insights.roles().len(),
-                insights.ids().len(),
-                insights.plugs().len()
-            );
+        while let Some((_plug_name, message)) = tether_agent.check_messages() {
+            if insights.update(&message) {
+                println!("TOPICS: Insights update: \n{}", insights);
+            }
         }
     }
 }

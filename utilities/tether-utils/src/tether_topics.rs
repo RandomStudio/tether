@@ -14,18 +14,24 @@ pub struct TopicOptions {
     pub subscribe_topic: String,
 }
 
+impl Default for TopicOptions {
+    fn default() -> Self {
+        TopicOptions {
+            subscribe_topic: "#".into(),
+        }
+    }
+}
+
 pub const MONITOR_LOG_LENGTH: usize = 256;
 type MessageLogEntry = (String, String);
 
 pub struct Insights {
-    options: TopicOptions,
     topics: Vec<String>,
     roles: Vec<String>,
     ids: Vec<String>,
     plugs: Vec<String>,
     message_count: u128,
     message_log: CircularBuffer<MONITOR_LOG_LENGTH, MessageLogEntry>,
-    input_plug_subscribed: Option<PlugDefinition>,
 }
 
 impl fmt::Display for Insights {
@@ -40,16 +46,22 @@ impl fmt::Display for Insights {
 }
 
 impl Insights {
-    pub fn new(options: &TopicOptions) -> Self {
+    pub fn new(options: &TopicOptions, tether_agent: &TetherAgent) -> Self {
+        if !tether_agent.is_connected() {
+            panic!("Insights utility needs already-connected Tether Agent");
+        }
+        let _input_plug = PlugOptionsBuilder::create_input("monitor")
+            .topic(&options.subscribe_topic)
+            .build(tether_agent)
+            .expect("failed to connect Tether");
+
         Insights {
-            options: options.clone(),
             topics: Vec::new(),
             roles: Vec::new(),
             ids: Vec::new(),
             plugs: Vec::new(),
             message_log: CircularBuffer::new(),
             message_count: 0,
-            input_plug_subscribed: None,
         }
     }
 
@@ -83,36 +95,36 @@ impl Insights {
         did_change
     }
 
-    pub fn check_for_updates(&mut self, tether_agent: &TetherAgent) -> bool {
-        let mut did_work = false;
+    // pub fn check_for_updates(&mut self, tether_agent: &TetherAgent) -> bool {
+    //     let mut did_work = false;
 
-        match &self.input_plug_subscribed {
-            None => {
-                debug!("Subscribe for the first time");
-                let input_plug = PlugOptionsBuilder::create_input("monitor")
-                    .topic(&self.options.subscribe_topic)
-                    .build(tether_agent)
-                    .expect("failed to connect Tether");
-                self.input_plug_subscribed = Some(input_plug);
-            }
-            Some(_input_plug) => {
-                // debug!("Checking...");
-                while let Some((_plug_name, message)) = tether_agent.check_messages() {
-                    debug!("Got message on topic \"{}\"", message.topic());
-                    did_work = true;
-                    if self.update(&message) {
-                        debug!("Insights update");
-                        return true;
-                    }
-                }
-            }
-        }
+    //     match &self.input_plug_subscribed {
+    //         None => {
+    //             debug!("Subscribe for the first time");
+    //             let input_plug = PlugOptionsBuilder::create_input("monitor")
+    //                 .topic(&self.options.subscribe_topic)
+    //                 .build(tether_agent)
+    //                 .expect("failed to connect Tether");
+    //             self.input_plug_subscribed = Some(input_plug);
+    //         }
+    //         Some(_input_plug) => {
+    //             // debug!("Checking...");
+    //             while let Some((_plug_name, message)) = tether_agent.check_messages() {
+    //                 debug!("Got message on topic \"{}\"", message.topic());
+    //                 did_work = true;
+    //                 if self.update(&message) {
+    //                     debug!("Insights update");
+    //                     return true;
+    //                 }
+    //             }
+    //         }
+    //     }
 
-        if !did_work {
-            std::thread::sleep(std::time::Duration::from_millis(1));
-        }
-        false
-    }
+    //     if !did_work {
+    //         std::thread::sleep(std::time::Duration::from_millis(1));
+    //     }
+    //     false
+    // }
 
     pub fn topics(&self) -> &[String] {
         &self.topics
