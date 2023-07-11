@@ -98,8 +98,8 @@ fn main() {
             player.start(&tether_agent);
         }
         Commands::Record(options) => {
-            let recorder = tether_record::TetherRecordUtil::new(options.clone(), tether_agent);
-            recorder.start_recording();
+            let recorder = tether_record::TetherRecordUtil::new(options.clone());
+            recorder.start_recording(&tether_agent);
         }
     }
 }

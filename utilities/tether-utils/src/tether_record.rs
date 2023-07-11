@@ -58,11 +58,10 @@ pub struct TetherRecordUtil {
     stop_request_tx: mpsc::Sender<bool>,
     stop_request_rx: mpsc::Receiver<bool>,
     options: RecordOptions,
-    tether_agent: TetherAgent,
 }
 
 impl TetherRecordUtil {
-    pub fn new(options: RecordOptions, tether_agent: TetherAgent) -> Self {
+    pub fn new(options: RecordOptions) -> Self {
         info!("Tether Record Utility: initialise");
 
         let (tx, rx) = mpsc::channel();
@@ -71,19 +70,18 @@ impl TetherRecordUtil {
             stop_request_tx: tx,
             stop_request_rx: rx,
             options,
-            tether_agent,
         }
     }
 
     pub fn get_stop_tx(&self) -> mpsc::Sender<bool> {
         self.stop_request_tx.clone()
     }
-    pub fn start_recording(&self) {
+    pub fn start_recording(&self, tether_agent: &TetherAgent) {
         info!("Tether Record Utility: start recording");
 
         let _input = PlugOptionsBuilder::create_input("all")
             .topic(&self.options.subscribe_topic)
-            .build(&self.tether_agent)
+            .build(&tether_agent)
             .expect("failed to create input plug");
 
         let file_path = match &self.options.file_override_path {
@@ -205,7 +203,7 @@ impl TetherRecordUtil {
                 finished = true;
             } else {
                 let mut did_work = false;
-                while let Some((_plug_name, message)) = self.tether_agent.check_messages() {
+                while let Some((_plug_name, message)) = tether_agent.check_messages() {
                     did_work = true;
 
                     let delta_time = if count == 0 && !self.options.timing_nonzero_start {

@@ -129,7 +129,7 @@ fn demo_record() {
         ignore_ctrl_c: true, // this is important for programmatic use
     };
 
-    let recorder = TetherRecordUtil::new(options, tether_agent);
+    let recorder = TetherRecordUtil::new(options);
     let stop_request_tx = recorder.get_stop_tx();
 
     let start_time = SystemTime::now();
@@ -152,7 +152,7 @@ fn demo_record() {
             println!("...Bye");
         }),
         spawn(move || {
-            recorder.start_recording();
+            recorder.start_recording(&tether_agent);
         }),
     ];
 
