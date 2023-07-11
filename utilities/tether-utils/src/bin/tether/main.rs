@@ -94,8 +94,8 @@ fn main() {
             }
         }
         Commands::Playback(options) => {
-            let player = TetherPlaybackUtil::new(options.clone(), tether_agent);
-            player.start();
+            let player = TetherPlaybackUtil::new(options.clone());
+            player.start(&tether_agent);
         }
         Commands::Record(options) => {
             let recorder = tether_record::TetherRecordUtil::new(options.clone(), tether_agent);

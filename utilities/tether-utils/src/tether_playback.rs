@@ -54,11 +54,10 @@ pub struct TetherPlaybackUtil {
     stop_request_tx: mpsc::Sender<bool>,
     stop_request_rx: mpsc::Receiver<bool>,
     options: PlaybackOptions,
-    tether_agent: TetherAgent,
 }
 
 impl TetherPlaybackUtil {
-    pub fn new(options: PlaybackOptions, tether_agent: TetherAgent) -> Self {
+    pub fn new(options: PlaybackOptions) -> Self {
         info!("Tether Playback Utility: initialise");
 
         let (tx, rx) = mpsc::channel();
@@ -66,7 +65,6 @@ impl TetherPlaybackUtil {
             stop_request_tx: tx,
             stop_request_rx: rx,
             options,
-            tether_agent,
         }
     }
 
@@ -74,7 +72,7 @@ impl TetherPlaybackUtil {
         self.stop_request_tx.clone()
     }
 
-    pub fn start(&self) {
+    pub fn start(&self, tether_agent: &TetherAgent) {
         info!("Tether Playback Utility: start playback");
 
         if let Some(t) = &self.options.override_topic {
@@ -117,7 +115,7 @@ impl TetherPlaybackUtil {
                 }
                 if parse_json_rows(
                     &self.options.file_path,
-                    &self.tether_agent,
+                    &tether_agent,
                     &self.options.override_topic,
                     &self.stop_request_rx,
                 ) {

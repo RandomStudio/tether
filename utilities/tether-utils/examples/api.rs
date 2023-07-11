@@ -79,14 +79,14 @@ fn demo_playback() {
         .build()
         .expect("failed to init/connect Tether Agent");
 
-    let player = TetherPlaybackUtil::new(options, tether_agent);
+    let player = TetherPlaybackUtil::new(options);
     let stop_request_tx = player.get_stop_tx();
 
     let start_time = SystemTime::now();
 
     let handles = vec![
         spawn(move || {
-            player.start();
+            player.start(&tether_agent);
         }),
         spawn(move || {
             let mut time_to_end = false;
