@@ -2,19 +2,25 @@
 
 ## Examples
 
-Create an agent, specify `None` for to use defaults for MQTT Broker IP address and/or Agent ID (Group): 
+Build an agent using defaults, and connect it automatically:
+
 ```
-    let agent = TetherAgent::new("RustDemoAgent", None, None);
-    agent.connect();
+ let agent = TetherAgentOptionsBuilder::new("RustDemoAgent")
+        .build()
+        .expect("failed to connect Tether");
 ```
 
-Create an Output Plug:
+Create an Output Plug, passing in a ref to the Tether Agent you created:
+
 ```
-    let custom_output = agent.create_output_plug("custom", None, None).unwrap();
+    let custom_output = PlugOptionsBuilder::create_output("customValues")
+        .build(&agent)
+        .expect("failed to create output");
 
 ```
 
 If your data structure can be Serialised using serde, go ahead and encode+publish in one step:
+
 ```
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -33,11 +39,15 @@ struct CustomStruct {
 ```
 
 Or create an Input Plug:
+
 ```
-    let input_one = agent.create_input_plug("one", None, None).unwrap();
+    let input_one = PlugOptionsBuilder::create_input("customValues")
+        .build(&agent)
+        .expect("failed to create input");
 ```
 
 And check for messages synchronously:
+
 ```
 if let Some((plug_name, message)) = agent.check_messages() {
             if &input_one.name == plug_name.as_str() {
@@ -48,10 +58,11 @@ if let Some((plug_name, message)) = agent.check_messages() {
 
 This "Base Agent" implementation assumes that the client (your application) will retain ownership of any Input and Output Plugs, as well as the instance of the TetherAgent struct.
 
-This means that the TetherAgent retains no "memory" of any Input or Output Plugs that you have created. 
+This means that the TetherAgent retains no "memory" of any Input or Output Plugs that you have created.
 Therefore, you must keep your own individual variables which reference the Plugs you have created, or store them in a `Vec<&PlugDefinition>` as necessary.
 
 ## Publishing
+
 The following functions can be called on the `TetherAgent` instance:
 
 - `publish`: expects an already-encoded Vector slice of u8 (i.e. a buffer)
@@ -60,6 +71,7 @@ The following functions can be called on the `TetherAgent` instance:
 In both cases, you provide a pointer to the `PlugDefinition` so that the Agent can publish on the appropriate topic with the correct QOS for the plug.
 
 ## Subscribing
+
 The `create_input_plug` function has a side effect: the client subscription.
 
 For now, checking messages is done synchronously. The same function should be called as often as possible (e.g. once per frame or on a timed thread, etc.) on the `TetherAgent` instance:
