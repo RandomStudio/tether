@@ -97,7 +97,7 @@ impl TetherRecordUtil {
 
         let _input = PlugOptionsBuilder::create_input("all")
             .topic(&self.options.subscribe_topic)
-            .build(&tether_agent)
+            .build(tether_agent)
             .expect("failed to create input plug");
 
         let file_path = match &self.options.file_override_path {

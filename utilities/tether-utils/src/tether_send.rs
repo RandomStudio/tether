@@ -79,7 +79,7 @@ pub fn send(options: &SendOptions, tether_agent: &TetherAgent) -> anyhow::Result
         info!("Sending dummy data {:?}", payload);
         match tether_agent.encode_and_publish(&output, &payload) {
             Ok(_) => Ok(()),
-            Err(e) => Err(e.into()),
+            Err(e) => Err(e),
         }
     }
 }

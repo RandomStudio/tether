@@ -127,7 +127,7 @@ impl TetherPlaybackUtil {
                 }
                 if parse_json_rows(
                     &self.options.file_path,
-                    &tether_agent,
+                    tether_agent,
                     &self.options.override_topic,
                     &self.stop_request_rx,
                 ) {
