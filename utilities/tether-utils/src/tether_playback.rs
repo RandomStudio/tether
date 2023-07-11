@@ -35,6 +35,18 @@ pub struct PlaybackOptions {
     pub ignore_ctrl_c: bool,
 }
 
+impl Default for PlaybackOptions {
+    fn default() -> Self {
+        PlaybackOptions {
+            file_path: "./demo.json".into(),
+            override_topic: None,
+            loop_count: 1,
+            loop_infinite: false,
+            ignore_ctrl_c: false,
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct SimulationMessage {

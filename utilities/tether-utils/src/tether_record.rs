@@ -54,6 +54,22 @@ pub struct RecordOptions {
     pub ignore_ctrl_c: bool,
 }
 
+impl Default for RecordOptions {
+    fn default() -> Self {
+        RecordOptions {
+            file_override_path: None,
+            file_base_path: "./".into(),
+            file_base_name: "recording".into(),
+            file_no_timestamp: false,
+            subscribe_topic: "#".into(),
+            timing_nonzero_start: false,
+            timing_delay: None,
+            timing_duration: None,
+            ignore_ctrl_c: false,
+        }
+    }
+}
+
 pub struct TetherRecordUtil {
     stop_request_tx: mpsc::Sender<bool>,
     stop_request_rx: mpsc::Receiver<bool>,
