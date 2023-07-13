@@ -51,22 +51,26 @@ impl AgentTree {
         let ids = topics_this_agent
             .clone()
             .fold(Vec::new(), |mut acc, topic| {
-                // match parse_agent_id(&x) {
-                //     Some(id) => acc.push(String::from(id)),
-                //     None => {}
-                // };
-                // acc
-                acc.push(String::from(parse_agent_id(&topic).unwrap_or("unknown")));
+                match parse_agent_id(&topic) {
+                    Some(id) => {
+                        if !acc.iter().any(|x| x == id) {
+                            acc.push(String::from(id))
+                        }
+                    }
+                    None => {}
+                }
                 acc
             });
 
-        let output_plugs = topics_this_agent.clone().fold(Vec::new(), |mut acc, x| {
-            match parse_plug_name(&x) {
-                Some(p) => acc.push(String::from(p)),
-                None => {}
-            }
-            acc
-        });
+        let output_plugs = topics_this_agent
+            .clone()
+            .fold(Vec::new(), |mut acc, topic| {
+                match parse_plug_name(&topic) {
+                    Some(p) => acc.push(String::from(p)),
+                    None => {}
+                }
+                acc
+            });
 
         AgentTree {
             role: role.into(),
@@ -85,11 +89,11 @@ impl fmt::Display for AgentTree {
         } = self;
         let ids_list = ids
             .iter()
-            .fold(String::from(""), |acc, x| format!("{}\n-{}", acc, x));
-        let output_plugs_list = output_plugs
-            .iter()
-            .fold(String::from(""), |acc, x| format!("{}\n-{}", acc, x));
-        write!(f, "{}\n    {}\n    {}", role, ids_list, output_plugs_list)
+            .fold(String::from(""), |acc, x| format!("{}\n    - {}", acc, x));
+        let output_plugs_list = output_plugs.iter().fold(String::from(""), |acc, x| {
+            format!("{}\n        - {}", acc, x)
+        });
+        write!(f, "\n{}\n {}\n {}\n", role, ids_list, output_plugs_list)
     }
 }
 
@@ -110,7 +114,7 @@ impl fmt::Display for Insights {
 
         write!(
             f,
-            "{}{}{}{}{}\n{}",
+            "{}{}{}{}{}{}",
             topics, roles, ids, plugs, message_count, trees_formatted
         )
     }
