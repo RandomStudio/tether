@@ -31,6 +31,68 @@ pub struct Insights {
     message_log: CircularBuffer<MONITOR_LOG_LENGTH, MessageLogEntry>,
 }
 
+/// Role, IDs, OutputPlugs
+pub struct AgentTree {
+    role: String,
+    ids: Vec<String>,
+    output_plugs: Vec<String>,
+}
+
+impl AgentTree {
+    fn new(role: &str, topics: &[String]) -> AgentTree {
+        let topics_this_agent = topics.iter().filter_map(|topic| {
+            if topic.contains(role) {
+                Some(String::from(topic))
+            } else {
+                None
+            }
+        });
+
+        let ids = topics_this_agent
+            .clone()
+            .fold(Vec::new(), |mut acc, topic| {
+                // match parse_agent_id(&x) {
+                //     Some(id) => acc.push(String::from(id)),
+                //     None => {}
+                // };
+                // acc
+                acc.push(String::from(parse_agent_id(&topic).unwrap_or("unknown")));
+                acc
+            });
+
+        let output_plugs = topics_this_agent.clone().fold(Vec::new(), |mut acc, x| {
+            match parse_plug_name(&x) {
+                Some(p) => acc.push(String::from(p)),
+                None => {}
+            }
+            acc
+        });
+
+        AgentTree {
+            role: role.into(),
+            ids: ids.to_vec(),
+            output_plugs: output_plugs.to_vec(),
+        }
+    }
+}
+
+impl fmt::Display for AgentTree {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let Self {
+            role,
+            ids,
+            output_plugs,
+        } = self;
+        let ids_list = ids
+            .iter()
+            .fold(String::from(""), |acc, x| format!("{}\n-{}", acc, x));
+        let output_plugs_list = output_plugs
+            .iter()
+            .fold(String::from(""), |acc, x| format!("{}\n-{}", acc, x));
+        write!(f, "{}\n    {}\n    {}", role, ids_list, output_plugs_list)
+    }
+}
+
 impl fmt::Display for Insights {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let topics = format!("x{} Topics: {:?} \n", self.topics().len(), self.topics());
@@ -38,7 +100,19 @@ impl fmt::Display for Insights {
         let ids = format!("x{} IDs: {:?} \n", self.ids().len(), self.ids());
         let plugs = format!("x{} Plugs: {:?} \n", self.plugs().len(), self.plugs());
         let message_count = format!("x{} Messages total \n", self.message_count());
-        write!(f, "{}{}{}{}{}", topics, roles, ids, plugs, message_count)
+
+        let trees = self
+            .roles()
+            .iter()
+            .map(|role| AgentTree::new(role.as_str(), self.topics()))
+            .collect::<Vec<AgentTree>>();
+        let trees_formatted = trees.iter().map(|x| x.to_string()).collect::<String>();
+
+        write!(
+            f,
+            "{}{}{}{}{}\n{}",
+            topics, roles, ids, plugs, message_count, trees_formatted
+        )
     }
 }
 
@@ -103,37 +177,6 @@ impl Insights {
 
         did_change
     }
-
-    // pub fn check_for_updates(&mut self, tether_agent: &TetherAgent) -> bool {
-    //     let mut did_work = false;
-
-    //     match &self.input_plug_subscribed {
-    //         None => {
-    //             debug!("Subscribe for the first time");
-    //             let input_plug = PlugOptionsBuilder::create_input("monitor")
-    //                 .topic(&self.options.subscribe_topic)
-    //                 .build(tether_agent)
-    //                 .expect("failed to connect Tether");
-    //             self.input_plug_subscribed = Some(input_plug);
-    //         }
-    //         Some(_input_plug) => {
-    //             // debug!("Checking...");
-    //             while let Some((_plug_name, message)) = tether_agent.check_messages() {
-    //                 debug!("Got message on topic \"{}\"", message.topic());
-    //                 did_work = true;
-    //                 if self.update(&message) {
-    //                     debug!("Insights update");
-    //                     return true;
-    //                 }
-    //             }
-    //         }
-    //     }
-
-    //     if !did_work {
-    //         std::thread::sleep(std::time::Duration::from_millis(1));
-    //     }
-    //     false
-    // }
 
     pub fn topics(&self) -> &[String] {
         &self.topics
