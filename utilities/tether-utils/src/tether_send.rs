@@ -13,9 +13,15 @@ pub struct SendOptions {
     #[arg(long = "plug.topic")]
     pub plug_topic: Option<String>,
 
-    /// Optionally provide a custom message. Provide this as a valid JSON string.
+    /// Provide a custom message as an escaped JSON string which will be converted
+    /// into MessagePack; by default the payload will be empty.
     #[arg(long = "message")]
-    pub custom_message: Option<String>,
+    pub message_payload_json: Option<String>,
+
+    /// Flag to generate dummy data for the MessagePack payload; useful for testing.
+    /// Any custom message will be ignored if enabled.
+    #[arg(long = "dummyData")]
+    pub use_dummy_data: bool,
 }
 
 #[derive(Serialize, Debug)]
@@ -51,25 +57,7 @@ pub fn send(options: &SendOptions, tether_agent: &TetherAgent) -> anyhow::Result
         .build(tether_agent)
         .expect("failed to create output plug");
 
-    if let Some(custom_message) = &options.custom_message {
-        debug!(
-            "Attempting to decode provided custom message \"{}\"",
-            &custom_message
-        );
-        match serde_json::from_str::<serde_json::Value>(custom_message) {
-            Ok(encoded) => {
-                let payload = rmp_serde::to_vec_named(&encoded).expect("failed to encode msgpack");
-                tether_agent
-                    .publish(&output, Some(&payload))
-                    .expect("failed to publish");
-                Ok(())
-            }
-            Err(e) => {
-                error!("Could not serialise String -> JSON; error: {}", e);
-                Err(e.into())
-            }
-        }
-    } else {
+    if options.use_dummy_data {
         let payload = DummyData {
             id: 0,
             a_float: 42.0,
@@ -77,9 +65,46 @@ pub fn send(options: &SendOptions, tether_agent: &TetherAgent) -> anyhow::Result
             a_string: "hello world".into(),
         };
         info!("Sending dummy data {:?}", payload);
-        match tether_agent.encode_and_publish(&output, &payload) {
+        return match tether_agent.encode_and_publish(&output, &payload) {
             Ok(_) => Ok(()),
             Err(e) => Err(e),
+        };
+    }
+
+    match &options.message_payload_json {
+        Some(custom_message) => {
+            debug!(
+                "Attempting to decode provided custom message \"{}\"",
+                &custom_message
+            );
+            match serde_json::from_str::<serde_json::Value>(custom_message) {
+                Ok(encoded) => {
+                    let payload =
+                        rmp_serde::to_vec_named(&encoded).expect("failed to encode msgpack");
+                    tether_agent
+                        .publish(&output, Some(&payload))
+                        .expect("failed to publish");
+                    info!("Sent message OK");
+                    Ok(())
+                }
+                Err(e) => {
+                    error!("Could not serialise String -> JSON; error: {}", e);
+                    Err(e.into())
+                }
+            }
+        }
+        None => {
+            warn!("Sending empty message");
+            match tether_agent.publish(&output, None) {
+                Ok(_) => {
+                    info!("Sent empty message OK");
+                    Ok(())
+                }
+                Err(e) => {
+                    error!("Failed to send empty message: {}", e);
+                    Err(e.into())
+                }
+            }
         }
     }
 }

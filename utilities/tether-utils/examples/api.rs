@@ -35,7 +35,8 @@ fn demo_send() {
     let options = SendOptions {
         plug_name: "dummyData".into(),
         plug_topic: None,
-        custom_message: None,
+        message_payload_json: None,
+        use_dummy_data: true,
     };
 
     loop {
