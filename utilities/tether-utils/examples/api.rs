@@ -51,9 +51,7 @@ fn demo_topics() {
         .build()
         .expect("failed to init/connect Tether Agent");
 
-    let options = TopicOptions {
-        subscribe_topic: "#".into(),
-    };
+    let options = TopicOptions { topic: "#".into() };
 
     let mut insights = Insights::new(&options, &tether_agent);
 
@@ -122,7 +120,7 @@ fn demo_record() {
         file_base_path: "./".into(),
         file_base_name: "recording".into(),
         file_no_timestamp: false,
-        subscribe_topic: "#".into(),
+        topic: "#".into(),
         timing_nonzero_start: false,
         timing_delay: None,
         timing_duration: None,

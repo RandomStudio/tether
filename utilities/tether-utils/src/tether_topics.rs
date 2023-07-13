@@ -10,14 +10,12 @@ use tether_agent::{
 #[derive(Args, Clone)]
 pub struct TopicOptions {
     #[arg(long = "topic", default_value_t=String::from("#"))]
-    pub subscribe_topic: String,
+    pub topic: String,
 }
 
 impl Default for TopicOptions {
     fn default() -> Self {
-        TopicOptions {
-            subscribe_topic: "#".into(),
-        }
+        TopicOptions { topic: "#".into() }
     }
 }
 
@@ -50,7 +48,7 @@ impl Insights {
             panic!("Insights utility needs already-connected Tether Agent");
         }
         let _input_plug = PlugOptionsBuilder::create_input("monitor")
-            .topic(&options.subscribe_topic)
+            .topic(&options.topic)
             .build(tether_agent)
             .expect("failed to connect Tether");
 

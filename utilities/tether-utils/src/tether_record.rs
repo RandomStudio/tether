@@ -31,7 +31,7 @@ pub struct RecordOptions {
 
     /// Topic to subscribe; by default we recording everything
     #[arg(long = "topic", default_value_t=String::from("#"))]
-    pub subscribe_topic: String,
+    pub topic: String,
 
     /// Flag to disable zero-ing of the first entry's deltaTime; using this
     /// flag will count time from launch, not first message received
@@ -61,7 +61,7 @@ impl Default for RecordOptions {
             file_base_path: "./".into(),
             file_base_name: "recording".into(),
             file_no_timestamp: false,
-            subscribe_topic: "#".into(),
+            topic: "#".into(),
             timing_nonzero_start: false,
             timing_delay: None,
             timing_duration: None,
@@ -96,7 +96,7 @@ impl TetherRecordUtil {
         info!("Tether Record Utility: start recording");
 
         let _input = PlugOptionsBuilder::create_input("all")
-            .topic(&self.options.subscribe_topic)
+            .topic(&self.options.topic)
             .build(tether_agent)
             .expect("failed to create input plug");
 
