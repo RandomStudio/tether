@@ -27,6 +27,7 @@ pub struct Insights {
     roles: Vec<String>,
     ids: Vec<String>,
     plugs: Vec<String>,
+    trees: Vec<AgentTree>,
     message_count: u128,
     message_log: CircularBuffer<MONITOR_LOG_LENGTH, MessageLogEntry>,
 }
@@ -39,7 +40,7 @@ pub struct AgentTree {
 }
 
 impl AgentTree {
-    fn new(role: &str, topics: &[String]) -> AgentTree {
+    pub fn new(role: &str, topics: &[String]) -> AgentTree {
         let topics_this_agent = topics.iter().filter_map(|topic| {
             if topic.contains(role) {
                 Some(String::from(topic))
@@ -105,12 +106,7 @@ impl fmt::Display for Insights {
         let plugs = format!("x{} Plugs: {:?} \n", self.plugs().len(), self.plugs());
         let message_count = format!("x{} Messages total \n", self.message_count());
 
-        let trees = self
-            .roles()
-            .iter()
-            .map(|role| AgentTree::new(role.as_str(), self.topics()))
-            .collect::<Vec<AgentTree>>();
-        let trees_formatted = trees.iter().map(|x| x.to_string()).collect::<String>();
+        let trees_formatted = self.trees.iter().map(|x| x.to_string()).collect::<String>();
 
         write!(
             f,
@@ -135,6 +131,7 @@ impl Insights {
             roles: Vec::new(),
             ids: Vec::new(),
             plugs: Vec::new(),
+            trees: Vec::new(),
             message_log: CircularBuffer::new(),
             message_count: 0,
         }
@@ -177,6 +174,14 @@ impl Insights {
             &mut self.plugs,
         ) {
             did_change = true;
+        }
+
+        if did_change {
+            self.trees = self
+                .roles()
+                .iter()
+                .map(|role| AgentTree::new(role.as_str(), self.topics()))
+                .collect::<Vec<AgentTree>>();
         }
 
         did_change
