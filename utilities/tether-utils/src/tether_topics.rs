@@ -200,6 +200,9 @@ impl Insights {
     pub fn plugs(&self) -> &[String] {
         &self.plugs
     }
+    pub fn trees(&self) -> &[AgentTree] {
+        &self.trees
+    }
 
     pub fn message_count(&self) -> u128 {
         self.message_count
