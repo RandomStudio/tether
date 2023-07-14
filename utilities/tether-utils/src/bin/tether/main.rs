@@ -12,24 +12,24 @@ pub struct Cli {
     #[command(subcommand)]
     command: Commands,
 
-    #[arg(long = "tether.host", default_value_t=String::from("localhost"))]
+    #[arg(long = "host", default_value_t=String::from("localhost"))]
     pub tether_host: String,
 
-    #[arg(long = "tether.port", default_value_t = 1883)]
+    #[arg(long = "port", default_value_t = 1883)]
     pub tether_port: u16,
 
-    #[arg(long = "tether.username", default_value_t=String::from("tether"))]
+    #[arg(long = "username", default_value_t=String::from("tether"))]
     pub tether_username: String,
 
-    #[arg(long = "tether.password", default_value_t=String::from("sp_ceB0ss!"))]
+    #[arg(long = "password", default_value_t=String::from("sp_ceB0ss!"))]
     pub tether_password: String,
 
     /// Role to use for any auto-generated topics on publish
-    #[arg(long = "tether.role", default_value_t=String::from("utils"))]
+    #[arg(long = "role", default_value_t=String::from("utils"))]
     pub tether_role: String,
 
     /// ID/Group to use for any auto-generated topics on publish
-    #[arg(long = "tether.id", default_value_t=String::from("any"))]
+    #[arg(long = "id", default_value_t=String::from("any"))]
     pub tether_id: String,
 
     #[arg(long = "loglevel",default_value_t=String::from("info"))]
