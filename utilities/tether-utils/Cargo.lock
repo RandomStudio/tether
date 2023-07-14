@@ -125,6 +125,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 
 [[package]]
+name = "circular-buffer"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5887fa83bbf76a5cf15915add06c187cfc9d00f2ae9aa1f33d108a02ba7af345"
+
+[[package]]
 name = "clap"
 version = "4.3.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -672,6 +678,8 @@ dependencies = [
 [[package]]
 name = "tether-agent"
 version = "0.8.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0716c6da7b21eef6cd83a3cf391f63700080d56f74ce9ec796972c535cddd06b"
 dependencies = [
  "anyhow",
  "env_logger",
@@ -684,8 +692,10 @@ dependencies = [
 
 [[package]]
 name = "tether-utils"
-version = "0.3.2"
+version = "0.4.0"
 dependencies = [
+ "anyhow",
+ "circular-buffer",
  "clap",
  "ctrlc",
  "env_logger",

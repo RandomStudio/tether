@@ -5,6 +5,19 @@
   "version": "0.2.0",
   "configurations": [
   {
+    "type": "lldb",
+    "request": "launch",
+    "name": "Debug Tether Utils",
+    // "cwd": "${workspaceFolder}/utilities/tether-utils",
+    "cargo": {
+      "args": [
+        "build",
+        "--manifest-path", "${workspaceFolder}/utilities/tether-utils/Cargo.toml"
+      ]
+    },
+    "args": ["topics"]
+  },
+  {
     "name": "Launch NodeJS example",
     "program": "${workspaceFolder}/examples/nodejs/index.js",
     "request": "launch",

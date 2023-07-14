@@ -15,7 +15,7 @@ This CLI utility tool, written in Rust, provides a single binary with subcommand
 There are always **two parts** to the CLI command
 
 - The main command `tether`
-  - Followed by optional parameters _for general configuration_ such as `--tether.host` or `--loglevel`
+  - Followed by optional parameters _for general configuration_ such as `--host` or `--loglevel`
 - The subcommand `receive`, `send`, `topics`, `record` or `playback`
   - Followed by optional paramaters _relating to the specific subcommand_
 
@@ -24,7 +24,7 @@ There are always **two parts** to the CLI command
 Here's an example of using the `receive` subcommand but specifying some non-default details for the MQTT Broker, and a non-default topic:
 
 ```
-tether --tether.host 10.0.0.1 --tether.username myUserName --tether.password myPaSsWorD! receive --topic +/+/someSpecificPlug
+tether --host 10.0.0.1 --username myUserName --password myPaSsWorD! receive --topic +/+/someSpecificPlug
 ```
 
 ## Installation

@@ -38,6 +38,7 @@ fn main() {
 
     println!("Set up tether agent OK");
 
+    #[allow(unused_assignments)]
     let mut output_plug = None;
 
     // Here we call .lock() because it is OK to block while "setting up", connecting

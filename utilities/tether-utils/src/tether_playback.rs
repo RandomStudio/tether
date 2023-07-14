@@ -1,13 +1,51 @@
-use std::{fs::File, io::BufReader};
+use std::{
+    fs::File,
+    io::BufReader,
+    sync::mpsc::{self, Receiver},
+};
 
 use clap::Args;
 use log::{debug, info, warn};
 
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use tether_agent::{TetherAgent, TetherAgentOptionsBuilder};
+use tether_agent::TetherAgent;
 
-use crate::{defaults, Cli};
+#[derive(Args, Clone)]
+pub struct PlaybackOptions {
+    /// Specify the full path to the JSON file containing recorded messages
+    #[arg(long = "file.path", default_value_t=String::from("./demo.json"))]
+    pub file_path: String,
+
+    /// Overide any original topics saved in the file, to use with every published message
+    #[arg(long = "topic")]
+    pub override_topic: Option<String>,
+
+    /// How many times to loop playback
+    #[arg(long = "loops.count", default_value_t = 1)]
+    pub loop_count: usize,
+
+    /// Flag to enable infinite looping for playback (ignore loops.count if enabled)
+    #[arg(long = "loops.infinite")]
+    pub loop_infinite: bool,
+
+    /// Flag to disable registration of Ctrl+C handler - this is usually necessary
+    /// when using the utility programmatically (i.e. not via CLI)
+    #[arg(long = "ignoreCtrlC")]
+    pub ignore_ctrl_c: bool,
+}
+
+impl Default for PlaybackOptions {
+    fn default() -> Self {
+        PlaybackOptions {
+            file_path: "./demo.json".into(),
+            override_topic: None,
+            loop_count: 1,
+            loop_infinite: false,
+            ignore_ctrl_c: false,
+        }
+    }
+}
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -24,90 +62,140 @@ pub struct SimulationRow {
     pub delta_time: u64,
 }
 
-#[derive(Args)]
-pub struct PlaybackOptions {
-    /// Specify the full path to the JSON file containing recorded messages
-    #[arg(long = "file.path", default_value_t=String::from("./demo.json"))]
-    file_path: String,
-
-    /// Overide any original topics saved in the file, to use with every published message
-    #[arg(long = "topic")]
-    override_topic: Option<String>,
-
-    /// How many times to loop playback
-    #[arg(long = "loops.count", default_value_t = 1)]
-    loop_count: usize,
-
-    /// Flag to enable infinite looping for playback (ignore loops.count if enabled)
-    #[arg(long = "loops.infinite")]
-    loop_infinite: bool,
+pub struct TetherPlaybackUtil {
+    stop_request_tx: mpsc::Sender<bool>,
+    stop_request_rx: mpsc::Receiver<bool>,
+    options: PlaybackOptions,
 }
 
-pub fn playback(cli: &Cli, options: &PlaybackOptions) {
-    info!("Tether Playback Utility");
+impl TetherPlaybackUtil {
+    pub fn new(options: PlaybackOptions) -> Self {
+        info!("Tether Playback Utility: initialise");
 
-    if let Some(t) = &options.override_topic {
-        warn!("Override topic provided; ALL topics in JSON entries will be ignored and replaced with \"{}\"",t);
+        let (tx, rx) = mpsc::channel();
+        TetherPlaybackUtil {
+            stop_request_tx: tx,
+            stop_request_rx: rx,
+            options,
+        }
     }
 
-    let tether_agent = TetherAgentOptionsBuilder::new(defaults::AGENT_ROLE)
-        .host(&cli.tether_host)
-        .port(cli.tether_port)
-        .username(&cli.tether_username)
-        .password(&cli.tether_password)
-        .build()
-        .expect("failed to connect Tether");
+    pub fn get_stop_tx(&self) -> mpsc::Sender<bool> {
+        self.stop_request_tx.clone()
+    }
 
-    if options.loop_infinite {
-        loop {
+    pub fn start(&self, tether_agent: &TetherAgent) {
+        info!("Tether Playback Utility: start playback");
+
+        if let Some(t) = &self.options.override_topic {
+            warn!("Override topic provided; ALL topics in JSON entries will be ignored and replaced with \"{}\"",t);
+        }
+
+        let stop_from_key = self.stop_request_tx.clone();
+
+        if !self.options.ignore_ctrl_c {
             warn!("Infinite loops requested; Press Ctr+C to stop");
-            parse_json_rows(&options.file_path, &tether_agent, &options.override_topic);
-        }
-    } else {
-        let mut count = 0;
-        while count < options.loop_count {
-            count += 1;
-            info!(
-                "Finite loops requested: starting loop {}/{}",
-                count, options.loop_count
+            ctrlc::set_handler(move || {
+                // should_stop_clone.store(true, Ordering::Relaxed);
+                stop_from_key
+                    .send(true)
+                    .expect("failed to send stop from key");
+                warn!("received Ctrl+C! 2");
+            })
+            .expect("Error setting Ctrl-C handler");
+        } else {
+            warn!(
+                "No Ctrl+C handler set; you may need to kill this process manually, PID: {}",
+                std::process::id()
             );
-            parse_json_rows(&options.file_path, &tether_agent, &options.override_topic);
         }
-        info!("All {} loops completed", options.loop_count);
+
+        let mut finished = false;
+
+        let mut count = 0;
+
+        while !finished {
+            count += 1;
+            if !finished {
+                if !self.options.loop_infinite {
+                    info!(
+                        "Finite loops requested: starting loop {}/{}",
+                        count, self.options.loop_count
+                    );
+                } else {
+                    info!("Infinite loops requested; starting loop {}", count);
+                }
+                if parse_json_rows(
+                    &self.options.file_path,
+                    tether_agent,
+                    &self.options.override_topic,
+                    &self.stop_request_rx,
+                ) {
+                    warn!("Early exit; finish now");
+                    finished = true;
+                }
+            }
+            if !self.options.loop_infinite && count >= self.options.loop_count {
+                info!("All {} loops completed", &self.options.loop_count);
+                finished = true;
+            }
+        }
     }
 }
 
-fn parse_json_rows(filename: &str, tether_agent: &TetherAgent, override_topic: &Option<String>) {
+fn parse_json_rows(
+    filename: &str,
+    tether_agent: &TetherAgent,
+    override_topic: &Option<String>,
+    should_stop_rx: &Receiver<bool>,
+) -> bool {
     let file = File::open(filename).unwrap_or_else(|_| panic!("failed to open file {}", filename));
     let reader = BufReader::new(file);
     let deserializer = serde_json::Deserializer::from_reader(reader);
-    // let mut rows: Vec<T> = vec![];
     let mut iterator = deserializer.into_iter::<Vec<Value>>();
     let top_level_array: Vec<Value> = iterator.next().unwrap().unwrap();
-    for row_value in top_level_array.into_iter() {
-        let row: SimulationRow =
-            serde_json::from_value(row_value).expect("failed to decode JSON row");
 
-        let SimulationRow {
-            topic,
-            message,
-            delta_time,
-        } = &row;
+    let mut finished = false;
+    let mut early_exit = false;
+    // let rows = top_level_array.into_iter();
 
-        let payload = &message.data;
+    let mut index = 0;
 
-        debug!("Sleeping {}ms ...", delta_time);
-        std::thread::sleep(std::time::Duration::from_millis(*delta_time));
+    while !finished {
+        while let Ok(_should_stop) = should_stop_rx.try_recv() {
+            early_exit = true;
+            finished = true;
+        }
+        if let Some(row_value) = top_level_array.get(index) {
+            let row: SimulationRow =
+                serde_json::from_value(row_value.clone()).expect("failed to decode JSON row");
 
-        let topic = match &override_topic {
-            Some(t) => String::from(t),
-            None => String::from(topic),
-        };
+            let SimulationRow {
+                topic,
+                message,
+                delta_time,
+            } = &row;
 
-        tether_agent
-            .publish_raw(&topic, payload, None, None)
-            .expect("failed to publish");
+            let payload = &message.data;
 
-        debug!("Got row {:?}", row);
+            if !finished {
+                debug!("Sleeping {}ms ...", delta_time);
+                std::thread::sleep(std::time::Duration::from_millis(*delta_time));
+                let topic = match &override_topic {
+                    Some(t) => String::from(t),
+                    None => String::from(topic),
+                };
+
+                tether_agent
+                    .publish_raw(&topic, payload, None, None)
+                    .expect("failed to publish");
+            }
+
+            debug!("Got row {:?}", row);
+        } else {
+            finished = true;
+        }
+        index += 1;
     }
+    early_exit
 }
