@@ -25,3 +25,4 @@ clap = { version = "4.1.1", features = ["derive"] }
 ctrlc = "3.4.0"
 anyhow = "1.0.71"
 circular-buffer = "0.1.1"
+crossterm = "0.26.1"

@@ -96,7 +96,7 @@ impl fmt::Display for AgentTree {
 
 impl fmt::Display for Insights {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let topics = format!("x{} Topics: {:?} \n", self.topics().len(), self.topics());
+        let topics = format!("x{} Topics: {:?} \n\n", self.topics().len(), self.topics());
         let roles = format!("x{} Roles: {:?} \n", self.roles().len(), self.roles());
         let ids = format!("x{} IDs: {:?} \n", self.ids().len(), self.ids());
         let plugs = format!("x{} Plugs: {:?} \n", self.plugs().len(), self.plugs());

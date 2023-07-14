@@ -1,3 +1,9 @@
+use crossterm::{
+    cursor::{Hide, RestorePosition, SavePosition},
+    execute, queue,
+    style::Print,
+    ExecutableCommand,
+};
 use env_logger::{Builder, Env};
 use log::*;
 
@@ -5,6 +11,8 @@ use clap::{Parser, Subcommand};
 
 use tether_agent::TetherAgentOptionsBuilder;
 use tether_utils::{tether_playback::TetherPlaybackUtil, *};
+
+use std::io::{stdout, Write};
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
@@ -87,9 +95,18 @@ fn main() {
 
             loop {
                 while let Some((_plug_name, message)) = tether_agent.check_messages() {
+                    let mut stdout = stdout();
                     if insights.update(&message) {
-                        info!("Insights update: \n{}", insights);
+                        info!("\nTopics update\n------------\n{}", &insights);
                     }
+                    execute!(
+                        stdout,
+                        SavePosition,
+                        Print(format!("Live message count: {}", insights.message_count())),
+                        RestorePosition,
+                        Hide
+                    )
+                    .unwrap();
                 }
             }
         }
