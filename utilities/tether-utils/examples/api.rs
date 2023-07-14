@@ -52,7 +52,10 @@ fn demo_topics() {
         .build()
         .expect("failed to init/connect Tether Agent");
 
-    let options = TopicOptions { topic: "#".into() };
+    let options = TopicOptions {
+        topic: "#".into(),
+        sampler_interval: 1000,
+    };
 
     let mut insights = Insights::new(&options, &tether_agent);
 

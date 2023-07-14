@@ -4,7 +4,7 @@ use tether_agent::{
     TetherAgent,
 };
 
-use crate::tether_topics::agent_tree::AgentTree;
+use crate::tether_topics::{agent_tree::AgentTree, sampler::Sampler};
 use std::{
     fmt,
     time::{Duration, SystemTime},
@@ -25,6 +25,7 @@ pub struct Insights {
     message_count: u128,
     log_start: Option<SystemTime>,
     message_log: CircularBuffer<MONITOR_LOG_LENGTH, MessageLogEntry>,
+    sampler: Sampler,
 }
 
 impl fmt::Display for Insights {
@@ -59,7 +60,16 @@ impl Insights {
             message_log: CircularBuffer::new(),
             message_count: 0,
             log_start: None,
+            sampler: Sampler::new(options.sampler_interval),
         }
+    }
+
+    pub fn sample(&mut self) -> bool {
+        self.sampler.add_sample(self.message_count)
+    }
+
+    pub fn sampler(&self) -> &Sampler {
+        &self.sampler
     }
 
     pub fn update(&mut self, message: &Message) -> bool {

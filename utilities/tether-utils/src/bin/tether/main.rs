@@ -97,6 +97,9 @@ fn main() {
             let mut last_update = SystemTime::now();
 
             loop {
+                if !insights.sample() {
+                    std::thread::sleep(Duration::from_millis(1));
+                }
                 while let Some((_plug_name, message)) = tether_agent.check_messages() {
                     let topics_did_udate = insights.update(&message);
                     print_insights_summary(&insights, topics_did_udate);
@@ -129,6 +132,20 @@ fn print_insights_summary(insights: &tether_topics::insights::Insights, topics_d
         Some(r) => format!("{:.1} msg/s", r),
         None => String::from("unknown"),
     };
+    let sampler_graph: String =
+        insights
+            .sampler()
+            .delta_entries()
+            .iter()
+            .fold(String::from(""), |acc, x| {
+                let symbol = match *x {
+                    0 => ".",
+                    1 => "_",
+                    _ => "+",
+                };
+                // if *x > 0 { "+" } else { "." };
+                format!("{} {}", acc, symbol)
+            });
     execute!(
         stdout,
         SavePosition,
@@ -137,6 +154,8 @@ fn print_insights_summary(insights: &tether_topics::insights::Insights, topics_d
             insights.message_count()
         )),
         Print(format!("Message rate: {}         \n", rate_string)),
+        // Print(format!("Sampler: {:?}", insights.sampler().delta_entries())),
+        Print(sampler_graph),
         RestorePosition,
     )
     .unwrap();
