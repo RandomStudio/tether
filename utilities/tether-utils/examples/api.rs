@@ -7,7 +7,7 @@ use tether_utils::{
     tether_receive::{receive, ReceiveOptions},
     tether_record::{RecordOptions, TetherRecordUtil},
     tether_send::{send, SendOptions},
-    tether_topics::{Insights, TopicOptions},
+    tether_topics::{insights::Insights, TopicOptions},
 };
 
 fn demo_receive() {

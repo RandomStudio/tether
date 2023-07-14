@@ -9,7 +9,7 @@ use log::*;
 use clap::{Parser, Subcommand};
 
 use tether_agent::TetherAgentOptionsBuilder;
-use tether_utils::{tether_playback::TetherPlaybackUtil, tether_topics::Insights, *};
+use tether_utils::*;
 
 use std::{
     io::stdout,
@@ -93,7 +93,7 @@ fn main() {
         Commands::Send(options) => tether_send::send(options, &tether_agent)
             .unwrap_or_else(|e| error!("Failed to send: {}", e)),
         Commands::Topics(options) => {
-            let mut insights = tether_topics::Insights::new(options, &tether_agent);
+            let mut insights = tether_topics::insights::Insights::new(options, &tether_agent);
             let mut last_update = SystemTime::now();
 
             loop {
@@ -110,7 +110,7 @@ fn main() {
             }
         }
         Commands::Playback(options) => {
-            let player = TetherPlaybackUtil::new(options.clone());
+            let player = tether_playback::TetherPlaybackUtil::new(options.clone());
             player.start(&tether_agent);
         }
         Commands::Record(options) => {
@@ -120,7 +120,7 @@ fn main() {
     }
 }
 
-fn print_insights_summary(insights: &Insights, topics_did_update: bool) {
+fn print_insights_summary(insights: &tether_topics::insights::Insights, topics_did_update: bool) {
     if topics_did_update {
         info!("\nTopics update\n------------\n{}", &insights);
     }

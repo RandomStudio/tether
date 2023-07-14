@@ -1,28 +1,19 @@
-use std::{
-    fmt,
-    time::{Duration, SystemTime},
-};
-
 use circular_buffer::CircularBuffer;
-use clap::Args;
 use tether_agent::{
     mqtt::Message, parse_agent_id, parse_agent_role, parse_plug_name, PlugOptionsBuilder,
     TetherAgent,
 };
 
-#[derive(Args, Clone)]
-pub struct TopicOptions {
-    #[arg(long = "topic", default_value_t=String::from("#"))]
-    pub topic: String,
-}
+use crate::tether_topics::agent_tree::AgentTree;
+use std::{
+    fmt,
+    time::{Duration, SystemTime},
+};
 
-impl Default for TopicOptions {
-    fn default() -> Self {
-        TopicOptions { topic: "#".into() }
-    }
-}
-
+use super::TopicOptions;
 pub const MONITOR_LOG_LENGTH: usize = 256;
+
+/// Topic, Payload as JSON
 type MessageLogEntry = (String, String);
 
 pub struct Insights {
@@ -34,68 +25,6 @@ pub struct Insights {
     message_count: u128,
     log_start: Option<SystemTime>,
     message_log: CircularBuffer<MONITOR_LOG_LENGTH, MessageLogEntry>,
-}
-
-/// Role, IDs, OutputPlugs
-pub struct AgentTree {
-    pub role: String,
-    pub ids: Vec<String>,
-    pub output_plugs: Vec<String>,
-}
-
-impl AgentTree {
-    pub fn new(role: &str, topics: &[String]) -> AgentTree {
-        let topics_this_agent = topics.iter().filter_map(|topic| {
-            if topic.contains(role) {
-                Some(String::from(topic))
-            } else {
-                None
-            }
-        });
-
-        let ids = topics_this_agent
-            .clone()
-            .fold(Vec::new(), |mut acc, topic| {
-                if let Some(id) = parse_agent_id(&topic) {
-                    if !acc.iter().any(|x| x == id) {
-                        acc.push(String::from(id))
-                    }
-                }
-                acc
-            });
-
-        let output_plugs = topics_this_agent
-            .clone()
-            .fold(Vec::new(), |mut acc, topic| {
-                if let Some(p) = parse_plug_name(&topic) {
-                    acc.push(String::from(p));
-                }
-                acc
-            });
-
-        AgentTree {
-            role: role.into(),
-            ids: ids.to_vec(),
-            output_plugs: output_plugs.to_vec(),
-        }
-    }
-}
-
-impl fmt::Display for AgentTree {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let Self {
-            role,
-            ids,
-            output_plugs,
-        } = self;
-        let ids_list = ids
-            .iter()
-            .fold(String::from(""), |acc, x| format!("{}\n    - {}", acc, x));
-        let output_plugs_list = output_plugs.iter().fold(String::from(""), |acc, x| {
-            format!("{}\n        - {}", acc, x)
-        });
-        write!(f, "\n{}\n {}\n {}\n", role, ids_list, output_plugs_list)
-    }
 }
 
 impl fmt::Display for Insights {
