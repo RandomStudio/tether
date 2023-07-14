@@ -104,15 +104,10 @@ impl fmt::Display for Insights {
         let roles = format!("x{} Roles: {:?} \n", self.roles().len(), self.roles());
         let ids = format!("x{} IDs: {:?} \n", self.ids().len(), self.ids());
         let plugs = format!("x{} Plugs: {:?} \n", self.plugs().len(), self.plugs());
-        let message_count = format!("x{} Messages total \n", self.message_count());
 
         let trees_formatted = self.trees.iter().map(|x| x.to_string()).collect::<String>();
 
-        write!(
-            f,
-            "{}{}{}{}{}{}",
-            topics, roles, ids, plugs, message_count, trees_formatted
-        )
+        write!(f, "{}{}{}{}{}", topics, roles, ids, plugs, trees_formatted)
     }
 }
 
@@ -217,10 +212,8 @@ impl Insights {
         &self.message_log
     }
     pub fn since_log_start(&self) -> Option<Duration> {
-        match self.log_start {
-            Some(t) => Some(t.elapsed().unwrap_or(Duration::ZERO)),
-            None => None,
-        }
+        self.log_start
+            .map(|t| t.elapsed().unwrap_or(Duration::ZERO))
     }
 
     /// Messages per second, since log_start was (re)set

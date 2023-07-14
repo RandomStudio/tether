@@ -1,5 +1,5 @@
 use crossterm::{
-    cursor::{Hide, RestorePosition, SavePosition},
+    cursor::{RestorePosition, SavePosition},
     execute,
     style::Print,
 };
@@ -8,7 +8,7 @@ use log::*;
 
 use clap::{Parser, Subcommand};
 
-use tether_agent::{mqtt::topic, TetherAgentOptionsBuilder};
+use tether_agent::TetherAgentOptionsBuilder;
 use tether_utils::{tether_playback::TetherPlaybackUtil, tether_topics::Insights, *};
 
 use std::{
