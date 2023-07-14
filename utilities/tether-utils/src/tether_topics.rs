@@ -52,13 +52,10 @@ impl AgentTree {
         let ids = topics_this_agent
             .clone()
             .fold(Vec::new(), |mut acc, topic| {
-                match parse_agent_id(&topic) {
-                    Some(id) => {
-                        if !acc.iter().any(|x| x == id) {
-                            acc.push(String::from(id))
-                        }
+                if let Some(id) = parse_agent_id(&topic) {
+                    if !acc.iter().any(|x| x == id) {
+                        acc.push(String::from(id))
                     }
-                    None => {}
                 }
                 acc
             });
@@ -66,9 +63,8 @@ impl AgentTree {
         let output_plugs = topics_this_agent
             .clone()
             .fold(Vec::new(), |mut acc, topic| {
-                match parse_plug_name(&topic) {
-                    Some(p) => acc.push(String::from(p)),
-                    None => {}
+                if let Some(p) = parse_plug_name(&topic) {
+                    acc.push(String::from(p));
                 }
                 acc
             });

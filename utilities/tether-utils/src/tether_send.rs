@@ -105,7 +105,7 @@ pub fn send(options: &SendOptions, tether_agent: &TetherAgent) -> anyhow::Result
                 }
                 Err(e) => {
                     error!("Failed to send empty message: {}", e);
-                    Err(e.into())
+                    Err(e)
                 }
             }
         }
