@@ -34,9 +34,9 @@ pub struct Insights {
 
 /// Role, IDs, OutputPlugs
 pub struct AgentTree {
-    role: String,
-    ids: Vec<String>,
-    output_plugs: Vec<String>,
+    pub role: String,
+    pub ids: Vec<String>,
+    pub output_plugs: Vec<String>,
 }
 
 impl AgentTree {
