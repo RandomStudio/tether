@@ -1,4 +1,7 @@
-use std::fmt;
+use std::{
+    fmt,
+    time::{Duration, SystemTime},
+};
 
 use circular_buffer::CircularBuffer;
 use clap::Args;
@@ -29,6 +32,7 @@ pub struct Insights {
     plugs: Vec<String>,
     trees: Vec<AgentTree>,
     message_count: u128,
+    log_start: Option<SystemTime>,
     message_log: CircularBuffer<MONITOR_LOG_LENGTH, MessageLogEntry>,
 }
 
@@ -130,11 +134,16 @@ impl Insights {
             trees: Vec::new(),
             message_log: CircularBuffer::new(),
             message_count: 0,
+            log_start: None,
         }
     }
 
     pub fn update(&mut self, message: &Message) -> bool {
         self.message_count += 1;
+
+        if self.log_start.is_none() {
+            self.log_start = Some(SystemTime::now());
+        }
 
         let bytes = message.payload();
         if bytes.is_empty() {
@@ -206,6 +215,26 @@ impl Insights {
 
     pub fn message_log(&self) -> &CircularBuffer<MONITOR_LOG_LENGTH, MessageLogEntry> {
         &self.message_log
+    }
+    pub fn since_log_start(&self) -> Option<Duration> {
+        match self.log_start {
+            Some(t) => Some(t.elapsed().unwrap_or(Duration::ZERO)),
+            None => None,
+        }
+    }
+
+    /// Messages per second, since log_start was (re)set
+    pub fn get_rate(&self) -> Option<f32> {
+        match self.log_start {
+            Some(t) => {
+                if let Ok(elapsed) = t.elapsed() {
+                    Some(self.message_count as f32 / elapsed.as_secs_f32())
+                } else {
+                    None
+                }
+            }
+            None => None,
+        }
     }
 }
 

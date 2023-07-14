@@ -1,18 +1,20 @@
 use crossterm::{
     cursor::{Hide, RestorePosition, SavePosition},
-    execute, queue,
+    execute,
     style::Print,
-    ExecutableCommand,
 };
 use env_logger::{Builder, Env};
 use log::*;
 
 use clap::{Parser, Subcommand};
 
-use tether_agent::TetherAgentOptionsBuilder;
-use tether_utils::{tether_playback::TetherPlaybackUtil, *};
+use tether_agent::{mqtt::topic, TetherAgentOptionsBuilder};
+use tether_utils::{tether_playback::TetherPlaybackUtil, tether_topics::Insights, *};
 
-use std::io::{stdout, Write};
+use std::{
+    io::stdout,
+    time::{Duration, SystemTime},
+};
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
@@ -92,21 +94,18 @@ fn main() {
             .unwrap_or_else(|e| error!("Failed to send: {}", e)),
         Commands::Topics(options) => {
             let mut insights = tether_topics::Insights::new(options, &tether_agent);
+            let mut last_update = SystemTime::now();
 
             loop {
                 while let Some((_plug_name, message)) = tether_agent.check_messages() {
-                    let mut stdout = stdout();
-                    if insights.update(&message) {
-                        info!("\nTopics update\n------------\n{}", &insights);
+                    let topics_did_udate = insights.update(&message);
+                    print_insights_summary(&insights, topics_did_udate);
+                }
+                if let Ok(elapsed) = last_update.elapsed() {
+                    if elapsed > Duration::from_secs(1) {
+                        print_insights_summary(&insights, false);
+                        last_update = SystemTime::now();
                     }
-                    execute!(
-                        stdout,
-                        SavePosition,
-                        Print(format!("Live message count: {}", insights.message_count())),
-                        RestorePosition,
-                        Hide
-                    )
-                    .unwrap();
                 }
             }
         }
@@ -119,4 +118,26 @@ fn main() {
             recorder.start_recording(&tether_agent);
         }
     }
+}
+
+fn print_insights_summary(insights: &Insights, topics_did_update: bool) {
+    if topics_did_update {
+        info!("\nTopics update\n------------\n{}", &insights);
+    }
+    let mut stdout = stdout();
+    let rate_string = match insights.get_rate() {
+        Some(r) => format!("{:.1} msg/s", r),
+        None => String::from("unknown"),
+    };
+    execute!(
+        stdout,
+        SavePosition,
+        Print(format!(
+            "Live message count: {}\n",
+            insights.message_count()
+        )),
+        Print(format!("Message rate: {}         \n", rate_string)),
+        RestorePosition,
+    )
+    .unwrap();
 }
