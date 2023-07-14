@@ -38,13 +38,13 @@ impl Sampler {
         &self.buffer
     }
 
-    pub fn delta_entries(&self) -> Vec<usize> {
+    pub fn delta_entries(&self) -> Vec<u128> {
         let mut result = Vec::with_capacity(WINDOW_SIZE);
         let mut previous = 0;
         for entry in &self.buffer {
             let delta = entry - previous;
             previous = *entry;
-            result.push(delta as usize);
+            result.push(delta);
         }
         result
     }
