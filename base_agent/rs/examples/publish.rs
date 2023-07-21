@@ -32,8 +32,9 @@ fn main() {
         .build(&agent)
         .expect("failed to create output");
     let custom_output = PlugOptionsBuilder::create_output("two")
+        .topic("custom/custom/two")
         .build(&agent)
-        .expect("failed to create input/subscribe");
+        .expect("failed to create output");
 
     for i in 1..=10 {
         info!("#{i}: Sending empty message...");
