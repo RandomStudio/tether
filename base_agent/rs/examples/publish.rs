@@ -22,7 +22,7 @@ fn main() {
     let agent = TetherAgentOptionsBuilder::new("RustDemoAgent")
         .build()
         .expect("failed to connect Tether");
-    let (role, id) = agent.description();
+    let (role, id, _) = agent.description();
     info!("Created agent OK: {}, {}", role, id);
 
     let empty_message_output = PlugOptionsBuilder::create_output("nothing")
