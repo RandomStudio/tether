@@ -59,6 +59,7 @@ fn main() {
     let cli = Cli::parse();
 
     let mut env_builder = Builder::from_env(Env::default().default_filter_or(&cli.log_level));
+    env_builder.filter_module("paho_mqtt", LevelFilter::Warn);
     env_builder.init();
 
     debug!("Debugging is enabled; could be verbose");
