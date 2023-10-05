@@ -5,7 +5,7 @@ use rmp_serde::to_vec_named;
 use serde::Serialize;
 use std::time::Duration;
 
-use crate::{parse_plug_name, PlugDefinition, PlugDefinitionCommon};
+use crate::{PlugDefinition, PlugDefinitionCommon, ThreePartTopic};
 
 const TIMEOUT_SECONDS: u64 = 10;
 pub struct TetherAgent {
@@ -206,14 +206,15 @@ impl TetherAgent {
         }
     }
 
-    /// If a message is waiting return Plug Name, Message (String, Message)
-    pub fn check_messages(&self) -> Option<(String, Message)> {
+    /// If a message is waiting return ThreePartTopic, Message (String, Message)
+    pub fn check_messages(&self) -> Option<(ThreePartTopic, Message)> {
         if let Some(message) = self.receiver.try_iter().find_map(|m| m) {
-            let topic = message.topic();
-            if let Some(plug_name) = parse_plug_name(topic) {
-                Some((String::from(plug_name), message))
+            if let Ok(t) = ThreePartTopic::try_from(message.topic()) {
+                Some((t, message))
             } else {
-                None
+                error!("Could not pass Three Part Topic from \"{}\"", message.topic());
+                warn!("Message was ignored");
+                None                
             }
         } else {
             None
@@ -232,9 +233,9 @@ impl TetherAgent {
                 panic!("You cannot publish using an Input Plug")
             }
             PlugDefinition::OutputPlugDefinition(output_plug_definition) => {
-                let PlugDefinitionCommon { topic, qos, .. } = &plug_definition.common();
+                let PlugDefinitionCommon { three_part_topic, qos, .. } = &plug_definition.common();
                 let message = MessageBuilder::new()
-                    .topic(topic)
+                    .topic(three_part_topic.topic())
                     .payload(payload.unwrap_or(&[]))
                     .retained(output_plug_definition.retain())
                     .qos(*qos)
