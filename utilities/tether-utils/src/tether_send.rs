@@ -35,7 +35,7 @@ struct DummyData {
 pub fn send(options: &SendOptions, tether_agent: &TetherAgent) -> anyhow::Result<()> {
     info!("Tether Send Utility");
 
-    let (role, id) = tether_agent.description();
+    let (role, id, _) = tether_agent.description();
 
     let publish_topic = match &options.plug_topic {
         Some(override_topic) => {
