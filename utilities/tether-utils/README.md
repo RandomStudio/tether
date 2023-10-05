@@ -2,13 +2,17 @@
 
 Utilities for [Tether](https://github.com/RandomStudio/tether), a standardised MQTT+MessagePack system for inter-process communication.
 
-This CLI utility tool, written in Rust, provides a single binary with subcommands:
+This is both a **library** (for Tether Agents to use) and **CLI tool** (for development and troubleshooting), written in Rust.
+
+With the CLI tool, users are provided a single binary with subcommands as follows:
 
 - [receive](#receive): Subscribe to all/some messages and attempt to decode them
 - [send](#send): Publish a single message with optional custom payload
 - [topics](#topics): Subscribe to all/some messages and parse the topic parts such as Agent Role, Agent ID and Plug Name
 - [record](#record): Record messages to disk. Useful for simulation, in combination with `playback` below
 - [playback](#playback): Playback messages with their original topics and timing, to simulate one or more Agents
+
+Usage as a library is not documented well yet, but see [examples/api.rs](./examples/api.rs) for a quick overview.
 
 ## Passing arguments
 
@@ -76,7 +80,11 @@ tether send --message \{\"hello\":\"world\"\,\"arr\":\[1,2,3\]\}
 
 ## Topics
 
-Super useful for seeing which Agents are online, and how message topics are being parsed according to Agent Role, Agent ID and Plug Name. This utility can't see into the past (except in the case of retained messages), so keep this in mind for Agents that don't publish frequently.
+Super useful for seeing which Agents are online, and how message topics are being parsed according to Agent Role, Agent ID and Plug Name. Now also provides live rate calculations (messages per second) and activity graph as below:
+
+![topics CLI screenshot](./docs/topics-screenshot.png)
+
+> 💡 This utility can't see into the past (except in the case of retained messages), so keep this in mind for Agents that don't publish frequently.
 
 - Run with defaults: `tether topics`
 - More options can be found using `tether topics --help`
