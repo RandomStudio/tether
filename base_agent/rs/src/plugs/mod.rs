@@ -147,7 +147,7 @@ impl PlugOptionsBuilder {
                     "Attempt to subscribe for plug named {} ...",
                     plug.common.name
                 );
-                match tether_agent.client.subscribe(&final_topic, final_qos) {
+                match tether_agent.client().subscribe(&final_topic, final_qos) {
                     Ok(res) => {
                         debug!("This topic was fine: --{final_topic}--");
                         debug!("Server respond OK for subscribe: {res:?}");
@@ -164,8 +164,8 @@ impl PlugOptionsBuilder {
             }
             Self::OutputPlugOptions(plug) => {
                 let final_topic = plug.common.topic.unwrap_or(build_topic(
-                    &tether_agent.role,
-                    &tether_agent.id,
+                    &tether_agent.role(),
+                    &tether_agent.id(),
                     &plug.common.name,
                 ));
                 let final_qos = plug.common.qos.unwrap_or(1);
