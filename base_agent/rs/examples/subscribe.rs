@@ -39,52 +39,57 @@ fn main() {
         .build(&tether_agent)
         .expect("failed to create input");
 
+    let input_everything = PlugOptionsBuilder::create_input("everything")
+        .topic("#")
+        .build(&tether_agent)
+        .expect("failed to create input");
+
     info!("Checking messages every 1s, 10x...");
 
     for i in 1..10 {
         info!("#{i}: Checking for messages...");
-        while let Some((plug_name, message)) = tether_agent.check_messages() {
+        while let Some((topic_parts, message)) = tether_agent.check_messages() {
             debug!(
-                "Received a message topic {} => plug name {}",
+                "Received a message topic {} => topic parts {:?}",
                 message.topic(),
-                plug_name
+                topic_parts
             );
-            if &plug_name == input_one.name() {
-                info!(
-                    "******** INPUT ONE:\n Received a message from plug named \"{}\" on topic {} with length {} bytes",
-                    input_one.name(),
-                    message.topic(),
-                    message.payload().len()
-                );
-            }
-            if &plug_name == input_two.name() {
-                info!(
-                    "******** INPUT TWO:\n Received a message from plug named \"{}\" on topic {} with length {} bytes",
-                    input_two.name(),
-                    message.topic(),
-                    message.payload().len()
-                );
-                // Notice how you must give the from_slice function a type so it knows what to expect
-                let decoded = from_slice::<CustomMessage>(&message.payload());
-                match decoded {
-                    Ok(d) => {
-                        info!("Yes, we decoded the MessagePack payload as: {:?}", d);
-                        let CustomMessage { name, id } = d;
-                        debug!("Name is {} and ID is {}", name, id);
-                    }
-                    Err(e) => {
-                        warn!("Failed to decode the payload: {}", e)
-                    }
-                };
-            }
-            if &plug_name == input_empty.name() {
-                info!(
-                    "******** EMPTY MESSAGE:\n Received a message from plug named \"{}\" on topic {} with length {} bytes",
-                    input_empty.name(),
-                    message.topic(),
-                    message.payload().len()
-                );
-            }
+            // if &plug_name == input_one.name() {
+            //     info!(
+            //         "******** INPUT ONE:\n Received a message from plug named \"{}\" on topic {} with length {} bytes",
+            //         input_one.name(),
+            //         message.topic(),
+            //         message.payload().len()
+            //     );
+            // }
+            // if &plug_name == input_two.name() {
+            //     info!(
+            //         "******** INPUT TWO:\n Received a message from plug named \"{}\" on topic {} with length {} bytes",
+            //         input_two.name(),
+            //         message.topic(),
+            //         message.payload().len()
+            //     );
+            //     // Notice how you must give the from_slice function a type so it knows what to expect
+            //     let decoded = from_slice::<CustomMessage>(&message.payload());
+            //     match decoded {
+            //         Ok(d) => {
+            //             info!("Yes, we decoded the MessagePack payload as: {:?}", d);
+            //             let CustomMessage { name, id } = d;
+            //             debug!("Name is {} and ID is {}", name, id);
+            //         }
+            //         Err(e) => {
+            //             warn!("Failed to decode the payload: {}", e)
+            //         }
+            //     };
+            // }
+            // if &plug_name == input_empty.name() {
+            //     info!(
+            //         "******** EMPTY MESSAGE:\n Received a message from plug named \"{}\" on topic {} with length {} bytes",
+            //         input_empty.name(),
+            //         message.topic(),
+            //         message.payload().len()
+            //     );
+            // }
         }
         thread::sleep(Duration::from_millis(1000))
     }

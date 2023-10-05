@@ -212,9 +212,12 @@ impl TetherAgent {
             if let Ok(t) = ThreePartTopic::try_from(message.topic()) {
                 Some((t, message))
             } else {
-                error!("Could not pass Three Part Topic from \"{}\"", message.topic());
+                error!(
+                    "Could not pass Three Part Topic from \"{}\"",
+                    message.topic()
+                );
                 warn!("Message was ignored");
-                None                
+                None
             }
         } else {
             None
@@ -233,9 +236,9 @@ impl TetherAgent {
                 panic!("You cannot publish using an Input Plug")
             }
             PlugDefinition::OutputPlugDefinition(output_plug_definition) => {
-                let PlugDefinitionCommon { three_part_topic, qos, .. } = &plug_definition.common();
+                let PlugDefinitionCommon { topic, qos, .. } = &plug_definition.common();
                 let message = MessageBuilder::new()
-                    .topic(three_part_topic.topic())
+                    .topic(topic)
                     .payload(payload.unwrap_or(&[]))
                     .retained(output_plug_definition.retain())
                     .qos(*qos)

@@ -57,7 +57,7 @@ fn main() {
                 Ok(a) => {
                     if let Some((topic, _message)) = a.check_messages() {
                         message_count += 1;
-                        println!("<<<<<<<< CHECKING LOOP: Received a message on topic {topic}",);
+                        println!("<<<<<<<< CHECKING LOOP: Received a message on topic {topic:?}",);
                         tx.send(format!("received message #{message_count}"))
                             .expect("failed to send message via channel");
                     }
