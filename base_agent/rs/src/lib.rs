@@ -201,6 +201,13 @@ pub struct TetherAgentOptionsBuilder {
     auto_connect: bool,
 }
 
+fn convert_optional<T, U: std::convert::From<T>>(optional_value: Option<T>) -> Option<U> {
+    match optional_value {
+        Some(v) => Some(v.into()),
+        None => None,
+    }
+}
+
 impl TetherAgentOptionsBuilder {
     /// Initialise Tether Options struct with default options; call other methods to customise.
     /// Call `build()` to get the actual TetherAgent instance (and connect automatically, by default)
@@ -221,8 +228,20 @@ impl TetherAgentOptionsBuilder {
         self
     }
 
+    /// Provide Some(value) to override or None to use default
+    pub fn id_optional(mut self, id: Option<String>) -> Self {
+        self.id = convert_optional(id);
+        self
+    }
+
     pub fn host(mut self, host: &str) -> Self {
         self.host = Some(host.into());
+        self
+    }
+
+    /// Provide Some(value) to override or None to use default
+    pub fn host_optional(mut self, host: Option<String>) -> Self {
+        self.host = convert_optional(host);
         self
     }
 
@@ -236,8 +255,20 @@ impl TetherAgentOptionsBuilder {
         self
     }
 
+    /// Provide Some(value) to override or None to use default
+    pub fn username_optional(mut self, username: Option<String>) -> Self {
+        self.username = convert_optional(username);
+        self
+    }
+
     pub fn password(mut self, password: &str) -> Self {
         self.password = Some(password.into());
+        self
+    }
+
+    /// Provide Some(value) to override or None to use default
+    pub fn password_optional(mut self, password: Option<String>) -> Self {
+        self.password = convert_optional(password);
         self
     }
 
@@ -290,9 +321,9 @@ impl TetherAgent {
         self.client.is_connected()
     }
 
-    /// Returns the Agent Role and ID (group)
-    pub fn description(&self) -> (&str, &str) {
-        (&self.role, &self.id)
+    /// Returns the Agent Role, ID (group) and Broker URI
+    pub fn description(&self) -> (&str, &str, &str) {
+        (&self.role, &self.id, &self.broker_uri)
     }
 
     /// Return the URI (protocol, IP address, port, path) that
