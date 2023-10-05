@@ -25,7 +25,7 @@ fn main() {
         .password("connected.space")
         .build()
         .expect("Failed to initialise and connect");
-    let (role, id) = tether_agent.description();
+    let (role, id, _) = tether_agent.description();
     info!("Created agent OK: {}, {}", role, id);
 
     let empty_message_output = PlugOptionsBuilder::create_output("nothing")
