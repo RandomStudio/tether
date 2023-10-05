@@ -5,10 +5,11 @@ It has been tested with Python 3.9.
 
 ## Dependencies
 
-This module has the following package dependencies:
+Install the dependencies by running
 
-- [https://pypi.org/project/paho-mqtt/](paho-mqtt)
-- [https://pypi.org/project/msgpack/](msgpack)
+```
+python -m pip install -r requirements.txt
+```
 
 ## Usage
 

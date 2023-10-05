@@ -7,3 +7,6 @@
 [submodule "base_agent/cpp/libs/msgpack"]
 	path = base_agent/cpp/libs/msgpack
 	url = https://github.com/msgpack/msgpack-c.git
+[submodule "base_agent/cpp/libs/json"]
+	path = base_agent/cpp/libs/json
+	url = git@github.com:nlohmann/json.git
