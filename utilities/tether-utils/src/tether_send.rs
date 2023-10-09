@@ -1,16 +1,25 @@
 use clap::Args;
 use log::{debug, error, info, warn};
 use serde::Serialize;
-use tether_agent::{build_topic, PlugOptionsBuilder, TetherAgent};
+use tether_agent::{PlugOptionsBuilder, TetherAgent};
 
 #[derive(Args)]
 pub struct SendOptions {
     /// Overide the auto-generated topic with your own, to use with every published message
-    #[arg(long = "plug.name", default_value_t=String::from("testMessages"))]
-    pub plug_name: String,
+    #[arg(long = "plug.name")]
+    pub plug_name: Option<String>,
 
-    /// Overide the auto-generated topic with your own, to use with every published message
-    #[arg(long = "plug.topic")]
+    /// Overide Tether Agent role with your own, to use with every published message
+    #[arg(long = "plug.role")]
+    pub plug_role: Option<String>,
+
+    /// Overide Tether Agent ID with your own, to use with every published message
+    #[arg(long = "plug.id")]
+    pub plug_id: Option<String>,
+
+    /// Overide the entire topic string (ignoring any defaults or customisations applied elsewhere),
+    /// to use with every published message
+    #[arg(long = "topic")]
     pub plug_topic: Option<String>,
 
     /// Provide a custom message as an escaped JSON string which will be converted
@@ -37,23 +46,27 @@ pub fn send(options: &SendOptions, tether_agent: &TetherAgent) -> anyhow::Result
 
     let (role, id, _) = tether_agent.description();
 
-    let publish_topic = match &options.plug_topic {
-        Some(override_topic) => {
-            warn!(
-                "Using override topic \"{}\"; agent role, agent ID and plug name will be ignored",
-                override_topic
-            );
-            String::from(override_topic)
-        }
-        None => {
-            let auto_generated_topic = build_topic(role, id, &options.plug_name);
-            info!("Using auto-generated topic \"{}\"", &auto_generated_topic);
-            auto_generated_topic
-        }
-    };
+    // let publish_topic = match &options.plug_topic {
+    //     Some(override_topic) => {
+    //         warn!(
+    //             "Using override topic \"{}\"; agent role, agent ID and plug name will be ignored",
+    //             override_topic
+    //         );
+    //         String::from(override_topic)
+    //     }
+    //     None => {
+    //         let auto_generated_topic = build_topic(role, id, &options.plug_name);
+    //         info!("Using auto-generated topic \"{}\"", &auto_generated_topic);
+    //         auto_generated_topic
+    //     }
+    // };
 
-    let output = PlugOptionsBuilder::create_output(&options.plug_name)
-        .topic(&publish_topic)
+    let plug_name = options.plug_name.clone().unwrap_or("testMessages".into());
+
+    let output = PlugOptionsBuilder::create_output(&plug_name)
+        .role(options.plug_role.clone())
+        .id(options.plug_id.clone())
+        .topic(options.plug_topic.clone())
         .build(tether_agent)
         .expect("failed to create output plug");
 

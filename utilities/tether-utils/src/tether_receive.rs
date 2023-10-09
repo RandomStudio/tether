@@ -1,12 +1,24 @@
 use clap::Args;
 use log::{debug, error, info, warn};
-use tether_agent::{mqtt::Message, PlugOptionsBuilder, TetherAgent};
+use tether_agent::{mqtt::Message, PlugOptionsBuilder, TetherAgent, TetherOrCustomTopic};
 
 #[derive(Args)]
 pub struct ReceiveOptions {
-    /// Topic to subscribe; by default we recording everything
-    #[arg(long = "topic", default_value_t=String::from("#"))]
-    pub subscribe_topic: String,
+    /// Topic to subscribe; by default we subscribe to everything
+    #[arg(long = "topic")]
+    pub subscribe_topic: Option<String>,
+
+    /// Specify a ROLE (instead of wildcard +)
+    #[arg(long = "role")]
+    pub subscribe_role: Option<String>,
+
+    /// Specify an ID (instead of wildcard +)
+    #[arg(long = "id")]
+    pub subscribe_id: Option<String>,
+
+    /// Specify a plug name (instead of wildcard +)
+    #[arg(long = "plug")]
+    pub subscribe_plug: Option<String>,
 }
 
 pub fn receive(
@@ -17,16 +29,22 @@ pub fn receive(
     info!("Tether Receive Utility");
 
     let _input = PlugOptionsBuilder::create_input("all")
-        .topic(&options.subscribe_topic)
+        .topic(options.subscribe_topic.clone())
+        .role(options.subscribe_role.clone())
+        .id(options.subscribe_id.clone())
         .build(tether_agent)
         .expect("failed to create input plug");
 
     loop {
         let mut did_work = false;
-        while let Some((plug_name, message)) = tether_agent.check_messages() {
+        while let Some((topic, message)) = tether_agent.check_messages() {
             did_work = true;
-            debug!("Received message on plug {}: {:?}", plug_name, message);
             debug!("Received message on topic \"{}\"", message.topic());
+            let plug_name = match topic {
+                TetherOrCustomTopic::Custom(_) => String::from("unknown"),
+                TetherOrCustomTopic::Tether(tpt) => String::from(tpt.plug_name()),
+            };
+
             let bytes = message.payload();
             if bytes.is_empty() {
                 debug!("Empty message payload");

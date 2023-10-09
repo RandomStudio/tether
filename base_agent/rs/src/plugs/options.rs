@@ -63,21 +63,26 @@ impl PlugOptionsBuilder {
     }
 
     /// Override the "role" part of the topic that gets generated for this Plug.
+    /// - For Input Plugs, this means you want to be specific about the Role part
+    /// of the topic, instead of using the default wildcard `+` at this location
+    /// - For Output Plugs, this means you want to override the Role part instead
+    /// of using your Agent's "own" Role with which you created the Tether Agent
+    ///
     /// If you override the entire topic using `.topic` this will be ignored.
-    pub fn role(mut self, role: Option<&str>) -> Self {
+    pub fn role(mut self, role: Option<String>) -> Self {
         match &mut self {
             PlugOptionsBuilder::InputPlugOptions(s) => {
                 if s.override_topic.is_some() {
                     error!("Override topic was also provided; this will take precedence");
                 } else {
-                    s.override_subscribe_role = role.and_then(|s| Some(String::from(s)));
+                    s.override_subscribe_role = role.and_then(|s| Some(s));
                 }
             }
             PlugOptionsBuilder::OutputPlugOptions(s) => {
                 if s.override_topic.is_some() {
                     error!("Override topic was also provided; this will take precedence");
                 } else {
-                    s.override_publish_role = role.and_then(|s| Some(String::from(s)));
+                    s.override_publish_role = role.and_then(|s| Some(s));
                 }
             }
         };
@@ -85,49 +90,61 @@ impl PlugOptionsBuilder {
     }
 
     /// Override the "id" part of the topic that gets generated for this Plug.
+    /// - For Input Plugs, this means you want to be specific about the ID part
+    /// of the topic, instead of using the default wildcard `+` at this location
+    /// - For Output Plugs, this means you want to override the ID part instead
+    /// of using your Agent's "own" ID which you specified (or left blank, i.e. "any")
+    /// when creating the Tether Agent
+    ///
     /// If you override the entire topic using `.topic` this will be ignored.
-    pub fn id(mut self, id: Option<&str>) -> Self {
+    pub fn id(mut self, id: Option<String>) -> Self {
         match &mut self {
             PlugOptionsBuilder::InputPlugOptions(s) => {
                 if s.override_topic.is_some() {
                     error!("Override topic was also provided; this will take precedence");
                 } else {
-                    s.override_subscribe_id = id.and_then(|s| Some(String::from(s)));
+                    s.override_subscribe_id = id.and_then(|s| Some(s));
                 }
             }
             PlugOptionsBuilder::OutputPlugOptions(s) => {
                 if s.override_topic.is_some() {
                     error!("Override topic was also provided; this will take precedence");
                 } else {
-                    s.override_publish_id = id.and_then(|s| Some(String::from(s)));
+                    s.override_publish_id = id.and_then(|s| Some(s));
                 }
             }
         };
         self
     }
 
-    /// Override the final topic to use for publishing or subscribing. The provided topic will be checked
-    /// against the Tether Three Part Topic convention, but will not reject topic strings - just produce
-    /// a warning. It's therefore valid to use a wildcard such as "#".
+    /// Override the final topic to use for publishing or subscribing. The provided topic **will** be checked
+    /// against the Tether Three Part Topic convention, but the function **will not** reject topic strings - just
+    /// produce a warning. It's therefore valid to use a wildcard such as "#".
     ///
-    /// Anything customised using `override_role` or `override_id` will be ignored if this function is called.
-    pub fn topic(mut self, override_topic: &str) -> Self {
-        if TryInto::<ThreePartTopic>::try_into(override_topic).is_ok() {
-            info!("Custom topic passes Three Part Topic validation");
-        } else {
-            warn!(
-                "Could not convert \"{}\" into Tether 3 Part Topic; presumably you know what you're doing!",
-                override_topic
-            );
+    /// Any customisations specified using `.role(...)` or `.id(...)` will be ignored if this function is called.
+    pub fn topic(mut self, override_topic: Option<String>) -> Self {
+        match override_topic {
+            Some(t) => {
+                if TryInto::<ThreePartTopic>::try_into(t.as_str()).is_ok() {
+                    info!("Custom topic passes Three Part Topic validation");
+                } else {
+                    warn!(
+                        "Could not convert \"{}\" into Tether 3 Part Topic; presumably you know what you're doing!",
+                        t
+                    );
+                }
+                match &mut self {
+                    PlugOptionsBuilder::InputPlugOptions(s) => s.override_topic = Some(t),
+                    PlugOptionsBuilder::OutputPlugOptions(s) => s.override_topic = Some(t),
+                };
+            }
+            None => {
+                match &mut self {
+                    PlugOptionsBuilder::InputPlugOptions(s) => s.override_topic = None,
+                    PlugOptionsBuilder::OutputPlugOptions(s) => s.override_topic = None,
+                };
+            }
         }
-        match &mut self {
-            PlugOptionsBuilder::InputPlugOptions(s) => {
-                s.override_topic = Some(override_topic.into())
-            }
-            PlugOptionsBuilder::OutputPlugOptions(s) => {
-                s.override_topic = Some(override_topic.into())
-            }
-        };
         self
     }
 

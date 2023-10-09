@@ -32,7 +32,7 @@ fn main() {
         .build(&agent)
         .expect("failed to create output");
     let custom_output = PlugOptionsBuilder::create_output("two")
-        .topic("custom/custom/two")
+        .topic(Some("custom/custom/two".into()))
         .build(&agent)
         .expect("failed to create output");
 

@@ -4,7 +4,7 @@ use env_logger::{Builder, Env};
 use log::{debug, info, warn};
 use rmp_serde::from_slice;
 use serde::Deserialize;
-use tether_agent::{PlugOptionsBuilder, TetherAgentOptionsBuilder, TetherOrCustomTopic};
+use tether_agent::{PlugOptionsBuilder, TetherAgentOptionsBuilder};
 
 #[derive(Deserialize, Debug)]
 struct CustomMessage {
@@ -32,7 +32,7 @@ fn main() {
         .expect("failed to create input");
     debug!("input one {} = {}", input_one.name(), input_one.topic());
     let input_two = PlugOptionsBuilder::create_input("two")
-        .role(Some("specific"))
+        .role(Some("specific".into()))
         .build(&tether_agent)
         .expect("failed to create input");
     debug!("input two {} = {}", input_two.name(), input_two.topic());
@@ -41,7 +41,7 @@ fn main() {
         .expect("failed to create input");
 
     let input_everything = PlugOptionsBuilder::create_input("everything")
-        .topic("#")
+        .topic(Some("#".into()))
         .build(&tether_agent)
         .expect("failed to create input");
     debug!(

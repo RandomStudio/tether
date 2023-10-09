@@ -125,27 +125,7 @@ pub enum PlugDefinition {
     OutputPlug(OutputPlugDefinition),
 }
 
-// #[derive(Serialize, Deserialize, Debug)]
-// pub enum PlugDefinition {
-//     InputPlugDefinition(InputPlugDefinition),
-//     OutputPlugDefinition(OutputPlugDefinition),
-// }
-
 impl PlugDefinition {
-    //     pub fn common(&self) -> &PlugDefinitionCommon {
-    //         match self {
-    //             PlugDefinition::InputPlugDefinition(plug) => &plug.common,
-    //             PlugDefinition::OutputPlugDefinition(plug) => &plug.common,
-    //         }
-    //     }
-
-    //     pub fn common_mut(&mut self) -> &mut PlugDefinitionCommon {
-    //         match self {
-    //             PlugDefinition::InputPlugDefinition(plug) => &mut plug.common,
-    //             PlugDefinition::OutputPlugDefinition(plug) => &mut plug.common,
-    //         }
-    //     }
-
     pub fn name(&self) -> &str {
         match self {
             PlugDefinition::InputPlug(p) => &p.name(),

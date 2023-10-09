@@ -742,8 +742,6 @@ dependencies = [
 [[package]]
 name = "tether-agent"
 version = "0.9.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1ebdd57c587062a032caa9b48ddf2b6ae8648a3dfe2c0678e88ecfdc4e0066b5"
 dependencies = [
  "anyhow",
  "env_logger",

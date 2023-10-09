@@ -13,17 +13,17 @@ fn main() {
         .expect("failed to create Tether Agent");
 
     let output_plug = PlugOptionsBuilder::create_output("anOutput")
-        .role(Some("pretendingToBeSomethingElse"))
+        .role(Some("pretendingToBeSomethingElse".into()))
         .qos(2)
         .retain(true)
         .build(&tether_agent);
     let input_wildcard_plug = PlugOptionsBuilder::create_input("everything")
-        .topic("#")
+        .topic(Some("#".into()))
         .build(&tether_agent);
 
     let input_customid_plug = PlugOptionsBuilder::create_input("someData")
         .role(None) // i.e., just use default
-        .id(Some("specificIDonly"))
+        .id(Some("specificIDonly".into()))
         .build(&tether_agent);
 
     println!("Agent looks like this: {:?}", tether_agent.description());
