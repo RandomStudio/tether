@@ -34,7 +34,7 @@ fn main() {
 
     match tether_agent.lock() {
         Ok(a) => {
-            let _input_plug = PlugOptionsBuilder::create_output("one").build(&a);
+            let _input_plug = PlugOptionsBuilder::create_input("one").build(&a);
         }
         Err(e) => {
             panic!("Failed to acquire lock for Tether Agent setup: {}", e);
@@ -45,7 +45,7 @@ fn main() {
 
     let receiver_agent = Arc::clone(&tether_agent);
     thread::spawn(move || {
-        println!("Checking messages every 1s, 10x...");
+        println!("Checking messages every 1s, until 10 messages received...");
 
         let mut message_count = 0;
         // let mut i = 0;

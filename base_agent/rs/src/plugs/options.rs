@@ -1,10 +1,9 @@
 use log::{debug, error, info, warn};
 
 use crate::{
-    definitions::{
-        InputPlugDefinition, OutputPlugDefinition, PlugDefinition, PlugDefinitionCommon,
-    },
-    TetherAgent, ThreePartTopic,
+    definitions::{InputPlugDefinition, OutputPlugDefinition, PlugDefinitionCommon},
+    three_part_topic::ThreePartTopic,
+    PlugDefinition, TetherAgent, TetherOrCustomTopic,
 };
 
 pub struct InputPlugOptions {
@@ -149,71 +148,46 @@ impl PlugOptionsBuilder {
     pub fn build(self, tether_agent: &TetherAgent) -> anyhow::Result<PlugDefinition> {
         match self {
             Self::InputPlugOptions(plug_options) => {
-                let final_topic: String = match plug_options.override_topic {
-                    Some(s) => s,
-                    None => {
-                        let t = ThreePartTopic::new(
-                            &plug_options
-                                .override_subscribe_role
-                                .unwrap_or("+".to_string()),
-                            &plug_options
-                                .override_subscribe_id
-                                .unwrap_or("+".to_string()),
-                            &plug_options.plug_name,
-                        );
-                        t.topic()
-                    }
+                let tpt: TetherOrCustomTopic = match plug_options.override_topic {
+                    Some(custom) => TetherOrCustomTopic::Custom(custom),
+                    None => TetherOrCustomTopic::Tether(ThreePartTopic::new_for_subscribe(
+                        plug_options.override_subscribe_role,
+                        plug_options.override_subscribe_id,
+                        &plug_options.plug_name,
+                    )),
                 };
-                let final_qos = plug_options.qos.unwrap_or(1);
-                debug!(
-                    "Attempt to subscribe for plug named \"{}\" with topic \"{}\" ...",
-                    &plug_options.plug_name, &final_topic
-                );
-                match tether_agent.client().subscribe(&final_topic, final_qos) {
+                let plug_definition =
+                    InputPlugDefinition::new(&plug_options.plug_name, tpt, plug_options.qos);
+                match tether_agent
+                    .client()
+                    .subscribe(plug_definition.topic().as_str(), plug_definition.qos())
+                {
                     Ok(res) => {
-                        debug!("This topic was fine: \"{final_topic}\"",);
+                        debug!("This topic was fine: \"{}\"", plug_definition.topic());
                         debug!("Server respond OK for subscribe: {res:?}");
-                        Ok(PlugDefinition::InputPlugDefinition(InputPlugDefinition {
-                            common: PlugDefinitionCommon {
-                                name: plug_options.plug_name,
-                                qos: final_qos,
-                                topic: final_topic,
-                            },
-                        }))
+                        Ok(PlugDefinition::InputPlug(plug_definition))
                     }
                     Err(e) => Err(e.into()),
                 }
             }
             Self::OutputPlugOptions(plug_options) => {
-                let final_topic: String = match plug_options.override_topic {
-                    Some(s) => s,
-                    None => {
-                        let t = ThreePartTopic::new(
-                            &plug_options
-                                .override_publish_role
-                                .unwrap_or(tether_agent.id().to_string()),
-                            &plug_options
-                                .override_publish_id
-                                .unwrap_or(tether_agent.id().to_string()),
-                            &plug_options.plug_name,
-                        );
-                        t.topic()
-                    }
+                let tpt: TetherOrCustomTopic = match plug_options.override_topic {
+                    Some(custom) => TetherOrCustomTopic::Custom(custom),
+                    None => TetherOrCustomTopic::Tether(ThreePartTopic::new_for_publish(
+                        plug_options.override_publish_role,
+                        plug_options.override_publish_id,
+                        &plug_options.plug_name,
+                        tether_agent,
+                    )),
                 };
 
-                let final_qos = plug_options.qos.unwrap_or(1);
-
-                debug!("Creating plug definition (immediately) for plug named \"{}\" with topic \"{}\"", 
-              &plug_options.plug_name, &final_topic);
-
-                Ok(PlugDefinition::OutputPlugDefinition(OutputPlugDefinition {
-                    common: PlugDefinitionCommon {
-                        name: plug_options.plug_name,
-                        topic: final_topic,
-                        qos: final_qos,
-                    },
-                    retain: plug_options.retain.unwrap_or(false),
-                }))
+                let plug_definition = OutputPlugDefinition::new(
+                    &plug_options.plug_name,
+                    tpt,
+                    plug_options.qos,
+                    plug_options.retain,
+                );
+                Ok(PlugDefinition::OutputPlug(plug_definition))
             }
         }
     }

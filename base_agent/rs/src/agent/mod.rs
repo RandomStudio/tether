@@ -5,7 +5,9 @@ use rmp_serde::to_vec_named;
 use serde::Serialize;
 use std::time::Duration;
 
-use crate::{PlugDefinition, PlugDefinitionCommon, ThreePartTopic};
+use crate::{
+    three_part_topic::ThreePartTopic, PlugDefinition, PlugDefinitionCommon, TetherOrCustomTopic,
+};
 
 const TIMEOUT_SECONDS: u64 = 10;
 pub struct TetherAgent {
@@ -207,17 +209,19 @@ impl TetherAgent {
     }
 
     /// If a message is waiting return ThreePartTopic, Message (String, Message)
-    pub fn check_messages(&self) -> Option<(ThreePartTopic, Message)> {
+    pub fn check_messages(&self) -> Option<(TetherOrCustomTopic, Message)> {
         if let Some(message) = self.receiver.try_iter().find_map(|m| m) {
             if let Ok(t) = ThreePartTopic::try_from(message.topic()) {
-                Some((t, message))
+                Some((TetherOrCustomTopic::Tether(t), message))
             } else {
-                error!(
+                warn!(
                     "Could not pass Three Part Topic from \"{}\"",
                     message.topic()
                 );
-                warn!("Message was ignored");
-                None
+                Some((
+                    TetherOrCustomTopic::Custom(String::from(message.topic())),
+                    message,
+                ))
             }
         } else {
             None
@@ -232,16 +236,17 @@ impl TetherAgent {
         payload: Option<&[u8]>,
     ) -> anyhow::Result<()> {
         match plug_definition {
-            PlugDefinition::InputPlugDefinition(_) => {
+            PlugDefinition::InputPlug(_) => {
                 panic!("You cannot publish using an Input Plug")
             }
-            PlugDefinition::OutputPlugDefinition(output_plug_definition) => {
-                let PlugDefinitionCommon { topic, qos, .. } = &plug_definition.common();
+            PlugDefinition::OutputPlug(output_plug_definition) => {
+                let topic = output_plug_definition.topic();
+                let qos = output_plug_definition.qos();
                 let message = MessageBuilder::new()
                     .topic(topic)
                     .payload(payload.unwrap_or(&[]))
                     .retained(output_plug_definition.retain())
-                    .qos(*qos)
+                    .qos(qos)
                     .finalize();
                 if let Err(e) = self.client.publish(message) {
                     error!("Error publishing: {:?}", e);

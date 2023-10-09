@@ -4,7 +4,7 @@ use env_logger::{Builder, Env};
 use log::{debug, info, warn};
 use rmp_serde::from_slice;
 use serde::Deserialize;
-use tether_agent::{PlugOptionsBuilder, TetherAgentOptionsBuilder};
+use tether_agent::{PlugOptionsBuilder, TetherAgentOptionsBuilder, TetherOrCustomTopic};
 
 #[derive(Deserialize, Debug)]
 struct CustomMessage {
@@ -32,6 +32,7 @@ fn main() {
         .expect("failed to create input");
     debug!("input one {} = {}", input_one.name(), input_one.topic());
     let input_two = PlugOptionsBuilder::create_input("two")
+        .role(Some("specific"))
         .build(&tether_agent)
         .expect("failed to create input");
     debug!("input two {} = {}", input_two.name(), input_two.topic());
@@ -43,8 +44,11 @@ fn main() {
         .topic("#")
         .build(&tether_agent)
         .expect("failed to create input");
-
-    let plug_names = vec![input_one. ]
+    debug!(
+        "input everything {} = {}",
+        input_everything.name(),
+        input_everything.topic()
+    );
 
     info!("Checking messages every 1s, 10x...");
 
@@ -52,32 +56,26 @@ fn main() {
         info!("#{i}: Checking for messages...");
         while let Some((topic_parts, message)) = tether_agent.check_messages() {
             debug!(
-                "Received a message topic {} => topic parts {:?}",
+                "........ Received a message topic {} => topic parts {:?}",
                 message.topic(),
                 topic_parts
             );
-            let plug_name = topic_parts.plug_name();
 
-            // match plug_name {
-            //     input_one.name() => {}
-            //     &_ => {}
-            // }
-
-            if plug_name == input_one.name() {
+            if input_one.matches(message.topic()) {
                 info!(
-                    "******** INPUT ONE:\n Received a message from plug named \"{}\" on topic {} with length {} bytes",
-                    input_one.name(),
-                    message.topic(),
-                    message.payload().len()
-                );
+                            "******** INPUT ONE:\n Received a message from plug named \"{}\" on topic {} with length {} bytes",
+                            input_one.name(),
+                            message.topic(),
+                            message.payload().len()
+                        );
             }
-            if plug_name == input_two.name() {
+            if input_two.matches(message.topic()) {
                 info!(
-                    "******** INPUT TWO:\n Received a message from plug named \"{}\" on topic {} with length {} bytes",
-                    input_two.name(),
-                    message.topic(),
-                    message.payload().len()
-                );
+                        "******** INPUT TWO:\n Received a message from plug named \"{}\" on topic {} with length {} bytes",
+                        input_two.name(),
+                        message.topic(),
+                        message.payload().len()
+                    );
                 // Notice how you must give the from_slice function a type so it knows what to expect
                 let decoded = from_slice::<CustomMessage>(&message.payload());
                 match decoded {
@@ -91,15 +89,24 @@ fn main() {
                     }
                 };
             }
-            if plug_name == input_empty.name() {
+            if input_empty.matches(message.topic()) {
                 info!(
-                    "******** EMPTY MESSAGE:\n Received a message from plug named \"{}\" on topic {} with length {} bytes",
-                    input_empty.name(),
+                        "******** EMPTY MESSAGE:\n Received a message from plug named \"{}\" on topic {} with length {} bytes",
+                        input_empty.name(),
+                        message.topic(),
+                        message.payload().len()
+                    );
+            }
+            if input_everything.matches(message.topic()) {
+                info!(
+                    "******** EVERYTHING MATCHES HERE:\n Received a message from plug named \"{}\" on topic {} with length {} bytes",
+                    input_everything.name(),
                     message.topic(),
                     message.payload().len()
                 );
             }
         }
+
         thread::sleep(Duration::from_millis(1000))
     }
 }

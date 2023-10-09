@@ -1,4 +1,6 @@
-use tether_agent::{PlugOptionsBuilder, TetherAgentOptionsBuilder};
+use tether_agent::{
+    PlugDefinition, PlugDefinitionCommon, PlugOptionsBuilder, TetherAgentOptionsBuilder,
+};
 
 fn main() {
     let tether_agent = TetherAgentOptionsBuilder::new("example")
@@ -29,11 +31,11 @@ fn main() {
     assert_eq!(role, "example");
     assert_eq!(id, "any"); // because we set None
 
-    println!("output plug: {:?}", output_plug);
-    assert_eq!(
-        output_plug.unwrap().topic(),
-        "pretendingToBeSomethingElse/any/anOutput"
-    );
+    if let PlugDefinition::OutputPlug(p) = output_plug.unwrap() {
+        println!("output plug: {:?}", p);
+        assert_eq!(p.topic(), "pretendingToBeSomethingElse/any/anOutput");
+    }
+
     println!("wildcard input plug: {:?}", input_wildcard_plug);
     println!("speific ID input plug: {:?}", input_customid_plug);
 }
