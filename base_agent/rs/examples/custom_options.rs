@@ -11,11 +11,17 @@ fn main() {
         .expect("failed to create Tether Agent");
 
     let output_plug = PlugOptionsBuilder::create_output("anOutput")
+        .role(Some("pretendingToBeSomethingElse"))
         .qos(2)
         .retain(true)
         .build(&tether_agent);
-    let input_plug = PlugOptionsBuilder::create_input("everything")
+    let input_wildcard_plug = PlugOptionsBuilder::create_input("everything")
         .topic("#")
+        .build(&tether_agent);
+
+    let input_customid_plug = PlugOptionsBuilder::create_input("someData")
+        .role(None) // i.e., just use default
+        .id(Some("specificIDonly"))
         .build(&tether_agent);
 
     println!("Agent looks like this: {:?}", tether_agent.description());
@@ -24,5 +30,10 @@ fn main() {
     assert_eq!(id, "any"); // because we set None
 
     println!("output plug: {:?}", output_plug);
-    println!("input plug: {:?}", input_plug);
+    assert_eq!(
+        output_plug.unwrap().topic(),
+        "pretendingToBeSomethingElse/any/anOutput"
+    );
+    println!("wildcard input plug: {:?}", input_wildcard_plug);
+    println!("speific ID input plug: {:?}", input_customid_plug);
 }

@@ -84,6 +84,7 @@ impl ThreePartTopic {
 impl TryFrom<&str> for ThreePartTopic {
     type Error = anyhow::Error;
 
+    /// Try to convert a topic string into a valid Tether Three Part Topic
     fn try_from(value: &str) -> Result<Self, Self::Error> {
         let parts = value.split('/').collect::<Vec<&str>>();
 
@@ -96,9 +97,9 @@ impl TryFrom<&str> for ThreePartTopic {
             debug!("parts: {:?}", parts);
         }
 
-        let role = parts.get(0).expect("this part should exist");
-        let id = parts.get(1).expect("this part should exist");
-        let plug_name = parts.get(2).expect("this part should exist");
+        let role = parts.get(0).expect("the role part should exist");
+        let id = parts.get(1).expect("the id part should exist");
+        let plug_name = parts.get(2).expect("the plug_name part should exist");
 
         return Ok(ThreePartTopic::new(role, id, plug_name));
     }
@@ -135,13 +136,6 @@ fn build_topic(role: &str, id: &str, plug_name: &str) -> String {
 // pub fn default_subscribe_topic(plug_name: &str) -> String {
 //     format!("+/+/{plug_name}")
 // }
-
-#[derive(Debug)]
-enum TetherOrCustomTopic {
-    NotSet(),
-    TetherTopic(ThreePartTopic),
-    CustomTopic(String),
-}
 
 // #[derive(Debug)]
 // struct PlugOptionsCommon {
