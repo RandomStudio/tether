@@ -22,3 +22,27 @@ impl Default for TopicOptions {
         }
     }
 }
+
+pub fn parse_plug_name(topic: &str) -> Option<&str> {
+    let parts: Vec<&str> = topic.split('/').collect();
+    match parts.get(2) {
+        Some(s) => Some(*s),
+        None => None,
+    }
+}
+
+pub fn parse_agent_id(topic: &str) -> Option<&str> {
+    let parts: Vec<&str> = topic.split('/').collect();
+    match parts.get(1) {
+        Some(s) => Some(*s),
+        None => None,
+    }
+}
+
+pub fn parse_agent_role(topic: &str) -> Option<&str> {
+    let parts: Vec<&str> = topic.split('/').collect();
+    match parts.first() {
+        Some(s) => Some(*s),
+        None => None,
+    }
+}

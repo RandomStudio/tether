@@ -1,12 +1,24 @@
 use clap::Args;
 use log::{debug, error, info, warn};
-use tether_agent::{mqtt::Message, PlugOptionsBuilder, TetherAgent};
+use tether_agent::{mqtt::Message, PlugOptionsBuilder, TetherAgent, TetherOrCustomTopic};
 
 #[derive(Args)]
 pub struct ReceiveOptions {
-    /// Topic to subscribe; by default we recording everything
-    #[arg(long = "topic", default_value_t=String::from("#"))]
-    pub subscribe_topic: String,
+    /// Topic to subscribe; by default we subscribe to everything
+    #[arg(long = "topic")]
+    pub subscribe_topic: Option<String>,
+
+    /// Specify a ROLE (instead of wildcard +)
+    #[arg(long = "plug.role")]
+    pub subscribe_role: Option<String>,
+
+    /// Specify an ID (instead of wildcard +)
+    #[arg(long = "plug.id")]
+    pub subscribe_id: Option<String>,
+
+    /// Specify a plug name for the topic (instead of wildcard +)
+    #[arg(long = "plug.name")]
+    pub subscribe_plug: Option<String>,
 }
 
 pub fn receive(
@@ -16,17 +28,45 @@ pub fn receive(
 ) {
     info!("Tether Receive Utility");
 
-    let _input = PlugOptionsBuilder::create_input("all")
-        .topic(&options.subscribe_topic)
+    let input_def = {
+        if options.subscribe_id.is_some()
+            || options.subscribe_role.is_some()
+            || options.subscribe_plug.is_some()
+        {
+            debug!(
+                "TPT Overrides apply: {:?}, {:?}, {:?}",
+                &options.subscribe_id, &options.subscribe_role, &options.subscribe_plug
+            );
+            PlugOptionsBuilder::create_input("all")
+                .role(options.subscribe_role.clone())
+                .id(options.subscribe_id.clone())
+                .name(options.subscribe_plug.clone().and_then(|s| Some(s)))
+        } else {
+            debug!(
+                "Using custom override topic \"{:?}\"",
+                &options.subscribe_topic
+            );
+            PlugOptionsBuilder::create_input("all")
+                .topic(Some(options.subscribe_topic.clone().unwrap_or("#".into())))
+        }
+    };
+
+    let input = input_def
         .build(tether_agent)
         .expect("failed to create input plug");
 
+    info!("Subscribed to topic \"{}\" ...", input.topic());
+
     loop {
         let mut did_work = false;
-        while let Some((plug_name, message)) = tether_agent.check_messages() {
+        while let Some((topic, message)) = tether_agent.check_messages() {
             did_work = true;
-            debug!("Received message on plug {}: {:?}", plug_name, message);
             debug!("Received message on topic \"{}\"", message.topic());
+            let plug_name = match topic {
+                TetherOrCustomTopic::Custom(_) => String::from("unknown"),
+                TetherOrCustomTopic::Tether(tpt) => String::from(tpt.plug_name()),
+            };
+
             let bytes = message.payload();
             if bytes.is_empty() {
                 debug!("Empty message payload");

@@ -16,9 +16,9 @@ fn main() {
     debug!("Debugging is enabled; could be verbose");
 
     let bad_tether_agent = TetherAgentOptionsBuilder::new("tester")
-        .host("tether-io.dev")
-        .username("bla")
-        .password("bla")
+        .host(Some("tether-io.dev".into()))
+        .username(Some("bla".into()))
+        .password(Some("bla".into()))
         .build();
     match bad_tether_agent {
         Ok(_agent) => {
@@ -28,7 +28,7 @@ fn main() {
     }
 
     let disconnected = TetherAgentOptionsBuilder::new("tester")
-        .host("tether-io.dev")
+        .host(Some("tether-io.dev".into()))
         .auto_connect(false)
         .build()
         .expect("this ought initialise but not conect");
@@ -65,7 +65,8 @@ fn main() {
         .publish(&output, Some(bad_payload))
         .expect("This will produce an error when DECODING, but not checked by library");
 
-    let bad_topic_input = PlugOptionsBuilder::create_input("something").topic("*/#/house+");
+    let bad_topic_input =
+        PlugOptionsBuilder::create_input("something").topic(Some("*/#/house+".into()));
     match bad_topic_input.build(&working_tether_agent) {
         Ok(_) => panic!("Weird topic: This shouldn't work!"),
         Err(e) => warn!("Got a subscribe error (bad topic) as expected: {e:?}"),

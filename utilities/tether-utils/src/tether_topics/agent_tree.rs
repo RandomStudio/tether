@@ -1,5 +1,6 @@
 use std::fmt;
-use tether_agent::{parse_agent_id, parse_plug_name};
+
+use super::{parse_agent_id, parse_agent_role, parse_plug_name};
 
 /// Role, IDs, OutputPlugs
 pub struct AgentTree {
@@ -11,8 +12,12 @@ pub struct AgentTree {
 impl AgentTree {
     pub fn new(role: &str, topics: &[String]) -> AgentTree {
         let topics_this_agent = topics.iter().filter_map(|topic| {
-            if topic.contains(role) {
-                Some(String::from(topic))
+            if let Some(role_part) = parse_agent_role(topic.as_str()) {
+                if role_part == role {
+                    Some(String::from(topic))
+                } else {
+                    None
+                }
             } else {
                 None
             }

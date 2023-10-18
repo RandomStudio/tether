@@ -5,7 +5,9 @@ use rmp_serde::to_vec_named;
 use serde::Serialize;
 use std::time::Duration;
 
-use crate::{parse_plug_name, PlugDefinition, PlugDefinitionCommon};
+use crate::{
+    three_part_topic::ThreePartTopic, PlugDefinition, PlugDefinitionCommon, TetherOrCustomTopic,
+};
 
 const TIMEOUT_SECONDS: u64 = 10;
 pub struct TetherAgent {
@@ -48,24 +50,14 @@ impl TetherAgentOptionsBuilder {
         }
     }
 
-    pub fn id(mut self, id: &str) -> Self {
-        self.id = Some(id.into());
-        self
-    }
-
     /// Provide Some(value) to override or None to use default
-    pub fn id_optional(mut self, id: Option<String>) -> Self {
+    pub fn id(mut self, id: Option<String>) -> Self {
         self.id = convert_optional(id);
         self
     }
 
-    pub fn host(mut self, host: &str) -> Self {
-        self.host = Some(host.into());
-        self
-    }
-
     /// Provide Some(value) to override or None to use default
-    pub fn host_optional(mut self, host: Option<String>) -> Self {
+    pub fn host(mut self, host: Option<String>) -> Self {
         self.host = convert_optional(host);
         self
     }
@@ -75,24 +67,14 @@ impl TetherAgentOptionsBuilder {
         self
     }
 
-    pub fn username(mut self, username: &str) -> Self {
-        self.username = Some(username.into());
-        self
-    }
-
     /// Provide Some(value) to override or None to use default
-    pub fn username_optional(mut self, username: Option<String>) -> Self {
+    pub fn username(mut self, username: Option<String>) -> Self {
         self.username = convert_optional(username);
         self
     }
 
-    pub fn password(mut self, password: &str) -> Self {
-        self.password = Some(password.into());
-        self
-    }
-
     /// Provide Some(value) to override or None to use default
-    pub fn password_optional(mut self, password: Option<String>) -> Self {
+    pub fn password(mut self, password: Option<String>) -> Self {
         self.password = convert_optional(password);
         self
     }
@@ -206,14 +188,20 @@ impl TetherAgent {
         }
     }
 
-    /// If a message is waiting return Plug Name, Message (String, Message)
-    pub fn check_messages(&self) -> Option<(String, Message)> {
+    /// If a message is waiting return ThreePartTopic, Message (String, Message)
+    pub fn check_messages(&self) -> Option<(TetherOrCustomTopic, Message)> {
         if let Some(message) = self.receiver.try_iter().find_map(|m| m) {
-            let topic = message.topic();
-            if let Some(plug_name) = parse_plug_name(topic) {
-                Some((String::from(plug_name), message))
+            if let Ok(t) = ThreePartTopic::try_from(message.topic()) {
+                Some((TetherOrCustomTopic::Tether(t), message))
             } else {
-                None
+                warn!(
+                    "Could not pass Three Part Topic from \"{}\"",
+                    message.topic()
+                );
+                Some((
+                    TetherOrCustomTopic::Custom(String::from(message.topic())),
+                    message,
+                ))
             }
         } else {
             None
@@ -228,16 +216,17 @@ impl TetherAgent {
         payload: Option<&[u8]>,
     ) -> anyhow::Result<()> {
         match plug_definition {
-            PlugDefinition::InputPlugDefinition(_) => {
+            PlugDefinition::InputPlug(_) => {
                 panic!("You cannot publish using an Input Plug")
             }
-            PlugDefinition::OutputPlugDefinition(output_plug_definition) => {
-                let PlugDefinitionCommon { topic, qos, .. } = &plug_definition.common();
+            PlugDefinition::OutputPlug(output_plug_definition) => {
+                let topic = output_plug_definition.topic();
+                let qos = output_plug_definition.qos();
                 let message = MessageBuilder::new()
                     .topic(topic)
                     .payload(payload.unwrap_or(&[]))
                     .retained(output_plug_definition.retain())
-                    .qos(*qos)
+                    .qos(qos)
                     .finalize();
                 if let Err(e) = self.client.publish(message) {
                     error!("Error publishing: {:?}", e);

@@ -4,7 +4,10 @@ use env_logger::{Builder, Env};
 use log::{debug, info, warn};
 use rmp_serde::from_slice;
 use serde::Deserialize;
-use tether_agent::{PlugOptionsBuilder, TetherAgentOptionsBuilder};
+use tether_agent::{
+    three_part_topic::{parse_agent_id, parse_plug_name},
+    PlugOptionsBuilder, TetherAgentOptionsBuilder,
+};
 
 #[derive(Deserialize, Debug)]
 struct CustomMessage {
@@ -23,7 +26,7 @@ fn main() {
     debug!("Debugging is enabled; could be verbose");
 
     let tether_agent = TetherAgentOptionsBuilder::new("RustDemoAgent")
-        .id("example")
+        .id(Some("example".into()))
         .build()
         .expect("failed to init Tether agent");
 
@@ -32,6 +35,7 @@ fn main() {
         .expect("failed to create input");
     debug!("input one {} = {}", input_one.name(), input_one.topic());
     let input_two = PlugOptionsBuilder::create_input("two")
+        .role(Some("specific".into()))
         .build(&tether_agent)
         .expect("failed to create input");
     debug!("input two {} = {}", input_two.name(), input_two.topic());
@@ -39,31 +43,53 @@ fn main() {
         .build(&tether_agent)
         .expect("failed to create input");
 
+    let input_everything = PlugOptionsBuilder::create_input("everything")
+        .topic(Some("#".into()))
+        .build(&tether_agent)
+        .expect("failed to create input");
+
+    let input_specify_id = PlugOptionsBuilder::create_input("groupMessages")
+        .id(Some("someGroup".into()))
+        .name(None)
+        .build(&tether_agent)
+        .expect("failed to create input");
+
+    debug!(
+        "input everything {} = {}",
+        input_everything.name(),
+        input_everything.topic()
+    );
+
     info!("Checking messages every 1s, 10x...");
 
     for i in 1..10 {
         info!("#{i}: Checking for messages...");
-        while let Some((plug_name, message)) = tether_agent.check_messages() {
+        while let Some((topic_parts, message)) = tether_agent.check_messages() {
             debug!(
-                "Received a message topic {} => plug name {}",
+                "........ Received a message topic {} => topic parts {:?}",
                 message.topic(),
-                plug_name
+                topic_parts
             );
-            if &plug_name == input_one.name() {
+
+            if input_one.matches(message.topic()) {
                 info!(
-                    "******** INPUT ONE:\n Received a message from plug named \"{}\" on topic {} with length {} bytes",
-                    input_one.name(),
-                    message.topic(),
-                    message.payload().len()
-                );
+                            "******** INPUT ONE:\n Received a message for plug named \"{}\" on topic {} with length {} bytes",
+                            input_one.name(),
+                            message.topic(),
+                            message.payload().len()
+                        );
+                assert_eq!(parse_plug_name(message.topic()), Some("one"));
             }
-            if &plug_name == input_two.name() {
+            if input_two.matches(message.topic()) {
                 info!(
-                    "******** INPUT TWO:\n Received a message from plug named \"{}\" on topic {} with length {} bytes",
-                    input_two.name(),
-                    message.topic(),
-                    message.payload().len()
-                );
+                        "******** INPUT TWO:\n Received a message for plug named \"{}\" on topic {} with length {} bytes",
+                        input_two.name(),
+                        message.topic(),
+                        message.payload().len()
+                    );
+                assert_eq!(parse_plug_name(message.topic()), Some("two"));
+                assert_ne!(parse_plug_name(message.topic()), Some("one"));
+
                 // Notice how you must give the from_slice function a type so it knows what to expect
                 let decoded = from_slice::<CustomMessage>(&message.payload());
                 match decoded {
@@ -77,15 +103,35 @@ fn main() {
                     }
                 };
             }
-            if &plug_name == input_empty.name() {
+            if input_empty.matches(message.topic()) {
                 info!(
-                    "******** EMPTY MESSAGE:\n Received a message from plug named \"{}\" on topic {} with length {} bytes",
-                    input_empty.name(),
+                        "******** EMPTY MESSAGE:\n Received a message for plug named \"{}\" on topic {} with length {} bytes",
+                        input_empty.name(),
+                        message.topic(),
+                        message.payload().len()
+                    );
+                assert_eq!(parse_plug_name(message.topic()), Some("nothing"));
+            }
+            if input_everything.matches(message.topic()) {
+                info!(
+                    "******** EVERYTHING MATCHES HERE:\n Received a message for plug named \"{}\" on topic {} with length {} bytes",
+                    input_everything.name(),
                     message.topic(),
                     message.payload().len()
                 );
             }
+            if input_specify_id.matches(message.topic()) {
+                info!("******** ID MATCH:\n Should match any role and plug name, but only messages with ID \"groupMessages\"");
+                info!(
+                    "\n Received a message from plug named \"{}\" on topic {} with length {} bytes",
+                    input_specify_id.name(),
+                    message.topic(),
+                    message.payload().len()
+                );
+                assert_eq!(parse_agent_id(message.topic()), Some("groupMessages"));
+            }
         }
+
         thread::sleep(Duration::from_millis(1000))
     }
 }

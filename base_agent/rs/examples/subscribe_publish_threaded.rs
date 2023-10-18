@@ -31,7 +31,7 @@ fn main() {
 
     let tether_agent = Arc::new(Mutex::new(
         TetherAgentOptionsBuilder::new("RustDemoAgent")
-            .id("example")
+            .id(Some("example".into()))
             .build()
             .expect("failed to init/connect"),
     ));
@@ -77,7 +77,7 @@ fn main() {
                 Ok(a) => {
                     if let Some((topic, _message)) = a.check_messages() {
                         count_messages_received += 1;
-                        println!("<<<<<<<< CHECKING LOOP: Received a message on topic {topic}; Now has {count_messages_received} messages");
+                        println!("<<<<<<<< CHECKING LOOP: Received a message on topic {topic:?}; Now has {count_messages_received} messages");
                     }
                 }
                 Err(e) => {

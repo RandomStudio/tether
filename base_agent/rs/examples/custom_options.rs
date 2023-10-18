@@ -1,21 +1,29 @@
-use tether_agent::{PlugOptionsBuilder, TetherAgentOptionsBuilder};
+use tether_agent::{
+    PlugDefinition, PlugDefinitionCommon, PlugOptionsBuilder, TetherAgentOptionsBuilder,
+};
 
 fn main() {
     let tether_agent = TetherAgentOptionsBuilder::new("example")
-        .id_optional(None)
-        .host("localhost")
+        .id(None)
+        .host(Some("localhost".into()))
         .port(1883)
-        .username("tether")
-        .password("sp_ceB0ss!")
+        .username(Some("tether".into()))
+        .password(Some("sp_ceB0ss!".into()))
         .build()
         .expect("failed to create Tether Agent");
 
     let output_plug = PlugOptionsBuilder::create_output("anOutput")
+        .role(Some("pretendingToBeSomethingElse".into()))
         .qos(2)
         .retain(true)
         .build(&tether_agent);
-    let input_plug = PlugOptionsBuilder::create_input("everything")
-        .topic("#")
+    let input_wildcard_plug = PlugOptionsBuilder::create_input("everything")
+        .topic(Some("#".into()))
+        .build(&tether_agent);
+
+    let input_customid_plug = PlugOptionsBuilder::create_input("someData")
+        .role(None) // i.e., just use default
+        .id(Some("specificIDonly".into()))
         .build(&tether_agent);
 
     println!("Agent looks like this: {:?}", tether_agent.description());
@@ -23,6 +31,11 @@ fn main() {
     assert_eq!(role, "example");
     assert_eq!(id, "any"); // because we set None
 
-    println!("output plug: {:?}", output_plug);
-    println!("input plug: {:?}", input_plug);
+    if let PlugDefinition::OutputPlug(p) = output_plug.unwrap() {
+        println!("output plug: {:?}", p);
+        assert_eq!(p.topic(), "pretendingToBeSomethingElse/any/anOutput");
+    }
+
+    println!("wildcard input plug: {:?}", input_wildcard_plug);
+    println!("speific ID input plug: {:?}", input_customid_plug);
 }

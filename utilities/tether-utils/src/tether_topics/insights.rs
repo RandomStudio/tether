@@ -1,8 +1,5 @@
 use circular_buffer::CircularBuffer;
-use tether_agent::{
-    mqtt::Message, parse_agent_id, parse_agent_role, parse_plug_name, PlugOptionsBuilder,
-    TetherAgent,
-};
+use tether_agent::{mqtt::Message, PlugOptionsBuilder, TetherAgent};
 
 use crate::tether_topics::{agent_tree::AgentTree, sampler::Sampler};
 use std::{
@@ -10,7 +7,7 @@ use std::{
     time::{Duration, SystemTime},
 };
 
-use super::TopicOptions;
+use super::{parse_agent_id, parse_agent_role, parse_plug_name, TopicOptions};
 pub const MONITOR_LOG_LENGTH: usize = 256;
 
 /// Topic, Payload as JSON
@@ -47,7 +44,7 @@ impl Insights {
             panic!("Insights utility needs already-connected Tether Agent");
         }
         let _input_plug = PlugOptionsBuilder::create_input("monitor")
-            .topic(&options.topic)
+            .topic(Some(options.topic.clone()))
             .build(tether_agent)
             .expect("failed to connect Tether");
 

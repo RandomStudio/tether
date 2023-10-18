@@ -1,6 +1,7 @@
 use std::{thread::spawn, time::SystemTime};
 
 use env_logger::{Builder, Env};
+use log::LevelFilter;
 use tether_agent::TetherAgentOptionsBuilder;
 use tether_utils::{
     tether_playback::{PlaybackOptions, TetherPlaybackUtil},
@@ -16,7 +17,10 @@ fn demo_receive() {
         .expect("failed to init/connect Tether Agent");
 
     let options = ReceiveOptions {
-        subscribe_topic: "#".into(),
+        subscribe_topic: None,
+        subscribe_role: None,
+        subscribe_id: None,
+        subscribe_plug: None,
     };
 
     receive(&options, &tether_agent, |_plug_name, message, decoded| {
@@ -33,8 +37,10 @@ fn demo_send() {
     let mut count = 0;
 
     let options = SendOptions {
-        plug_name: "dummyData".into(),
+        plug_name: Some("dummyData".into()),
         plug_topic: None,
+        plug_id: None,
+        plug_role: None,
         message_payload_json: None,
         use_dummy_data: true,
     };
@@ -171,6 +177,7 @@ fn main() {
     println!("Press Ctrl+C to stop");
 
     let mut env_builder = Builder::from_env(Env::default().default_filter_or("info"));
+    env_builder.filter_module("paho_mqtt", LevelFilter::Warn);
     env_builder.init();
 
     let handles = vec![

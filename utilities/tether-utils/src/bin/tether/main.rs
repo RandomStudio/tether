@@ -65,11 +65,11 @@ fn main() {
     debug!("Debugging is enabled; could be verbose");
 
     let tether_agent = TetherAgentOptionsBuilder::new(&cli.tether_role)
-        .id(&cli.tether_id)
-        .host(&cli.tether_host)
+        .id(Some(cli.tether_id.into()))
+        .host(Some(cli.tether_host.clone()))
         .port(cli.tether_port)
-        .username(&cli.tether_username)
-        .password(&cli.tether_password)
+        .username(Some(cli.tether_username.into()))
+        .password(Some(cli.tether_password.into()))
         .build()
         .unwrap_or_else(|_| {
             error!("Failed to initialise and/or connect the Tether Agent");
