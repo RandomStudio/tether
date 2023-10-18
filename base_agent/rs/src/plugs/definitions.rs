@@ -69,7 +69,7 @@ impl InputPlugDefinition {
     pub fn matches(&self, topic: &str) -> bool {
         match &self.topic {
             TetherOrCustomTopic::Custom(s) => {
-                warn!(
+                debug!(
                     "Custom/manual topic \"{}\" on Plug \"{}\" cannot be matched automatically; please filter manually for this",
                     &s,
                     self.name()
@@ -174,7 +174,6 @@ impl PlugDefinition {
 
 #[cfg(test)]
 mod tests {
-    use env_logger::{Builder, Env};
 
     use crate::{
         three_part_topic::{parse_agent_id, parse_agent_role, parse_plug_name, ThreePartTopic},

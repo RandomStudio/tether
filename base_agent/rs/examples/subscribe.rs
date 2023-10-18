@@ -4,7 +4,10 @@ use env_logger::{Builder, Env};
 use log::{debug, info, warn};
 use rmp_serde::from_slice;
 use serde::Deserialize;
-use tether_agent::{PlugOptionsBuilder, TetherAgentOptionsBuilder};
+use tether_agent::{
+    three_part_topic::{parse_agent_id, parse_plug_name},
+    PlugOptionsBuilder, TetherAgentOptionsBuilder,
+};
 
 #[derive(Deserialize, Debug)]
 struct CustomMessage {
@@ -75,6 +78,7 @@ fn main() {
                             message.topic(),
                             message.payload().len()
                         );
+                assert_eq!(parse_plug_name(message.topic()), Some("one"));
             }
             if input_two.matches(message.topic()) {
                 info!(
@@ -83,6 +87,9 @@ fn main() {
                         message.topic(),
                         message.payload().len()
                     );
+                assert_eq!(parse_plug_name(message.topic()), Some("two"));
+                assert_ne!(parse_plug_name(message.topic()), Some("one"));
+
                 // Notice how you must give the from_slice function a type so it knows what to expect
                 let decoded = from_slice::<CustomMessage>(&message.payload());
                 match decoded {
@@ -103,6 +110,7 @@ fn main() {
                         message.topic(),
                         message.payload().len()
                     );
+                assert_eq!(parse_plug_name(message.topic()), Some("nothing"));
             }
             if input_everything.matches(message.topic()) {
                 info!(
@@ -120,6 +128,7 @@ fn main() {
                     message.topic(),
                     message.payload().len()
                 );
+                assert_eq!(parse_agent_id(message.topic()), Some("groupMessages"));
             }
         }
 
