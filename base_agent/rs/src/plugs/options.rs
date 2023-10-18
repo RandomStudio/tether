@@ -119,7 +119,7 @@ impl PlugOptionsBuilder {
 
     /// Override the final topic to use for publishing or subscribing. The provided topic **will** be checked
     /// against the Tether Three Part Topic convention, but the function **will not** reject topic strings - just
-    /// produce a warning. It's therefore valid to use a wildcard such as "#".
+    /// produce a warning. It's therefore valid to use a wildcard such as "#", for Input (subscribing).
     ///
     /// Any customisations specified using `.role(...)` or `.id(...)` will be ignored if this function is called.
     pub fn topic(mut self, override_topic: Option<String>) -> Self {
