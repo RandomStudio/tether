@@ -16,9 +16,9 @@ fn main() {
     debug!("Debugging is enabled; could be verbose");
 
     let bad_tether_agent = TetherAgentOptionsBuilder::new("tester")
-        .host("tether-io.dev")
-        .username("bla")
-        .password("bla")
+        .host(Some("tether-io.dev".into()))
+        .username(Some("bla".into()))
+        .password(Some("bla".into()))
         .build();
     match bad_tether_agent {
         Ok(_agent) => {
@@ -28,7 +28,7 @@ fn main() {
     }
 
     let disconnected = TetherAgentOptionsBuilder::new("tester")
-        .host("tether-io.dev")
+        .host(Some("tether-io.dev".into()))
         .auto_connect(false)
         .build()
         .expect("this ought initialise but not conect");

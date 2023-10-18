@@ -4,11 +4,11 @@ use tether_agent::{
 
 fn main() {
     let tether_agent = TetherAgentOptionsBuilder::new("example")
-        .id_optional(None)
-        .host("localhost")
+        .id(None)
+        .host(Some("localhost".into()))
         .port(1883)
-        .username("tether")
-        .password("sp_ceB0ss!")
+        .username(Some("tether".into()))
+        .password(Some("sp_ceB0ss!".into()))
         .build()
         .expect("failed to create Tether Agent");
 

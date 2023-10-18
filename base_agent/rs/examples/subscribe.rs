@@ -23,7 +23,7 @@ fn main() {
     debug!("Debugging is enabled; could be verbose");
 
     let tether_agent = TetherAgentOptionsBuilder::new("RustDemoAgent")
-        .id("example")
+        .id(Some("example".into()))
         .build()
         .expect("failed to init Tether agent");
 

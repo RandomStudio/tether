@@ -50,24 +50,14 @@ impl TetherAgentOptionsBuilder {
         }
     }
 
-    pub fn id(mut self, id: &str) -> Self {
-        self.id = Some(id.into());
-        self
-    }
-
     /// Provide Some(value) to override or None to use default
-    pub fn id_optional(mut self, id: Option<String>) -> Self {
+    pub fn id(mut self, id: Option<String>) -> Self {
         self.id = convert_optional(id);
         self
     }
 
-    pub fn host(mut self, host: &str) -> Self {
-        self.host = Some(host.into());
-        self
-    }
-
     /// Provide Some(value) to override or None to use default
-    pub fn host_optional(mut self, host: Option<String>) -> Self {
+    pub fn host(mut self, host: Option<String>) -> Self {
         self.host = convert_optional(host);
         self
     }
@@ -77,24 +67,14 @@ impl TetherAgentOptionsBuilder {
         self
     }
 
-    pub fn username(mut self, username: &str) -> Self {
-        self.username = Some(username.into());
-        self
-    }
-
     /// Provide Some(value) to override or None to use default
-    pub fn username_optional(mut self, username: Option<String>) -> Self {
+    pub fn username(mut self, username: Option<String>) -> Self {
         self.username = convert_optional(username);
         self
     }
 
-    pub fn password(mut self, password: &str) -> Self {
-        self.password = Some(password.into());
-        self
-    }
-
     /// Provide Some(value) to override or None to use default
-    pub fn password_optional(mut self, password: Option<String>) -> Self {
+    pub fn password(mut self, password: Option<String>) -> Self {
         self.password = convert_optional(password);
         self
     }
