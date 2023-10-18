@@ -44,6 +44,13 @@ fn main() {
         .topic(Some("#".into()))
         .build(&tether_agent)
         .expect("failed to create input");
+
+    let input_specify_id = PlugOptionsBuilder::create_input("groupMessages")
+        .id(Some("someGroup".into()))
+        .name(None)
+        .build(&tether_agent)
+        .expect("failed to create input");
+
     debug!(
         "input everything {} = {}",
         input_everything.name(),
@@ -63,7 +70,7 @@ fn main() {
 
             if input_one.matches(message.topic()) {
                 info!(
-                            "******** INPUT ONE:\n Received a message from plug named \"{}\" on topic {} with length {} bytes",
+                            "******** INPUT ONE:\n Received a message for plug named \"{}\" on topic {} with length {} bytes",
                             input_one.name(),
                             message.topic(),
                             message.payload().len()
@@ -71,7 +78,7 @@ fn main() {
             }
             if input_two.matches(message.topic()) {
                 info!(
-                        "******** INPUT TWO:\n Received a message from plug named \"{}\" on topic {} with length {} bytes",
+                        "******** INPUT TWO:\n Received a message for plug named \"{}\" on topic {} with length {} bytes",
                         input_two.name(),
                         message.topic(),
                         message.payload().len()
@@ -91,7 +98,7 @@ fn main() {
             }
             if input_empty.matches(message.topic()) {
                 info!(
-                        "******** EMPTY MESSAGE:\n Received a message from plug named \"{}\" on topic {} with length {} bytes",
+                        "******** EMPTY MESSAGE:\n Received a message for plug named \"{}\" on topic {} with length {} bytes",
                         input_empty.name(),
                         message.topic(),
                         message.payload().len()
@@ -99,8 +106,17 @@ fn main() {
             }
             if input_everything.matches(message.topic()) {
                 info!(
-                    "******** EVERYTHING MATCHES HERE:\n Received a message from plug named \"{}\" on topic {} with length {} bytes",
+                    "******** EVERYTHING MATCHES HERE:\n Received a message for plug named \"{}\" on topic {} with length {} bytes",
                     input_everything.name(),
+                    message.topic(),
+                    message.payload().len()
+                );
+            }
+            if input_specify_id.matches(message.topic()) {
+                info!("******** ID MATCH:\n Should match any role and plug name, but only messages with ID \"groupMessages\"");
+                info!(
+                    "\n Received a message from plug named \"{}\" on topic {} with length {} bytes",
+                    input_specify_id.name(),
                     message.topic(),
                     message.payload().len()
                 );

@@ -34,19 +34,23 @@ impl ThreePartTopic {
 
     /// Subscribe topics fall back to wildcard `+` for role and/or id if not explicitly provided
     pub fn new_for_subscribe(
+        plug_name: &str,
         role: Option<String>,
         id: Option<String>,
-        plug_name: Option<String>,
+        plug_name_override: Option<String>,
     ) -> ThreePartTopic {
         let role = role.unwrap_or("+".into());
         let id = id.unwrap_or("+".into());
-        let plug_name = plug_name.unwrap_or("+".into());
-        let full_topic = build_topic(&role, &id, &plug_name);
+        let plug_name_part = match plug_name_override {
+            Some(s) => s.clone(),
+            None => String::from(plug_name),
+        };
+        let full_topic = build_topic(&role, &id, &plug_name_part);
 
         ThreePartTopic {
             role,
             id,
-            plug_name,
+            plug_name: plug_name_part,
             full_topic,
         }
     }

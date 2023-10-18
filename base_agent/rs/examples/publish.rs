@@ -35,6 +35,14 @@ fn main() {
         .topic(Some("custom/custom/two".into()))
         .build(&agent)
         .expect("failed to create output");
+    let grouped_output_1 = PlugOptionsBuilder::create_output("one")
+        .id(Some("groupMessages".into()))
+        .build(&agent)
+        .expect("failed to create output");
+    let grouped_output_2 = PlugOptionsBuilder::create_output("two")
+        .id(Some("groupMessages".into()))
+        .build(&agent)
+        .expect("failed to create output");
 
     for i in 1..=10 {
         info!("#{i}: Sending empty message...");
@@ -54,6 +62,10 @@ fn main() {
         agent
             .encode_and_publish(&custom_output, custom_message)
             .unwrap();
+
+        info!("#{i}: Sending grouped messages...");
+        agent.publish(&grouped_output_1, None).unwrap();
+        agent.publish(&grouped_output_2, None).unwrap();
 
         thread::sleep(Duration::from_millis(1000))
     }

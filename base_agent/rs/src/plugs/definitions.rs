@@ -1,4 +1,4 @@
-use log::{error, warn};
+use log::{debug, error, warn};
 use serde::{Deserialize, Serialize};
 
 use crate::three_part_topic::ThreePartTopic;
@@ -28,8 +28,17 @@ impl<'a> PlugDefinitionCommon<'_> for InputPlugDefinition {
 
     fn topic(&self) -> String {
         match &self.topic {
-            TetherOrCustomTopic::Custom(s) => s.into(),
-            TetherOrCustomTopic::Tether(t) => t.topic().into(),
+            TetherOrCustomTopic::Custom(s) => {
+                debug!("Plug named \"{}\" has custom topic \"{}\"", &self.name, &s);
+                s.into()
+            }
+            TetherOrCustomTopic::Tether(t) => {
+                debug!(
+                    "Plug named \"{}\" has Three Part topic \"{:?}\"",
+                    &self.name, t
+                );
+                t.topic().into()
+            }
         }
     }
 
@@ -47,11 +56,21 @@ impl InputPlugDefinition {
         }
     }
 
+    /// Use the topic of an incoming message to check against the definition of an Input Plug.
+    ///
+    /// Due to the use of wildcard subscriptions, multiple topic strings might match a given
+    /// Input Plug definition. e.g. `someRole/any/plugMessages` and `anotherRole/any/plugMessages`
+    /// should both match on an Input Plug named `plugMessages` unless more specific Role and/or ID
+    /// parts were specified in the Input Plug Definition.
+    ///
+    /// In the case where an Input Plug was defined with a completely manually-specified topic string,
+    /// this function returns a warning and marks ANY incoming message as a valid match; the end-user
+    /// developer is expected to match against topic strings themselves.
     pub fn matches(&self, topic: &str) -> bool {
         match &self.topic {
             TetherOrCustomTopic::Custom(s) => {
                 warn!(
-                    "Custom topic \"{}\" on Plug \"{}\" cannot be matched automatically; please filter manually for this",
+                    "Custom/manual topic \"{}\" on Plug \"{}\" cannot be matched automatically; please filter manually for this",
                     &s,
                     self.name()
                 );
@@ -63,7 +82,9 @@ impl InputPlugDefinition {
                         my_tpt.role() == "+" || my_tpt.role().eq(incoming_three_parts.role());
                     let matches_id =
                         my_tpt.id() == "+" || my_tpt.id().eq(incoming_three_parts.id());
-                    let matches_plug_name = my_tpt.plug_name().eq(incoming_three_parts.plug_name());
+                    let matches_plug_name = my_tpt.plug_name() == "+"
+                        || my_tpt.plug_name().eq(incoming_three_parts.plug_name());
+                    debug!("Test match for plug named \"{}\" with def {:?} against {:?} => matches_role? {}, matches_id? {}, matches_plug_name? {}", &self.name, &self.topic, &incoming_three_parts, matches_role, matches_id, matches_plug_name);
                     matches_role && matches_id && matches_plug_name
                 } else {
                     error!("Incoming topic \"{}\" is not a three-part topic", topic);
