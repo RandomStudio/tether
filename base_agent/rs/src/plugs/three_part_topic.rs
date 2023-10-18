@@ -1,5 +1,5 @@
 use anyhow::anyhow;
-use log::debug;
+use log::{debug, error};
 use serde::{Deserialize, Serialize};
 
 use crate::TetherAgent;
@@ -32,17 +32,23 @@ impl ThreePartTopic {
         }
     }
 
-    /// Subscribe topics fall back to wildcard `+` for role and/or id if not explicitly provided
+    /// Subscribe topics fall back to wildcard `+` for role and/or id if not explicitly provided.
+    /// If `plug_name_part` is specified as `Some(String)` then the part
     pub fn new_for_subscribe(
         plug_name: &str,
         role: Option<String>,
         id: Option<String>,
-        plug_name_override: Option<String>,
+        plug_name_part_override: Option<String>,
     ) -> ThreePartTopic {
         let role = role.unwrap_or("+".into());
         let id = id.unwrap_or("+".into());
-        let plug_name_part = match plug_name_override {
-            Some(s) => s.clone(),
+        let plug_name_part = match plug_name_part_override {
+            Some(s) => {
+                if !&s.eq("+") {
+                    error!("The only valid override for the Plug Name part is a wildcard (+)");
+                }
+                s.clone()
+            }
             None => String::from(plug_name),
         };
         let full_topic = build_topic(&role, &id, &plug_name_part);
@@ -124,6 +130,43 @@ impl TryFrom<&str> for ThreePartTopic {
     }
 }
 
-fn build_topic(role: &str, id: &str, plug_name: &str) -> String {
+pub fn build_topic(role: &str, id: &str, plug_name: &str) -> String {
     format!("{role}/{id}/{plug_name}")
+}
+
+pub fn parse_plug_name(topic: &str) -> Option<&str> {
+    let parts: Vec<&str> = topic.split('/').collect();
+    match parts.get(2) {
+        Some(s) => Some(*s),
+        None => None,
+    }
+}
+
+pub fn parse_agent_id(topic: &str) -> Option<&str> {
+    let parts: Vec<&str> = topic.split('/').collect();
+    match parts.get(1) {
+        Some(s) => Some(*s),
+        None => None,
+    }
+}
+
+pub fn parse_agent_role(topic: &str) -> Option<&str> {
+    let parts: Vec<&str> = topic.split('/').collect();
+    match parts.first() {
+        Some(s) => Some(*s),
+        None => None,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::three_part_topic::{parse_agent_id, parse_agent_role, parse_plug_name};
+
+    #[test]
+    fn util_parsers() {
+        assert_eq!(parse_agent_role("one/two/three"), Some("one"));
+        assert_eq!(parse_agent_id("one/two/three"), Some("two"));
+        assert_eq!(parse_plug_name("one/two/three"), Some("three"));
+        assert_eq!(parse_plug_name("just/two"), None);
+    }
 }

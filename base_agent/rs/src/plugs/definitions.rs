@@ -171,3 +171,111 @@ impl PlugDefinition {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use env_logger::{Builder, Env};
+
+    use crate::{
+        three_part_topic::{parse_agent_id, parse_agent_role, parse_plug_name, ThreePartTopic},
+        InputPlugDefinition, PlugDefinitionCommon, TetherOrCustomTopic,
+    };
+
+    #[test]
+    fn input_match_tpt() {
+        let plug_def = InputPlugDefinition::new(
+            "testPlug",
+            TetherOrCustomTopic::Tether(ThreePartTopic::new_for_subscribe(
+                "testPlug", None, None, None,
+            )),
+            None,
+        );
+
+        assert_eq!(&plug_def.name, "testPlug");
+        assert_eq!(&plug_def.topic(), "+/+/testPlug");
+        assert_eq!(parse_plug_name("+/+/testPlug"), Some("testPlug"));
+        assert!(plug_def.matches("dummy/any/testPlug"));
+        assert!(!plug_def.matches("dummy/any/anotherPlug"))
+    }
+
+    #[test]
+    fn input_match_tpt_custom_role() {
+        let plug_def = InputPlugDefinition::new(
+            "customPlug",
+            TetherOrCustomTopic::Tether(ThreePartTopic::new_for_subscribe(
+                "customPlug",
+                Some("customRole".into()),
+                None,
+                None,
+            )),
+            None,
+        );
+
+        assert_eq!(&plug_def.name, "customPlug");
+        assert_eq!(&plug_def.topic(), "customRole/+/customPlug");
+        assert!(plug_def.matches("customRole/any/customPlug"));
+        assert!(plug_def.matches("customRole/andAnythingElse/customPlug"));
+        assert!(!plug_def.matches("customRole/any/notMyPlug")); // wrong incoming Plug Name
+        assert!(!plug_def.matches("someOtherRole/any/customPlug")); // wrong incoming Role
+    }
+
+    #[test]
+    fn input_match_custom_id() {
+        let plug_def = InputPlugDefinition::new(
+            "customPlug",
+            TetherOrCustomTopic::Tether(ThreePartTopic::new_for_subscribe(
+                "customPlug",
+                None,
+                Some("specificID".into()),
+                None,
+            )),
+            None,
+        );
+
+        assert_eq!(&plug_def.name, "customPlug");
+        assert_eq!(&plug_def.topic(), "+/specificID/customPlug");
+        assert!(plug_def.matches("anyRole/specificID/customPlug"));
+        assert!(plug_def.matches("anotherRole/specificID/customPlug"));
+        assert!(!plug_def.matches("anyRole/specificID/notMyPlug")); // wrong incoming Plug Name
+        assert!(!plug_def.matches("anyRole/anotherID/customPlug")); // wrong incoming ID
+    }
+
+    #[test]
+    fn input_match_both() {
+        let plug_def = InputPlugDefinition::new(
+            "customPlug",
+            TetherOrCustomTopic::Tether(ThreePartTopic::new_for_subscribe(
+                "customPlug",
+                Some("specificRole".into()),
+                Some("specificID".into()),
+                None,
+            )),
+            None,
+        );
+
+        assert_eq!(&plug_def.name, "customPlug");
+        assert_eq!(&plug_def.topic(), "specificRole/specificID/customPlug");
+        assert!(plug_def.matches("specificRole/specificID/customPlug"));
+        assert!(!plug_def.matches("specificRole/specificID/notMyPlug")); // wrong incoming Plug Name
+        assert!(!plug_def.matches("specificRole/anotherID/customPlug")); // wrong incoming ID
+        assert!(!plug_def.matches("anotherRole/anotherID/customPlug")); // wrong incoming Role
+    }
+
+    #[test]
+    fn input_match_custom_topic() {
+        let plug_def = InputPlugDefinition::new(
+            "customPlug",
+            TetherOrCustomTopic::Custom("one/two/three".into()),
+            None,
+        );
+
+        let incoming_topic = String::from("some/other/plug");
+
+        assert_eq!(plug_def.name(), "customPlug");
+        assert!(plug_def.matches(&incoming_topic)); // it will match, but emit warning
+
+        assert_eq!(parse_plug_name(&incoming_topic), Some("plug"));
+        assert_eq!(parse_agent_role(&incoming_topic), Some("some"));
+        assert_eq!(parse_agent_id(&incoming_topic), Some("other"));
+    }
+}
