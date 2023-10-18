@@ -16,7 +16,7 @@ pub struct ReceiveOptions {
     #[arg(long = "plug.id")]
     pub subscribe_id: Option<String>,
 
-    /// Specify a plug name
+    /// Specify a plug name for the topic (instead of wildcard +)
     #[arg(long = "plug.name")]
     pub subscribe_plug: Option<String>,
 }
@@ -28,28 +28,24 @@ pub fn receive(
 ) {
     info!("Tether Receive Utility");
 
-    // let override_topic = match &options.subscribe_topic {
-    //     Some(t) => Some(String::from(t)),
-    //     None => {
-    //         if options.subscribe_id.is_some() || options.subscribe_role.is_some() {
-    //             None
-    //         } else {
-    //             Some(String::from("#"))
-    //         }
-    //     }
-    // };
-
     let input_def = {
         if options.subscribe_id.is_some()
             || options.subscribe_role.is_some()
             || options.subscribe_plug.is_some()
         {
-            PlugOptionsBuilder::create_input(
-                &options.subscribe_plug.clone().unwrap_or("all".into()),
-            )
-            .role(options.subscribe_role.clone())
-            .id(options.subscribe_id.clone())
+            debug!(
+                "TPT Overrides apply: {:?}, {:?}, {:?}",
+                &options.subscribe_id, &options.subscribe_role, &options.subscribe_plug
+            );
+            PlugOptionsBuilder::create_input("all")
+                .role(options.subscribe_role.clone())
+                .id(options.subscribe_id.clone())
+                .name(options.subscribe_plug.clone().and_then(|s| Some(s)))
         } else {
+            debug!(
+                "Using custom override topic \"{:?}\"",
+                &options.subscribe_topic
+            );
             PlugOptionsBuilder::create_input("all")
                 .topic(Some(options.subscribe_topic.clone().unwrap_or("#".into())))
         }

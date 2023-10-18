@@ -11,6 +11,7 @@ pub struct InputPlugOptions {
     qos: Option<i32>,
     override_subscribe_role: Option<String>,
     override_subscribe_id: Option<String>,
+    override_subscribe_plug_name: Option<String>,
     override_topic: Option<String>,
 }
 
@@ -38,6 +39,7 @@ impl PlugOptionsBuilder {
             plug_name: String::from(name),
             override_subscribe_id: None,
             override_subscribe_role: None,
+            override_subscribe_plug_name: None,
             override_topic: None,
             qos: None,
         })
@@ -117,6 +119,40 @@ impl PlugOptionsBuilder {
         self
     }
 
+    pub fn name(mut self, override_plug_name: Option<String>) -> Self {
+        match &mut self {
+            PlugOptionsBuilder::InputPlugOptions(opt) => {
+                if opt.override_topic.is_some() {
+                    error!("Override topic was also provided; this will take precedence");
+                } else {
+                    if let Some(s) = &override_plug_name {
+                        if s.eq("+") {
+                            warn!("This is a wildcard; subscribe topic will use this but Plug Name will remain unchanged");
+                        } else {
+                            let new_name = String::from(s);
+                            warn!(
+                                "Plug Name was \"{}\", now => \"{}\"",
+                                &opt.plug_name, &new_name
+                            );
+                            opt.plug_name = new_name;
+                        }
+                        opt.override_subscribe_plug_name = override_plug_name.and_then(|s| Some(s));
+                    } else {
+                        debug!("Override plug name set to None; will use original name \"{}\" given in ::create_input constructor", opt.plug_name);
+                    }
+                }
+            }
+            PlugOptionsBuilder::OutputPlugOptions(_) => {
+                if let Some(s) = override_plug_name {
+                    if s.eq("+") {
+                        error!("Output Plugs should not use wildcards in their topics");
+                    }
+                }
+            }
+        };
+        self
+    }
+
     /// Override the final topic to use for publishing or subscribing. The provided topic **will** be checked
     /// against the Tether Three Part Topic convention, but the function **will not** reject topic strings - just
     /// produce a warning. It's therefore valid to use a wildcard such as "#", for Input (subscribing).
@@ -170,7 +206,9 @@ impl PlugOptionsBuilder {
                     None => TetherOrCustomTopic::Tether(ThreePartTopic::new_for_subscribe(
                         plug_options.override_subscribe_role,
                         plug_options.override_subscribe_id,
-                        &plug_options.plug_name,
+                        plug_options
+                            .override_subscribe_plug_name
+                            .and_then(|s| Some(s)),
                     )),
                 };
                 let plug_definition =

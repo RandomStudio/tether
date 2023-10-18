@@ -36,11 +36,11 @@ impl ThreePartTopic {
     pub fn new_for_subscribe(
         role: Option<String>,
         id: Option<String>,
-        plug_name: &str,
+        plug_name: Option<String>,
     ) -> ThreePartTopic {
         let role = role.unwrap_or("+".into());
         let id = id.unwrap_or("+".into());
-        let plug_name = String::from(plug_name);
+        let plug_name = plug_name.unwrap_or("+".into());
         let full_topic = build_topic(&role, &id, &plug_name);
 
         ThreePartTopic {
