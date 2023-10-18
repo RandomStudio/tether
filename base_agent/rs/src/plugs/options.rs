@@ -119,6 +119,11 @@ impl PlugOptionsBuilder {
         self
     }
 
+    /// Override the "name" part of the topic that gets generated for this Plug.
+    /// This is mainly to facilitate wildcard subscriptions such as
+    /// `someRole/someID/+` instead of `someRole/someID/originalPlugName`.
+    ///
+    /// In the case of
     pub fn name(mut self, override_plug_name: Option<String>) -> Self {
         match &mut self {
             PlugOptionsBuilder::InputPlugOptions(opt) => {
@@ -143,11 +148,7 @@ impl PlugOptionsBuilder {
                 }
             }
             PlugOptionsBuilder::OutputPlugOptions(_) => {
-                if let Some(s) = override_plug_name {
-                    if s.eq("+") {
-                        error!("Output Plugs should not use wildcards in their topics");
-                    }
-                }
+                error!("Output Plugs cannot change their name after ::create_output constructor");
             }
         };
         self
