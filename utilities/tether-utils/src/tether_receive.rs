@@ -9,15 +9,15 @@ pub struct ReceiveOptions {
     pub subscribe_topic: Option<String>,
 
     /// Specify a ROLE (instead of wildcard +)
-    #[arg(long = "role")]
+    #[arg(long = "plug.role")]
     pub subscribe_role: Option<String>,
 
     /// Specify an ID (instead of wildcard +)
-    #[arg(long = "id")]
+    #[arg(long = "plug.id")]
     pub subscribe_id: Option<String>,
 
-    /// Specify a plug name (instead of wildcard +)
-    #[arg(long = "plug")]
+    /// Specify a plug name
+    #[arg(long = "plug.name")]
     pub subscribe_plug: Option<String>,
 }
 
@@ -28,12 +28,38 @@ pub fn receive(
 ) {
     info!("Tether Receive Utility");
 
-    let _input = PlugOptionsBuilder::create_input("all")
-        .topic(options.subscribe_topic.clone())
-        .role(options.subscribe_role.clone())
-        .id(options.subscribe_id.clone())
+    // let override_topic = match &options.subscribe_topic {
+    //     Some(t) => Some(String::from(t)),
+    //     None => {
+    //         if options.subscribe_id.is_some() || options.subscribe_role.is_some() {
+    //             None
+    //         } else {
+    //             Some(String::from("#"))
+    //         }
+    //     }
+    // };
+
+    let input_def = {
+        if options.subscribe_id.is_some()
+            || options.subscribe_role.is_some()
+            || options.subscribe_plug.is_some()
+        {
+            PlugOptionsBuilder::create_input(
+                &options.subscribe_plug.clone().unwrap_or("all".into()),
+            )
+            .role(options.subscribe_role.clone())
+            .id(options.subscribe_id.clone())
+        } else {
+            PlugOptionsBuilder::create_input("all")
+                .topic(Some(options.subscribe_topic.clone().unwrap_or("#".into())))
+        }
+    };
+
+    let input = input_def
         .build(tether_agent)
         .expect("failed to create input plug");
+
+    info!("Subscribed to topic \"{}\" ...", input.topic());
 
     loop {
         let mut did_work = false;

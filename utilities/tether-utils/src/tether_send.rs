@@ -44,23 +44,6 @@ struct DummyData {
 pub fn send(options: &SendOptions, tether_agent: &TetherAgent) -> anyhow::Result<()> {
     info!("Tether Send Utility");
 
-    let (role, id, _) = tether_agent.description();
-
-    // let publish_topic = match &options.plug_topic {
-    //     Some(override_topic) => {
-    //         warn!(
-    //             "Using override topic \"{}\"; agent role, agent ID and plug name will be ignored",
-    //             override_topic
-    //         );
-    //         String::from(override_topic)
-    //     }
-    //     None => {
-    //         let auto_generated_topic = build_topic(role, id, &options.plug_name);
-    //         info!("Using auto-generated topic \"{}\"", &auto_generated_topic);
-    //         auto_generated_topic
-    //     }
-    // };
-
     let plug_name = options.plug_name.clone().unwrap_or("testMessages".into());
 
     let output = PlugOptionsBuilder::create_output(&plug_name)
@@ -69,6 +52,8 @@ pub fn send(options: &SendOptions, tether_agent: &TetherAgent) -> anyhow::Result
         .topic(options.plug_topic.clone())
         .build(tether_agent)
         .expect("failed to create output plug");
+
+    info!("Sending on topic \"{}\" ...", output.topic());
 
     if options.use_dummy_data {
         let payload = DummyData {
