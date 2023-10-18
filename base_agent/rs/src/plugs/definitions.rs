@@ -1,4 +1,4 @@
-use log::{debug, error, warn};
+use log::{debug, error};
 use serde::{Deserialize, Serialize};
 
 use crate::three_part_topic::ThreePartTopic;

@@ -255,14 +255,14 @@ impl PlugOptionsBuilder {
 
 #[cfg(test)]
 mod tests {
-    use env_logger::{Builder, Env};
 
     use crate::{PlugOptionsBuilder, TetherAgentOptionsBuilder};
 
-    fn verbose_logging() {
-        let mut logger_builder = Builder::from_env(Env::default().default_filter_or("debug"));
-        logger_builder.init();
-    }
+    // fn verbose_logging() {
+    //     use env_logger::{Builder, Env};
+    //     let mut logger_builder = Builder::from_env(Env::default().default_filter_or("debug"));
+    //     logger_builder.init();
+    // }
 
     #[test]
     fn default_input_plug() {
