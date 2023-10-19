@@ -61,6 +61,7 @@ fn demo_topics() {
     let options = TopicOptions {
         topic: "#".into(),
         sampler_interval: 1000,
+        graph_enable: false,
     };
 
     let mut insights = Insights::new(&options, &tether_agent);
