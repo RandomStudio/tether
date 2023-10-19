@@ -1,7 +1,8 @@
 use crossterm::{
-    cursor::{RestorePosition, SavePosition},
+    cursor::{self, RestorePosition, SavePosition},
     execute,
     style::Print,
+    terminal::{disable_raw_mode, enable_raw_mode},
 };
 use env_logger::{Builder, Env};
 use log::*;
@@ -12,7 +13,7 @@ use tether_agent::TetherAgentOptionsBuilder;
 use tether_utils::*;
 
 use std::{
-    io::stdout,
+    io::{stdout, Write},
     time::{Duration, SystemTime},
 };
 
@@ -57,6 +58,7 @@ enum Commands {
 
 fn main() {
     let cli = Cli::parse();
+    std::io::stdout().flush().unwrap();
 
     let mut env_builder = Builder::from_env(Env::default().default_filter_or(&cli.log_level));
     env_builder.filter_module("paho_mqtt", LevelFilter::Warn);
@@ -103,11 +105,11 @@ fn main() {
                 }
                 while let Some((_plug_name, message)) = tether_agent.check_messages() {
                     let topics_did_udate = insights.update(&message);
-                    print_insights_summary(&insights, topics_did_udate, options.graph_disable);
+                    print_insights_summary(&insights, topics_did_udate, options.graph_enable);
                 }
                 if let Ok(elapsed) = last_update.elapsed() {
                     if elapsed > Duration::from_secs(1) {
-                        print_insights_summary(&insights, false, options.graph_disable);
+                        print_insights_summary(&insights, false, options.graph_enable);
                         last_update = SystemTime::now();
                     }
                 }
@@ -127,10 +129,13 @@ fn main() {
 fn print_insights_summary(
     insights: &tether_topics::insights::Insights,
     topics_did_update: bool,
-    disable_graph: bool,
+    enable_graph: bool,
 ) {
     if topics_did_update {
-        info!("\nTopics update\n------------\n{}", &insights);
+        info!(
+            "Topics update-------------------------------\n{}\n",
+            &insights
+        );
     }
     let mut stdout = stdout();
     let rate_string = match insights.get_rate() {
@@ -138,7 +143,7 @@ fn print_insights_summary(
         None => String::from("unknown"),
     };
     let sampler_graph: String = {
-        if disable_graph {
+        if !enable_graph {
             String::from("")
         } else {
             insights
@@ -156,17 +161,20 @@ fn print_insights_summary(
                 })
         }
     };
-    execute!(
-        stdout,
-        SavePosition,
-        Print(format!(
-            "Live message count: {}\n",
-            insights.message_count()
-        )),
-        Print(format!("Message rate: {}         \n", rate_string)),
-        // Print(format!("Sampler: {:?}", insights.sampler().delta_entries())),
-        Print(sampler_graph),
-        RestorePosition,
-    )
-    .unwrap();
+    if enable_graph {
+        execute!(
+            stdout,
+            SavePosition,
+            Print(format!(
+                "Live message count: {}             \n",
+                insights.message_count()
+            )),
+            Print(format!("Message rate: {}         \n", rate_string)),
+            // Print(format!("Sampler: {:?}", insights.sampler().delta_entries())),
+            Print(sampler_graph),
+            RestorePosition,
+        )
+        .unwrap();
+    }
+    // disable_raw_mode();
 }

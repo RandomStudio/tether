@@ -13,8 +13,10 @@ pub struct TopicOptions {
     #[arg(long = "sampler.interval", default_value_t = 1000)]
     pub sampler_interval: u64,
 
-    #[arg(long = "graph.disable")]
-    pub graph_disable: bool,
+    /// Whether to print message rate and activity graph to the terminal;
+    /// some terminals might break
+    #[arg(long = "graph.enable")]
+    pub graph_enable: bool,
 }
 
 impl Default for TopicOptions {
@@ -22,7 +24,7 @@ impl Default for TopicOptions {
         TopicOptions {
             topic: "#".into(),
             sampler_interval: 1000,
-            graph_disable: false,
+            graph_enable: false,
         }
     }
 }
