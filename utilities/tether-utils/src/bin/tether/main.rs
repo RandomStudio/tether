@@ -103,11 +103,11 @@ fn main() {
                 }
                 while let Some((_plug_name, message)) = tether_agent.check_messages() {
                     let topics_did_udate = insights.update(&message);
-                    print_insights_summary(&insights, topics_did_udate);
+                    print_insights_summary(&insights, topics_did_udate, options.graph_disable);
                 }
                 if let Ok(elapsed) = last_update.elapsed() {
                     if elapsed > Duration::from_secs(1) {
-                        print_insights_summary(&insights, false);
+                        print_insights_summary(&insights, false, options.graph_disable);
                         last_update = SystemTime::now();
                     }
                 }
@@ -124,7 +124,11 @@ fn main() {
     }
 }
 
-fn print_insights_summary(insights: &tether_topics::insights::Insights, topics_did_update: bool) {
+fn print_insights_summary(
+    insights: &tether_topics::insights::Insights,
+    topics_did_update: bool,
+    disable_graph: bool,
+) {
     if topics_did_update {
         info!("\nTopics update\n------------\n{}", &insights);
     }
@@ -133,20 +137,25 @@ fn print_insights_summary(insights: &tether_topics::insights::Insights, topics_d
         Some(r) => format!("{:.1} msg/s", r),
         None => String::from("unknown"),
     };
-    let sampler_graph: String =
-        insights
-            .sampler()
-            .delta_entries()
-            .iter()
-            .fold(String::from(""), |acc, x| {
-                let symbol = match *x {
-                    0 => ".",
-                    1 => "_",
-                    _ => "+",
-                };
-                // if *x > 0 { "+" } else { "." };
-                format!("{} {}", acc, symbol)
-            });
+    let sampler_graph: String = {
+        if disable_graph {
+            String::from("")
+        } else {
+            insights
+                .sampler()
+                .delta_entries()
+                .iter()
+                .fold(String::from(""), |acc, x| {
+                    let symbol = match *x {
+                        0 => ".",
+                        1 => "_",
+                        _ => "+",
+                    };
+                    // if *x > 0 { "+" } else { "." };
+                    format!("{} {}", acc, symbol)
+                })
+        }
+    };
     execute!(
         stdout,
         SavePosition,

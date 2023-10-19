@@ -12,6 +12,9 @@ pub struct TopicOptions {
     /// Sampler interval, in milliseconds
     #[arg(long = "sampler.interval", default_value_t = 1000)]
     pub sampler_interval: u64,
+
+    #[arg(long = "graph.disable")]
+    pub graph_disable: bool,
 }
 
 impl Default for TopicOptions {
@@ -19,6 +22,7 @@ impl Default for TopicOptions {
         TopicOptions {
             topic: "#".into(),
             sampler_interval: 1000,
+            graph_disable: false,
         }
     }
 }
