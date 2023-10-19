@@ -9,6 +9,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "tether-agent": "../../base_agent/js",
     "@msgpack/msgpack": "^2.7.2",
     "parse-strings-in-object": "^1.4.0",
     "rc": "^1.2.8"
