@@ -15,19 +15,18 @@ pub struct ThreePartTopic {
 impl ThreePartTopic {
     /// Publish topics fall back to the ID and/or role associated with the agent, if not explicitly provided
     pub fn new_for_publish(
-        role: Option<String>,
-        id: Option<String>,
+        role: Option<&str>,
+        id: Option<&str>,
         plug_name: &str,
         agent: &TetherAgent,
     ) -> ThreePartTopic {
-        let role = role.unwrap_or(agent.role().into());
-        let id = id.unwrap_or(agent.id().into());
-        let plug_name = String::from(plug_name);
+        let role = role.unwrap_or(agent.role());
+        let id = id.unwrap_or(agent.id());
         let full_topic = build_topic(&role, &id, &plug_name);
         ThreePartTopic {
-            role,
-            id,
-            plug_name,
+            role: role.into(),
+            id: id.into(),
+            plug_name: plug_name.into(),
             full_topic,
         }
     }
@@ -36,12 +35,12 @@ impl ThreePartTopic {
     /// If `plug_name_part` is specified as `Some(String)` then the part
     pub fn new_for_subscribe(
         plug_name: &str,
-        role: Option<String>,
-        id: Option<String>,
+        role: Option<&str>,
+        id: Option<&str>,
         plug_name_part_override: Option<String>,
     ) -> ThreePartTopic {
-        let role = role.unwrap_or("+".into());
-        let id = id.unwrap_or("+".into());
+        let role = role.unwrap_or("+");
+        let id = id.unwrap_or("+");
         let plug_name_part = match plug_name_part_override {
             Some(s) => {
                 if !&s.eq("+") {
@@ -54,8 +53,8 @@ impl ThreePartTopic {
         let full_topic = build_topic(&role, &id, &plug_name_part);
 
         ThreePartTopic {
-            role,
-            id,
+            role: role.into(),
+            id: id.into(),
             plug_name: plug_name_part,
             full_topic,
         }

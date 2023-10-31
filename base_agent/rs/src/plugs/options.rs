@@ -210,8 +210,8 @@ impl PlugOptionsBuilder {
 
                         TetherOrCustomTopic::Tether(ThreePartTopic::new_for_subscribe(
                             &plug_options.plug_name,
-                            plug_options.override_subscribe_role,
-                            plug_options.override_subscribe_id,
+                            plug_options.override_subscribe_role.as_deref(),
+                            plug_options.override_subscribe_id.as_deref(),
                             plug_options.override_subscribe_plug_name,
                         ))
                     }
@@ -234,8 +234,8 @@ impl PlugOptionsBuilder {
                 let tpt: TetherOrCustomTopic = match plug_options.override_topic {
                     Some(custom) => TetherOrCustomTopic::Custom(custom),
                     None => TetherOrCustomTopic::Tether(ThreePartTopic::new_for_publish(
-                        plug_options.override_publish_role,
-                        plug_options.override_publish_id,
+                        plug_options.override_publish_role.as_deref(),
+                        plug_options.override_publish_id.as_deref(),
                         &plug_options.plug_name,
                         tether_agent,
                     )),
