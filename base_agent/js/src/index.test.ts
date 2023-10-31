@@ -1,4 +1,4 @@
-import { topicMatchesPlug } from ".";
+import { topicMatchesPlug } from "./Plug";
 
 describe("matching topics to plugs", () => {
   test("if Plug specified full topic, i.e. no wildcards, then only exact matches", () => {
