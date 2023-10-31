@@ -212,7 +212,7 @@ impl PlugOptionsBuilder {
                             &plug_options.plug_name,
                             plug_options.override_subscribe_role.as_deref(),
                             plug_options.override_subscribe_id.as_deref(),
-                            plug_options.override_subscribe_plug_name,
+                            plug_options.override_subscribe_plug_name.as_deref(),
                         ))
                     }
                 };

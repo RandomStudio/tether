@@ -37,7 +37,7 @@ impl ThreePartTopic {
         plug_name: &str,
         role: Option<&str>,
         id: Option<&str>,
-        plug_name_part_override: Option<String>,
+        plug_name_part_override: Option<&str>,
     ) -> ThreePartTopic {
         let role = role.unwrap_or("+");
         let id = id.unwrap_or("+");
@@ -46,16 +46,16 @@ impl ThreePartTopic {
                 if !&s.eq("+") {
                     error!("The only valid override for the Plug Name part is a wildcard (+)");
                 }
-                s.clone()
+                s
             }
-            None => String::from(plug_name),
+            None => plug_name,
         };
         let full_topic = build_topic(&role, &id, &plug_name_part);
 
         ThreePartTopic {
             role: role.into(),
             id: id.into(),
-            plug_name: plug_name_part,
+            plug_name: plug_name_part.into(),
             full_topic,
         }
     }
