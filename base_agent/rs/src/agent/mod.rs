@@ -62,8 +62,8 @@ impl TetherAgentOptionsBuilder {
         self
     }
 
-    pub fn port(mut self, port: u16) -> Self {
-        self.port = Some(port);
+    pub fn port(mut self, port: Option<u16>) -> Self {
+        self.port = convert_optional(port);
         self
     }
 

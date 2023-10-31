@@ -6,7 +6,7 @@ fn main() {
     let tether_agent = TetherAgentOptionsBuilder::new("example")
         .id(None)
         .host(Some("localhost"))
-        .port(1883)
+        .port(Some(1883))
         .username(Some("tether"))
         .password(Some("sp_ceB0ss!"))
         .build()
