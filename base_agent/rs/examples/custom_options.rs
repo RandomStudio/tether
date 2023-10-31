@@ -5,25 +5,25 @@ use tether_agent::{
 fn main() {
     let tether_agent = TetherAgentOptionsBuilder::new("example")
         .id(None)
-        .host(Some("localhost".into()))
+        .host(Some("localhost"))
         .port(1883)
-        .username(Some("tether".into()))
-        .password(Some("sp_ceB0ss!".into()))
+        .username(Some("tether"))
+        .password(Some("sp_ceB0ss!"))
         .build()
         .expect("failed to create Tether Agent");
 
     let output_plug = PlugOptionsBuilder::create_output("anOutput")
-        .role(Some("pretendingToBeSomethingElse".into()))
+        .role(Some("pretendingToBeSomethingElse"))
         .qos(2)
         .retain(true)
         .build(&tether_agent);
     let input_wildcard_plug = PlugOptionsBuilder::create_input("everything")
-        .topic(Some("#".into()))
+        .topic(Some("#"))
         .build(&tether_agent);
 
     let input_customid_plug = PlugOptionsBuilder::create_input("someData")
         .role(None) // i.e., just use default
-        .id(Some("specificIDonly".into()))
+        .id(Some("specificIDonly"))
         .build(&tether_agent);
 
     println!("Agent looks like this: {:?}", tether_agent.description());
