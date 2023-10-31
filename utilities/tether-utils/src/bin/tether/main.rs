@@ -1,8 +1,7 @@
 use crossterm::{
-    cursor::{self, RestorePosition, SavePosition},
+    cursor::{RestorePosition, SavePosition},
     execute,
     style::Print,
-    terminal::{disable_raw_mode, enable_raw_mode},
 };
 use env_logger::{Builder, Env};
 use log::*;
@@ -26,8 +25,8 @@ pub struct Cli {
     #[arg(long = "host", default_value_t=String::from("localhost"))]
     pub tether_host: String,
 
-    #[arg(long = "port", default_value_t = 1883)]
-    pub tether_port: u16,
+    #[arg(long = "port")]
+    pub tether_port: Option<u16>,
 
     #[arg(long = "username", default_value_t=String::from("tether"))]
     pub tether_username: String,
@@ -67,17 +66,17 @@ fn main() {
     debug!("Debugging is enabled; could be verbose");
 
     let tether_agent = TetherAgentOptionsBuilder::new(&cli.tether_role)
-        .id(Some(cli.tether_id.into()))
-        .host(Some(cli.tether_host.clone()))
+        .id(Some(cli.tether_id).as_deref())
+        .host(Some(cli.tether_host.clone()).as_deref())
         .port(cli.tether_port)
-        .username(Some(cli.tether_username.into()))
-        .password(Some(cli.tether_password.into()))
+        .username(Some(cli.tether_username).as_deref())
+        .password(Some(cli.tether_password).as_deref())
         .build()
         .unwrap_or_else(|_| {
             error!("Failed to initialise and/or connect the Tether Agent");
             warn!(
                 "Check your Tether settings and ensure that you have a correctly-configured MQTT broker running at {}:{}",
-                cli.tether_host, cli.tether_port
+                &cli.tether_host, cli.tether_port.unwrap_or(1883)
             );
             panic!("Failed to init/connect Tether Agent")
         });

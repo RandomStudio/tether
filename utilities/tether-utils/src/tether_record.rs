@@ -96,7 +96,7 @@ impl TetherRecordUtil {
         info!("Tether Record Utility: start recording");
 
         let _input = PlugOptionsBuilder::create_input("all")
-            .topic(Some(self.options.topic.clone())) // TODO: should be possible to build TPT
+            .topic(Some(self.options.topic.clone()).as_deref()) // TODO: should be possible to build TPT
             .build(tether_agent)
             .expect("failed to create input plug");
 

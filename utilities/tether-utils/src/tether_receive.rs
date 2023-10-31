@@ -38,16 +38,16 @@ pub fn receive(
                 &options.subscribe_id, &options.subscribe_role, &options.subscribe_plug
             );
             PlugOptionsBuilder::create_input("all")
-                .role(options.subscribe_role.clone())
-                .id(options.subscribe_id.clone())
-                .name(options.subscribe_plug.clone().and_then(|s| Some(s)))
+                .role(options.subscribe_role.as_deref())
+                .id(options.subscribe_id.as_deref())
+                .name(options.subscribe_plug.as_deref())
         } else {
             debug!(
                 "Using custom override topic \"{:?}\"",
                 &options.subscribe_topic
             );
             PlugOptionsBuilder::create_input("all")
-                .topic(Some(options.subscribe_topic.clone().unwrap_or("#".into())))
+                .topic(Some(options.subscribe_topic.as_deref().unwrap_or("#")))
         }
     };
 
