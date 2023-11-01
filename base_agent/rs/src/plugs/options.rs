@@ -186,13 +186,13 @@ impl PlugOptionsBuilder {
         self
     }
 
-    pub fn retain(mut self, should_retain: bool) -> Self {
+    pub fn retain(mut self, should_retain: Option<bool>) -> Self {
         match &mut self {
             Self::InputPlugOptions(_) => {
                 error!("Cannot set retain flag on Input Plug / subscription");
             }
             Self::OutputPlugOptions(s) => {
-                s.retain = Some(should_retain);
+                s.retain = should_retain;
             }
         }
         self
