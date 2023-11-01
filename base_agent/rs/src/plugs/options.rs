@@ -56,10 +56,10 @@ impl PlugOptionsBuilder {
         })
     }
 
-    pub fn qos(mut self, qos: i32) -> Self {
+    pub fn qos(mut self, qos: Option<i32>) -> Self {
         match &mut self {
-            PlugOptionsBuilder::InputPlugOptions(s) => s.qos = Some(qos),
-            PlugOptionsBuilder::OutputPlugOptions(s) => s.qos = Some(qos),
+            PlugOptionsBuilder::InputPlugOptions(s) => s.qos = qos,
+            PlugOptionsBuilder::OutputPlugOptions(s) => s.qos = qos,
         };
         self
     }

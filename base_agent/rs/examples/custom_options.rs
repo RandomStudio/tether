@@ -14,7 +14,7 @@ fn main() {
 
     let output_plug = PlugOptionsBuilder::create_output("anOutput")
         .role(Some("pretendingToBeSomethingElse"))
-        .qos(2)
+        .qos(Some(2))
         .retain(true)
         .build(&tether_agent);
     let input_wildcard_plug = PlugOptionsBuilder::create_input("everything")
