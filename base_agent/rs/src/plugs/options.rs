@@ -160,6 +160,8 @@ impl PlugOptionsBuilder {
     /// produce a warning. It's therefore valid to use a wildcard such as "#", for Input (subscribing).
     ///
     /// Any customisations specified using `.role(...)` or `.id(...)` will be ignored if this function is called.
+    ///
+    /// By default, the override_topic is None, but you can specify None explicitly using this function.
     pub fn topic(mut self, override_topic: Option<&str>) -> Self {
         match override_topic {
             Some(t) => {
