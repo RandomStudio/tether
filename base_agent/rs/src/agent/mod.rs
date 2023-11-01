@@ -28,13 +28,6 @@ pub struct TetherAgentOptionsBuilder {
     auto_connect: bool,
 }
 
-fn convert_optional<T, U: std::convert::From<T>>(optional_value: Option<T>) -> Option<U> {
-    match optional_value {
-        Some(v) => Some(v.into()),
-        None => None,
-    }
-}
-
 impl TetherAgentOptionsBuilder {
     /// Initialise Tether Options struct with default options; call other methods to customise.
     /// Call `build()` to get the actual TetherAgent instance (and connect automatically, by default)
@@ -52,30 +45,30 @@ impl TetherAgentOptionsBuilder {
 
     /// Provide Some(value) to override or None to use default
     pub fn id(mut self, id: Option<&str>) -> Self {
-        self.id = convert_optional(id);
+        self.id = id.map(|x| x.into());
         self
     }
 
     /// Provide Some(value) to override or None to use default
     pub fn host(mut self, host: Option<&str>) -> Self {
-        self.host = convert_optional(host);
+        self.host = host.map(|x| x.into());
         self
     }
 
     pub fn port(mut self, port: Option<u16>) -> Self {
-        self.port = convert_optional(port);
+        self.port = port;
         self
     }
 
     /// Provide Some(value) to override or None to use default
     pub fn username(mut self, username: Option<&str>) -> Self {
-        self.username = convert_optional(username);
+        self.username = username.map(|x| x.into());
         self
     }
 
     /// Provide Some(value) to override or None to use default
     pub fn password(mut self, password: Option<&str>) -> Self {
-        self.password = convert_optional(password);
+        self.password = password.map(|x| x.into());
         self
     }
 

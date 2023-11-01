@@ -77,14 +77,14 @@ impl PlugOptionsBuilder {
                 if s.override_topic.is_some() {
                     error!("Override topic was also provided; this will take precedence");
                 } else {
-                    s.override_subscribe_role = role.and_then(|s| Some(s.into()));
+                    s.override_subscribe_role = role.map(|s| s.into());
                 }
             }
             PlugOptionsBuilder::OutputPlugOptions(s) => {
                 if s.override_topic.is_some() {
                     error!("Override topic was also provided; this will take precedence");
                 } else {
-                    s.override_publish_role = role.and_then(|s| Some(s.into()));
+                    s.override_publish_role = role.map(|s| s.into());
                 }
             }
         };
@@ -105,14 +105,14 @@ impl PlugOptionsBuilder {
                 if s.override_topic.is_some() {
                     error!("Override topic was also provided; this will take precedence");
                 } else {
-                    s.override_subscribe_id = id.and_then(|s| Some(s.into()));
+                    s.override_subscribe_id = id.map(|s| s.into());
                 }
             }
             PlugOptionsBuilder::OutputPlugOptions(s) => {
                 if s.override_topic.is_some() {
                     error!("Override topic was also provided; this will take precedence");
                 } else {
-                    s.override_publish_id = id.and_then(|s| Some(s.into()));
+                    s.override_publish_id = id.map(|s| s.into());
                 }
             }
         };
@@ -134,18 +134,16 @@ impl PlugOptionsBuilder {
             PlugOptionsBuilder::InputPlugOptions(opt) => {
                 if opt.override_topic.is_some() {
                     error!("Override topic was also provided; this will take precedence");
-                } else {
-                    if let Some(s) = override_plug_name {
-                        if s.eq("+") {
-                            info!("This is a wildcard; subscribe topic will use this but Plug Name will remain unchanged");
-                        } else {
-                            error!("Input Plugs cannot change their name after ::create_input constructor EXCEPT for wildcard \"+\"");
-                        }
-                        opt.override_subscribe_plug_name =
-                            override_plug_name.and_then(|s| Some(s.into()));
+                }
+                if let Some(s) = override_plug_name {
+                    if s.eq("+") {
+                        info!("This is a wildcard; subscribe topic will use this but Plug Name will remain unchanged");
                     } else {
-                        debug!("Override plug name set to None; will use original name \"{}\" given in ::create_input constructor", opt.plug_name);
+                        error!("Input Plugs cannot change their name after ::create_input constructor EXCEPT for wildcard \"+\"");
                     }
+                    opt.override_subscribe_plug_name = override_plug_name.map(|s| s.into());
+                } else {
+                    debug!("Override plug name set to None; will use original name \"{}\" given in ::create_input constructor", opt.plug_name);
                 }
             }
             PlugOptionsBuilder::OutputPlugOptions(_) => {
@@ -222,7 +220,7 @@ impl PlugOptionsBuilder {
                     InputPlugDefinition::new(&plug_options.plug_name, tpt, plug_options.qos);
                 match tether_agent
                     .client()
-                    .subscribe(plug_definition.topic().as_str(), plug_definition.qos())
+                    .subscribe(plug_definition.topic(), plug_definition.qos())
                 {
                     Ok(res) => {
                         debug!("This topic was fine: \"{}\"", plug_definition.topic());

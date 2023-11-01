@@ -22,7 +22,7 @@ impl ThreePartTopic {
     ) -> ThreePartTopic {
         let role = role.unwrap_or(agent.role());
         let id = id.unwrap_or(agent.id());
-        let full_topic = build_topic(&role, &id, &plug_name);
+        let full_topic = build_topic(role, id, plug_name);
         ThreePartTopic {
             role: role.into(),
             id: id.into(),
@@ -50,7 +50,7 @@ impl ThreePartTopic {
             }
             None => plug_name,
         };
-        let full_topic = build_topic(&role, &id, &plug_name_part);
+        let full_topic = build_topic(role, id, plug_name_part);
 
         ThreePartTopic {
             role: role.into(),
@@ -65,7 +65,7 @@ impl ThreePartTopic {
             role: role.into(),
             id: id.into(),
             plug_name: plug_name.into(),
-            full_topic: build_topic(&role, &id, &plug_name),
+            full_topic: build_topic(role, id, plug_name),
         }
     }
 
@@ -121,11 +121,11 @@ impl TryFrom<&str> for ThreePartTopic {
             debug!("parts: {:?}", parts);
         }
 
-        let role = parts.get(0).expect("the role part should exist");
+        let role = parts.first().expect("the role part should exist");
         let id = parts.get(1).expect("the id part should exist");
         let plug_name = parts.get(2).expect("the plug_name part should exist");
 
-        return Ok(ThreePartTopic::new(role, id, plug_name));
+        Ok(ThreePartTopic::new(role, id, plug_name))
     }
 }
 
