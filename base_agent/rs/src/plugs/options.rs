@@ -26,8 +26,8 @@ pub struct OutputPlugOptions {
 
 /// This is the definition of an Input or Output Plug.
 ///
-/// You should never use an instance of this directly; call `.build()` at the
-/// end of the chain to get a usable PlugDefinition
+/// You typically don't use an instance of this directly; call `.build()` at the
+/// end of the chain to get a usable **PlugDefinition**
 pub enum PlugOptionsBuilder {
     InputPlugOptions(InputPlugOptions),
     OutputPlugOptions(OutputPlugOptions),

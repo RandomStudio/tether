@@ -189,6 +189,8 @@ impl TetherAgent {
     }
 
     /// If a message is waiting return ThreePartTopic, Message (String, Message)
+    /// Messages received on topics that are not parseable as Tether Three Part Topics will be returned with
+    /// the complete Topic string instead
     pub fn check_messages(&self) -> Option<(TetherOrCustomTopic, Message)> {
         if let Some(message) = self.receiver.try_iter().find_map(|m| m) {
             if let Ok(t) = ThreePartTopic::try_from(message.topic()) {
