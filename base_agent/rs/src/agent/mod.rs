@@ -10,12 +10,16 @@ use crate::{
 };
 
 const TIMEOUT_SECONDS: u64 = 10;
+const DEFAULT_USERNAME: &str = "tether";
+const DEFAULT_PASSWORD: &str = "sp_ceB0ss!";
 pub struct TetherAgent {
     role: String,
     id: String,
     client: Client,
     broker_uri: String,
     receiver: Receiver<Option<Message>>,
+    username: String,
+    password: String,
 }
 #[derive(Clone)]
 pub struct TetherAgentOptionsBuilder {
@@ -102,10 +106,12 @@ impl TetherAgentOptionsBuilder {
             client,
             broker_uri,
             receiver,
+            username: self.username.unwrap_or(DEFAULT_USERNAME.into()),
+            password: self.password.unwrap_or(DEFAULT_PASSWORD.into()),
         };
 
         if self.auto_connect {
-            match agent.connect(&self) {
+            match agent.connect() {
                 Ok(()) => Ok(agent),
                 Err(e) => Err(e.into()),
             }
@@ -152,12 +158,10 @@ impl TetherAgent {
         self.id = id.into();
     }
 
-    pub fn connect(&self, options: &TetherAgentOptionsBuilder) -> Result<(), mqtt::Error> {
-        let username = options.clone().username.unwrap_or("tether".into());
-        let password = options.clone().password.unwrap_or("sp_ceB0ss!".into());
+    pub fn connect(&self) -> Result<(), mqtt::Error> {
         let conn_opts = mqtt::ConnectOptionsBuilder::new()
-            .user_name(username)
-            .password(password)
+            .user_name(&self.username)
+            .password(&self.password)
             .connect_timeout(Duration::from_secs(TIMEOUT_SECONDS))
             .keep_alive_interval(Duration::from_secs(TIMEOUT_SECONDS))
             // .mqtt_version(mqtt::MQTT_VERSION_3_1_1)
