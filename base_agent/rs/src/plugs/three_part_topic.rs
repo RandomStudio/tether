@@ -32,7 +32,8 @@ impl ThreePartTopic {
     }
 
     /// Subscribe topics fall back to wildcard `+` for role and/or id if not explicitly provided.
-    /// If `plug_name_part` is specified as `Some(String)` then the part
+    /// If `plug_name_part` is specified as `Some(String)` then the plug name part of the generated
+    /// topic is changed but the plug name itself is left alone.
     pub fn new_for_subscribe(
         plug_name: &str,
         role: Option<&str>,
