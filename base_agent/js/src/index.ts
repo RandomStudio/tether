@@ -4,9 +4,10 @@ import { InputPlug, OutputPlug } from "./Plug";
 import logger from "loglevel";
 import { LogLevelDesc } from "loglevel";
 import { TetherConfig, TetherOptions } from "./types";
+import { encode, decode } from "@msgpack/msgpack";
 
 logger.setLevel("info");
-export { logger, BROKER_DEFAULTS };
+export { logger, BROKER_DEFAULTS, encode, decode };
 
 export { InputPlug, OutputPlug, IClientOptions };
 

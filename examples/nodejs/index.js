@@ -3,10 +3,11 @@ const {
   InputPlug,
   OutputPlug,
   BROKER_DEFAULTS,
+  encode,
+  decode,
 } = require("tether-agent");
 const parse = require("parse-strings-in-object");
 const rc = require("rc");
-const { encode, decode } = require("@msgpack/msgpack");
 
 const config = parse(
   rc("NodeJSDummy", {
