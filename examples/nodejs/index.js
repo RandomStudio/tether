@@ -1,4 +1,9 @@
-const { TetherAgent, Input, Output, BROKER_DEFAULTS } = require("tether-agent");
+const {
+  TetherAgent,
+  InputPlug,
+  OutputPlug,
+  BROKER_DEFAULTS,
+} = require("tether-agent");
 const parse = require("parse-strings-in-object");
 const rc = require("rc");
 const { encode, decode } = require("@msgpack/msgpack");
@@ -20,8 +25,8 @@ const main = async () => {
   //   brokerOptions: BROKER_DEFAULTS.browser,
   // });
 
-  const outputPlug = new Output(agent, "randomValue");
-  const emptyOutputPlug = new Output(agent, "emptyMessage");
+  const outputPlug = new OutputPlug(agent, "randomValue");
+  const emptyOutputPlug = new OutputPlug(agent, "emptyMessage");
 
   setInterval(() => {
     const m = {
@@ -34,26 +39,30 @@ const main = async () => {
   }, 1000);
 
   setTimeout(() => {
-    const fastOutput = new Output(agent, "fastValues");
+    const fastOutput = new OutputPlug(agent, "fastValues");
     setInterval(() => {
       const a = [Math.random(), Math.random(), Math.random()];
       fastOutput.publish(Buffer.from(encode(a)));
     }, 10);
   }, 4000);
 
-  const fastInput = new Input(agent, "fastValuesReceiver", "+/+/fastValues");
+  const fastInput = new InputPlug(
+    agent,
+    "fastValuesReceiver",
+    "+/+/fastValues"
+  );
   fastInput.on("message", (payload) => {
     console.log("received fastValues");
   });
 
-  const inputPlugOne = new Input(agent, "randomValue");
+  const inputPlugOne = new InputPlug(agent, "randomValue");
   inputPlugOne.on("message", (payload, topic) => {
     console.log("received:", { payload, topic });
     const m = decode(payload);
     console.log("received message on inputPlugOne:", { topic, m });
   });
 
-  const inputPlugTwo = new Input(
+  const inputPlugTwo = new InputPlug(
     agent,
     "moreRandomValues",
     "dummy/NodeJSDummy/randomValue"
@@ -63,7 +72,7 @@ const main = async () => {
     console.log("received message on inputPlugTwo:", { topic, m });
   });
 
-  const inputPlugThree = new Input(
+  const inputPlugThree = new InputPlug(
     agent,
     "evenMoreRandomValues",
     "+/+/randomValue"
@@ -74,7 +83,11 @@ const main = async () => {
   });
 
   try {
-    const inputPlugFour = new Input(agent, "randomValue", "+/+/somethingElse");
+    const inputPlugFour = new InputPlug(
+      agent,
+      "randomValue",
+      "+/+/somethingElse"
+    );
     inputPlugFour.on("message", () => {
       throw Error(
         "we didn't expect to receive anything on this plug, despite the name"
@@ -85,7 +98,7 @@ const main = async () => {
   }
 
   let countReceived = 0;
-  const inputPlugJustOnce = new Input(
+  const inputPlugJustOnce = new InputPlug(
     agent,
     "randomValueOnce",
     "+/+/randomValue"
@@ -98,7 +111,7 @@ const main = async () => {
     }
   });
 
-  const inputEmptyMessages = new Input(agent, "emptyMessage");
+  const inputEmptyMessages = new InputPlug(agent, "emptyMessage");
   inputEmptyMessages.on("message", (payload, topic) => {
     console.log("received empty message:", { payload, topic });
   });

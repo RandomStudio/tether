@@ -1,10 +1,6 @@
-import mqtt, {
-  AsyncMqttClient,
-  IClientOptions,
-  IClientSubscribeOptions,
-} from "async-mqtt";
+import mqtt, { AsyncMqttClient, IClientOptions } from "async-mqtt";
 import defaults, { BROKER_DEFAULTS } from "./defaults";
-import { Input, Output } from "./Plug";
+import { InputPlug, OutputPlug } from "./Plug";
 import logger from "loglevel";
 import { LogLevelDesc } from "loglevel";
 import { TetherConfig, TetherOptions } from "./types";
@@ -12,7 +8,7 @@ import { TetherConfig, TetherOptions } from "./types";
 logger.setLevel("info");
 export { logger, BROKER_DEFAULTS };
 
-export { Input, Output, IClientOptions };
+export { InputPlug, OutputPlug, IClientOptions };
 
 export class TetherAgent {
   private config: TetherConfig;

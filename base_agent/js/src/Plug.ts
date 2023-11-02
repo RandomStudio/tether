@@ -31,7 +31,7 @@ type MessageCallbackListIterm = {
   cb: MessageCallback;
   once: boolean;
 };
-export class Input extends Plug {
+export class InputPlug extends Plug {
   constructor(
     agent: TetherAgent,
     name: string,
@@ -96,7 +96,7 @@ export class Input extends Plug {
   // };
 }
 
-export class Output extends Plug {
+export class OutputPlug extends Plug {
   constructor(agent: TetherAgent, name: string, overrideTopic?: string) {
     super(agent, {
       name,
