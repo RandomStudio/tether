@@ -4,6 +4,23 @@
   // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
   "version": "0.2.0",
   "configurations": [
+    {
+      "name": "Debug Rust Base Agent unit tests",
+      "type": "lldb",
+      "request": "launch",
+      "cargo": {
+          "args": [
+            "test", "--no-run", "--lib",
+            "--manifest-path", "${workspaceFolder}/base_agent/rs/Cargo.toml"
+          ], // Cargo command line to build the debug target
+          // "args": ["build", "--bin=foo"] is another possibility
+          // "filter": { // Filter applied to compilation artifacts (optional)
+          //     "name": "mylib",
+          //     "kind": "lib"
+          // }
+      }
+  },
+
   {
     "type": "lldb",
     "request": "launch",

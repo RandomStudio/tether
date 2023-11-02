@@ -26,8 +26,8 @@ pub struct OutputPlugOptions {
 
 /// This is the definition of an Input or Output Plug.
 ///
-/// You should never use an instance of this directly; call `.build()` at the
-/// end of the chain to get a usable PlugDefinition
+/// You typically don't use an instance of this directly; call `.build()` at the
+/// end of the chain to get a usable **PlugDefinition**
 pub enum PlugOptionsBuilder {
     InputPlugOptions(InputPlugOptions),
     OutputPlugOptions(OutputPlugOptions),
@@ -56,10 +56,10 @@ impl PlugOptionsBuilder {
         })
     }
 
-    pub fn qos(mut self, qos: i32) -> Self {
+    pub fn qos(mut self, qos: Option<i32>) -> Self {
         match &mut self {
-            PlugOptionsBuilder::InputPlugOptions(s) => s.qos = Some(qos),
-            PlugOptionsBuilder::OutputPlugOptions(s) => s.qos = Some(qos),
+            PlugOptionsBuilder::InputPlugOptions(s) => s.qos = qos,
+            PlugOptionsBuilder::OutputPlugOptions(s) => s.qos = qos,
         };
         self
     }
@@ -71,20 +71,20 @@ impl PlugOptionsBuilder {
     /// of using your Agent's "own" Role with which you created the Tether Agent
     ///
     /// If you override the entire topic using `.topic` this will be ignored.
-    pub fn role(mut self, role: Option<String>) -> Self {
+    pub fn role(mut self, role: Option<&str>) -> Self {
         match &mut self {
             PlugOptionsBuilder::InputPlugOptions(s) => {
                 if s.override_topic.is_some() {
                     error!("Override topic was also provided; this will take precedence");
                 } else {
-                    s.override_subscribe_role = role.and_then(|s| Some(s));
+                    s.override_subscribe_role = role.map(|s| s.into());
                 }
             }
             PlugOptionsBuilder::OutputPlugOptions(s) => {
                 if s.override_topic.is_some() {
                     error!("Override topic was also provided; this will take precedence");
                 } else {
-                    s.override_publish_role = role.and_then(|s| Some(s));
+                    s.override_publish_role = role.map(|s| s.into());
                 }
             }
         };
@@ -99,20 +99,20 @@ impl PlugOptionsBuilder {
     /// when creating the Tether Agent
     ///
     /// If you override the entire topic using `.topic` this will be ignored.
-    pub fn id(mut self, id: Option<String>) -> Self {
+    pub fn id(mut self, id: Option<&str>) -> Self {
         match &mut self {
             PlugOptionsBuilder::InputPlugOptions(s) => {
                 if s.override_topic.is_some() {
                     error!("Override topic was also provided; this will take precedence");
                 } else {
-                    s.override_subscribe_id = id.and_then(|s| Some(s));
+                    s.override_subscribe_id = id.map(|s| s.into());
                 }
             }
             PlugOptionsBuilder::OutputPlugOptions(s) => {
                 if s.override_topic.is_some() {
                     error!("Override topic was also provided; this will take precedence");
                 } else {
-                    s.override_publish_id = id.and_then(|s| Some(s));
+                    s.override_publish_id = id.map(|s| s.into());
                 }
             }
         };
@@ -129,22 +129,21 @@ impl PlugOptionsBuilder {
     ///
     /// Output Plugs will ignore (with an error) any attempt to change the name after
     /// instantiation.
-    pub fn name(mut self, override_plug_name: Option<String>) -> Self {
+    pub fn name(mut self, override_plug_name: Option<&str>) -> Self {
         match &mut self {
             PlugOptionsBuilder::InputPlugOptions(opt) => {
                 if opt.override_topic.is_some() {
                     error!("Override topic was also provided; this will take precedence");
-                } else {
-                    if let Some(s) = &override_plug_name {
-                        if s.eq("+") {
-                            info!("This is a wildcard; subscribe topic will use this but Plug Name will remain unchanged");
-                        } else {
-                            error!("Input Plugs cannot change their name after ::create_input constructor EXCEPT for wildcard \"+\"");
-                        }
-                        opt.override_subscribe_plug_name = override_plug_name.and_then(|s| Some(s));
+                }
+                if let Some(s) = override_plug_name {
+                    if s.eq("+") {
+                        info!("This is a wildcard; subscribe topic will use this but Plug Name will remain unchanged");
                     } else {
-                        debug!("Override plug name set to None; will use original name \"{}\" given in ::create_input constructor", opt.plug_name);
+                        error!("Input Plugs cannot change their name after ::create_input constructor EXCEPT for wildcard \"+\"");
                     }
+                    opt.override_subscribe_plug_name = override_plug_name.map(|s| s.into());
+                } else {
+                    debug!("Override plug name set to None; will use original name \"{}\" given in ::create_input constructor", opt.plug_name);
                 }
             }
             PlugOptionsBuilder::OutputPlugOptions(_) => {
@@ -159,10 +158,12 @@ impl PlugOptionsBuilder {
     /// produce a warning. It's therefore valid to use a wildcard such as "#", for Input (subscribing).
     ///
     /// Any customisations specified using `.role(...)` or `.id(...)` will be ignored if this function is called.
-    pub fn topic(mut self, override_topic: Option<String>) -> Self {
+    ///
+    /// By default, the override_topic is None, but you can specify None explicitly using this function.
+    pub fn topic(mut self, override_topic: Option<&str>) -> Self {
         match override_topic {
             Some(t) => {
-                if TryInto::<ThreePartTopic>::try_into(t.as_str()).is_ok() {
+                if TryInto::<ThreePartTopic>::try_into(t).is_ok() {
                     info!("Custom topic passes Three Part Topic validation");
                 } else {
                     warn!(
@@ -171,8 +172,8 @@ impl PlugOptionsBuilder {
                     );
                 }
                 match &mut self {
-                    PlugOptionsBuilder::InputPlugOptions(s) => s.override_topic = Some(t),
-                    PlugOptionsBuilder::OutputPlugOptions(s) => s.override_topic = Some(t),
+                    PlugOptionsBuilder::InputPlugOptions(s) => s.override_topic = Some(t.into()),
+                    PlugOptionsBuilder::OutputPlugOptions(s) => s.override_topic = Some(t.into()),
                 };
             }
             None => {
@@ -185,13 +186,13 @@ impl PlugOptionsBuilder {
         self
     }
 
-    pub fn retain(mut self, should_retain: bool) -> Self {
+    pub fn retain(mut self, should_retain: Option<bool>) -> Self {
         match &mut self {
             Self::InputPlugOptions(_) => {
                 error!("Cannot set retain flag on Input Plug / subscription");
             }
             Self::OutputPlugOptions(s) => {
-                s.retain = Some(should_retain);
+                s.retain = should_retain;
             }
         }
         self
@@ -206,13 +207,12 @@ impl PlugOptionsBuilder {
                     Some(custom) => TetherOrCustomTopic::Custom(custom),
                     None => {
                         debug!("Not a custom topic; provided overrides: role = {:?}, id = {:?}, name = {:?}", plug_options.override_subscribe_role, plug_options.override_subscribe_id, plug_options.override_subscribe_plug_name);
+
                         TetherOrCustomTopic::Tether(ThreePartTopic::new_for_subscribe(
                             &plug_options.plug_name,
-                            plug_options.override_subscribe_role,
-                            plug_options.override_subscribe_id,
-                            plug_options
-                                .override_subscribe_plug_name
-                                .and_then(|s| Some(s)),
+                            plug_options.override_subscribe_role.as_deref(),
+                            plug_options.override_subscribe_id.as_deref(),
+                            plug_options.override_subscribe_plug_name.as_deref(),
                         ))
                     }
                 };
@@ -220,7 +220,7 @@ impl PlugOptionsBuilder {
                     InputPlugDefinition::new(&plug_options.plug_name, tpt, plug_options.qos);
                 match tether_agent
                     .client()
-                    .subscribe(plug_definition.topic().as_str(), plug_definition.qos())
+                    .subscribe(&plug_definition.topic(), plug_definition.qos())
                 {
                     Ok(res) => {
                         debug!("This topic was fine: \"{}\"", plug_definition.topic());
@@ -234,8 +234,8 @@ impl PlugOptionsBuilder {
                 let tpt: TetherOrCustomTopic = match plug_options.override_topic {
                     Some(custom) => TetherOrCustomTopic::Custom(custom),
                     None => TetherOrCustomTopic::Tether(ThreePartTopic::new_for_publish(
-                        plug_options.override_publish_role,
-                        plug_options.override_publish_id,
+                        plug_options.override_publish_role.as_deref(),
+                        plug_options.override_publish_id.as_deref(),
                         &plug_options.plug_name,
                         tether_agent,
                     )),

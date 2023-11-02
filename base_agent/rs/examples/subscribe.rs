@@ -26,7 +26,7 @@ fn main() {
     debug!("Debugging is enabled; could be verbose");
 
     let tether_agent = TetherAgentOptionsBuilder::new("RustDemoAgent")
-        .id(Some("example".into()))
+        .id(Some("example"))
         .build()
         .expect("failed to init Tether agent");
 
@@ -35,7 +35,7 @@ fn main() {
         .expect("failed to create input");
     debug!("input one {} = {}", input_one.name(), input_one.topic());
     let input_two = PlugOptionsBuilder::create_input("two")
-        .role(Some("specific".into()))
+        .role(Some("specific"))
         .build(&tether_agent)
         .expect("failed to create input");
     debug!("input two {} = {}", input_two.name(), input_two.topic());
@@ -44,12 +44,12 @@ fn main() {
         .expect("failed to create input");
 
     let input_everything = PlugOptionsBuilder::create_input("everything")
-        .topic(Some("#".into()))
+        .topic(Some("#"))
         .build(&tether_agent)
         .expect("failed to create input");
 
     let input_specify_id = PlugOptionsBuilder::create_input("groupMessages")
-        .id(Some("someGroup".into()))
+        .id(Some("someGroup"))
         .name(None)
         .build(&tether_agent)
         .expect("failed to create input");

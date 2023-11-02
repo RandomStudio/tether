@@ -15,48 +15,48 @@ pub struct ThreePartTopic {
 impl ThreePartTopic {
     /// Publish topics fall back to the ID and/or role associated with the agent, if not explicitly provided
     pub fn new_for_publish(
-        role: Option<String>,
-        id: Option<String>,
+        role: Option<&str>,
+        id: Option<&str>,
         plug_name: &str,
         agent: &TetherAgent,
     ) -> ThreePartTopic {
-        let role = role.unwrap_or(agent.role().into());
-        let id = id.unwrap_or(agent.id().into());
-        let plug_name = String::from(plug_name);
-        let full_topic = build_topic(&role, &id, &plug_name);
+        let role = role.unwrap_or(agent.role());
+        let id = id.unwrap_or(agent.id());
+        let full_topic = build_topic(role, id, plug_name);
         ThreePartTopic {
-            role,
-            id,
-            plug_name,
+            role: role.into(),
+            id: id.into(),
+            plug_name: plug_name.into(),
             full_topic,
         }
     }
 
     /// Subscribe topics fall back to wildcard `+` for role and/or id if not explicitly provided.
-    /// If `plug_name_part` is specified as `Some(String)` then the part
+    /// If `plug_name_part` is specified as `Some(String)` then the plug name part of the generated
+    /// topic is changed but the plug name itself is left alone.
     pub fn new_for_subscribe(
         plug_name: &str,
-        role: Option<String>,
-        id: Option<String>,
-        plug_name_part_override: Option<String>,
+        role: Option<&str>,
+        id: Option<&str>,
+        plug_name_part_override: Option<&str>,
     ) -> ThreePartTopic {
-        let role = role.unwrap_or("+".into());
-        let id = id.unwrap_or("+".into());
+        let role = role.unwrap_or("+");
+        let id = id.unwrap_or("+");
         let plug_name_part = match plug_name_part_override {
             Some(s) => {
                 if !&s.eq("+") {
                     error!("The only valid override for the Plug Name part is a wildcard (+)");
                 }
-                s.clone()
+                s
             }
-            None => String::from(plug_name),
+            None => plug_name,
         };
-        let full_topic = build_topic(&role, &id, &plug_name_part);
+        let full_topic = build_topic(role, id, plug_name_part);
 
         ThreePartTopic {
-            role,
-            id,
-            plug_name: plug_name_part,
+            role: role.into(),
+            id: id.into(),
+            plug_name: plug_name_part.into(),
             full_topic,
         }
     }
@@ -66,7 +66,7 @@ impl ThreePartTopic {
             role: role.into(),
             id: id.into(),
             plug_name: plug_name.into(),
-            full_topic: build_topic(&role, &id, &plug_name),
+            full_topic: build_topic(role, id, plug_name),
         }
     }
 
@@ -122,11 +122,11 @@ impl TryFrom<&str> for ThreePartTopic {
             debug!("parts: {:?}", parts);
         }
 
-        let role = parts.get(0).expect("the role part should exist");
+        let role = parts.first().expect("the role part should exist");
         let id = parts.get(1).expect("the id part should exist");
         let plug_name = parts.get(2).expect("the plug_name part should exist");
 
-        return Ok(ThreePartTopic::new(role, id, plug_name));
+        Ok(ThreePartTopic::new(role, id, plug_name))
     }
 }
 

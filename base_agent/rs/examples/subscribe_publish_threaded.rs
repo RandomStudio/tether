@@ -31,7 +31,7 @@ fn main() {
 
     let tether_agent = Arc::new(Mutex::new(
         TetherAgentOptionsBuilder::new("RustDemoAgent")
-            .id(Some("example".into()))
+            .id(Some("example"))
             .build()
             .expect("failed to init/connect"),
     ));

@@ -5,7 +5,7 @@ use crate::three_part_topic::ThreePartTopic;
 
 pub trait PlugDefinitionCommon<'a> {
     fn name(&'a self) -> &'a str;
-    fn topic(&'a self) -> String;
+    fn topic(&'a self) -> &'a str;
     fn qos(&'a self) -> i32;
 }
 
@@ -21,23 +21,23 @@ pub struct InputPlugDefinition {
     qos: i32,
 }
 
-impl<'a> PlugDefinitionCommon<'_> for InputPlugDefinition {
+impl PlugDefinitionCommon<'_> for InputPlugDefinition {
     fn name(&self) -> &str {
         &self.name
     }
 
-    fn topic(&self) -> String {
+    fn topic(&self) -> &str {
         match &self.topic {
             TetherOrCustomTopic::Custom(s) => {
                 debug!("Plug named \"{}\" has custom topic \"{}\"", &self.name, &s);
-                s.into()
+                s
             }
             TetherOrCustomTopic::Tether(t) => {
                 debug!(
                     "Plug named \"{}\" has Three Part topic \"{:?}\"",
                     &self.name, t
                 );
-                t.topic().into()
+                t.topic()
             }
         }
     }
@@ -108,10 +108,10 @@ impl PlugDefinitionCommon<'_> for OutputPlugDefinition {
         &self.name
     }
 
-    fn topic(&self) -> String {
+    fn topic(&self) -> &str {
         match &self.topic {
-            TetherOrCustomTopic::Custom(s) => s.into(),
-            TetherOrCustomTopic::Tether(t) => t.topic().into(),
+            TetherOrCustomTopic::Custom(s) => s,
+            TetherOrCustomTopic::Tether(t) => t.topic(),
         }
     }
 
@@ -149,12 +149,12 @@ pub enum PlugDefinition {
 impl PlugDefinition {
     pub fn name(&self) -> &str {
         match self {
-            PlugDefinition::InputPlug(p) => &p.name(),
-            PlugDefinition::OutputPlug(p) => &p.name(),
+            PlugDefinition::InputPlug(p) => p.name(),
+            PlugDefinition::OutputPlug(p) => p.name(),
         }
     }
 
-    pub fn topic(&self) -> String {
+    pub fn topic(&self) -> &str {
         match self {
             PlugDefinition::InputPlug(p) => p.topic(),
             PlugDefinition::OutputPlug(p) => p.topic(),
@@ -191,7 +191,7 @@ mod tests {
         );
 
         assert_eq!(&plug_def.name, "testPlug");
-        assert_eq!(&plug_def.topic(), "+/+/testPlug");
+        assert_eq!(plug_def.topic(), "+/+/testPlug");
         assert_eq!(parse_plug_name("+/+/testPlug"), Some("testPlug"));
         assert!(plug_def.matches("dummy/any/testPlug"));
         assert!(!plug_def.matches("dummy/any/anotherPlug"))
@@ -203,7 +203,7 @@ mod tests {
             "customPlug",
             TetherOrCustomTopic::Tether(ThreePartTopic::new_for_subscribe(
                 "customPlug",
-                Some("customRole".into()),
+                Some("customRole"),
                 None,
                 None,
             )),
@@ -211,7 +211,7 @@ mod tests {
         );
 
         assert_eq!(&plug_def.name, "customPlug");
-        assert_eq!(&plug_def.topic(), "customRole/+/customPlug");
+        assert_eq!(plug_def.topic(), "customRole/+/customPlug");
         assert!(plug_def.matches("customRole/any/customPlug"));
         assert!(plug_def.matches("customRole/andAnythingElse/customPlug"));
         assert!(!plug_def.matches("customRole/any/notMyPlug")); // wrong incoming Plug Name
@@ -225,14 +225,14 @@ mod tests {
             TetherOrCustomTopic::Tether(ThreePartTopic::new_for_subscribe(
                 "customPlug",
                 None,
-                Some("specificID".into()),
+                Some("specificID"),
                 None,
             )),
             None,
         );
 
         assert_eq!(&plug_def.name, "customPlug");
-        assert_eq!(&plug_def.topic(), "+/specificID/customPlug");
+        assert_eq!(plug_def.topic(), "+/specificID/customPlug");
         assert!(plug_def.matches("anyRole/specificID/customPlug"));
         assert!(plug_def.matches("anotherRole/specificID/customPlug"));
         assert!(!plug_def.matches("anyRole/specificID/notMyPlug")); // wrong incoming Plug Name
@@ -245,15 +245,15 @@ mod tests {
             "customPlug",
             TetherOrCustomTopic::Tether(ThreePartTopic::new_for_subscribe(
                 "customPlug",
-                Some("specificRole".into()),
-                Some("specificID".into()),
+                Some("specificRole"),
+                Some("specificID"),
                 None,
             )),
             None,
         );
 
         assert_eq!(&plug_def.name, "customPlug");
-        assert_eq!(&plug_def.topic(), "specificRole/specificID/customPlug");
+        assert_eq!(plug_def.topic(), "specificRole/specificID/customPlug");
         assert!(plug_def.matches("specificRole/specificID/customPlug"));
         assert!(!plug_def.matches("specificRole/specificID/notMyPlug")); // wrong incoming Plug Name
         assert!(!plug_def.matches("specificRole/anotherID/customPlug")); // wrong incoming ID
