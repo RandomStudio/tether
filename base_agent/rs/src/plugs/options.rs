@@ -220,7 +220,7 @@ impl PlugOptionsBuilder {
                     InputPlugDefinition::new(&plug_options.plug_name, tpt, plug_options.qos);
                 match tether_agent
                     .client()
-                    .subscribe(plug_definition.topic(), plug_definition.qos())
+                    .subscribe(&plug_definition.topic(), plug_definition.qos())
                 {
                     Ok(res) => {
                         debug!("This topic was fine: \"{}\"", plug_definition.topic());

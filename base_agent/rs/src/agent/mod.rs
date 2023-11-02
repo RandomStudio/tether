@@ -87,7 +87,7 @@ impl TetherAgentOptionsBuilder {
 
         let broker_uri = format!("tcp://{broker_host}:{broker_port}");
 
-        info!("Create connection for broker at {}", &broker_uri);
+        info!("Broker at {}", &broker_uri);
 
         let create_opts = mqtt::CreateOptionsBuilder::new()
             .server_uri(broker_uri.clone())
@@ -159,7 +159,18 @@ impl TetherAgent {
     }
 
     pub fn connect(&self) -> Result<(), mqtt::Error> {
+        if self.client.is_connected() {
+            warn!("Was already connected. First disconnect...");
+            self.client
+                .disconnect(None)
+                .expect("...Failed to disconnect");
+            info!("...Disconnected");
+        }
+
+        info!("Broker at {}", &self.broker_uri);
+
         let conn_opts = mqtt::ConnectOptionsBuilder::new()
+            .server_uris(&[self.broker_uri.clone()])
             .user_name(&self.username)
             .password(&self.password)
             .connect_timeout(Duration::from_secs(TIMEOUT_SECONDS))
@@ -169,7 +180,10 @@ impl TetherAgent {
             .finalize();
 
         // Make the connection to the broker
-        info!("Connecting to the MQTT server...");
+        info!(
+            "Make new connection to the MQTT server at {}...",
+            &self.broker_uri
+        );
 
         match self.client.connect(conn_opts) {
             Ok(res) => {
