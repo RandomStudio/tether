@@ -1,10 +1,6 @@
-import {
-  AsyncMqttClient,
-  IClientPublishOptions,
-  IClientSubscribeOptions,
-} from "async-mqtt";
+import { IClientPublishOptions, IClientSubscribeOptions } from "async-mqtt";
 import { TetherAgent, logger } from ".";
-import { MessageCallback, PlugDefinition } from "./types";
+import { PlugDefinition } from "./types";
 import { Buffer } from "buffer";
 import EventEmitter from "events";
 
@@ -13,26 +9,41 @@ class Plug extends EventEmitter {
   protected agent: TetherAgent;
 
   constructor(agent: TetherAgent, definition: PlugDefinition) {
-    super();
+    super(); // For EventEmitter
     this.agent = agent;
 
-    if (definition.name === undefined) {
-      throw Error("No name provided for input");
-    }
-
     logger.debug("Plug super definition:", JSON.stringify(definition));
+    if (this instanceof EventEmitter) {
+      logger.debug("Plug is EventEmitter!");
+    }
     this.definition = definition;
   }
 
   public getDefinition = () => this.definition;
 }
 
-type MessageCallbackListIterm = {
-  cb: MessageCallback;
-  once: boolean;
-};
 export class InputPlug extends Plug {
-  constructor(
+  public static async create(
+    agent: TetherAgent,
+    name: string,
+    options?: {
+      overrideTopic?: string;
+      subscribeOptions?: IClientSubscribeOptions;
+    }
+  ) {
+    const inputPlug = new InputPlug(agent, name, options);
+
+    try {
+      await inputPlug.subscribe(options?.subscribeOptions || { qos: 1 });
+      logger.info("subscribed OK to", inputPlug.definition.topic);
+    } catch (e) {
+      logger.error("failed to subscribe:", e);
+    }
+
+    return inputPlug;
+  }
+
+  private constructor(
     agent: TetherAgent,
     name: string,
     options?: {
@@ -47,14 +58,6 @@ export class InputPlug extends Plug {
     if (!agent.getIsConnected()) {
       throw Error("trying to create an Input before client is connected");
     }
-
-    this.subscribe(options?.subscribeOptions || { qos: 1 })
-      .then(() => {
-        logger.info("subscribed OK to", this.definition.topic);
-      })
-      .catch((e) => {
-        logger.error("failed to subscribe:", e);
-      });
   }
 
   private subscribe = async (options?: IClientSubscribeOptions) => {

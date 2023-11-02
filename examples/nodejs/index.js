@@ -54,19 +54,20 @@ const main = async () => {
     }, 10);
   }, 4000);
 
-  const fastInput = new InputPlug(agent, "fastValuesReceiver");
+  const fastInput = await InputPlug.create(agent, "fastValuesReceiver");
+  console.log("typeof fastInput", typeof fastInput);
   fastInput.on("message", (payload) => {
     console.log("received fastValues");
   });
 
-  const inputPlugOne = new InputPlug(agent, "randomValue");
+  const inputPlugOne = await InputPlug.create(agent, "randomValue");
   inputPlugOne.on("message", (payload, topic) => {
     console.log("received:", { payload, topic });
     const m = decode(payload);
     console.log("received message on inputPlugOne:", { topic, m });
   });
 
-  const inputPlugTwo = new InputPlug(agent, "moreRandomValues", {
+  const inputPlugTwo = await InputPlug.create(agent, "moreRandomValues", {
     overrideTopic: "dummy/NodeJSDummy/randomValue",
   });
   inputPlugTwo.on("message", (payload, topic) => {
@@ -74,7 +75,7 @@ const main = async () => {
     console.log("received message on inputPlugTwo:", { topic, m });
   });
 
-  const inputPlugThree = new InputPlug(agent, "evenMoreRandomValues", {
+  const inputPlugThree = await InputPlug.create(agent, "evenMoreRandomValues", {
     overrideTopic: "+/+/randomValue",
   });
   inputPlugThree.on("message", (payload, topic) => {
@@ -83,7 +84,7 @@ const main = async () => {
   });
 
   try {
-    const inputPlugFour = new InputPlug(agent, "randomValue", {
+    const inputPlugFour = await InputPlug.create(agent, "randomValue", {
       overrideTopic: "+/+/somethingElse",
     });
     inputPlugFour.on("message", () => {
@@ -96,7 +97,7 @@ const main = async () => {
   }
 
   let countReceived = 0;
-  const inputPlugJustOnce = new InputPlug(agent, "randomValueOnce");
+  const inputPlugJustOnce = await InputPlug.create(agent, "randomValueOnce");
   inputPlugJustOnce.once("message", (payload, topic) => {
     countReceived++;
     console.log("received", countReceived, "message on inputPlugJustOnce");
@@ -105,7 +106,7 @@ const main = async () => {
     }
   });
 
-  const inputEmptyMessages = new InputPlug(agent, "emptyMessage");
+  const inputEmptyMessages = await InputPlug.create(agent, "emptyMessage");
   inputEmptyMessages.on("message", (payload, topic) => {
     console.log("received empty message:", { payload, topic });
   });
