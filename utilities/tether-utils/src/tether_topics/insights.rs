@@ -44,7 +44,7 @@ impl Insights {
             panic!("Insights utility needs already-connected Tether Agent");
         }
         let _input_plug = PlugOptionsBuilder::create_input("monitor")
-            .topic(Some(options.topic.clone()))
+            .topic(Some(options.topic.clone()).as_deref())
             .build(tether_agent)
             .expect("failed to connect Tether");
 

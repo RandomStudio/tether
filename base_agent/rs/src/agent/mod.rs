@@ -10,12 +10,16 @@ use crate::{
 };
 
 const TIMEOUT_SECONDS: u64 = 10;
+const DEFAULT_USERNAME: &str = "tether";
+const DEFAULT_PASSWORD: &str = "sp_ceB0ss!";
 pub struct TetherAgent {
     role: String,
     id: String,
     client: Client,
     broker_uri: String,
     receiver: Receiver<Option<Message>>,
+    username: String,
+    password: String,
 }
 #[derive(Clone)]
 pub struct TetherAgentOptionsBuilder {
@@ -26,13 +30,6 @@ pub struct TetherAgentOptionsBuilder {
     username: Option<String>,
     password: Option<String>,
     auto_connect: bool,
-}
-
-fn convert_optional<T, U: std::convert::From<T>>(optional_value: Option<T>) -> Option<U> {
-    match optional_value {
-        Some(v) => Some(v.into()),
-        None => None,
-    }
 }
 
 impl TetherAgentOptionsBuilder {
@@ -51,31 +48,31 @@ impl TetherAgentOptionsBuilder {
     }
 
     /// Provide Some(value) to override or None to use default
-    pub fn id(mut self, id: Option<String>) -> Self {
-        self.id = convert_optional(id);
+    pub fn id(mut self, id: Option<&str>) -> Self {
+        self.id = id.map(|x| x.into());
         self
     }
 
     /// Provide Some(value) to override or None to use default
-    pub fn host(mut self, host: Option<String>) -> Self {
-        self.host = convert_optional(host);
+    pub fn host(mut self, host: Option<&str>) -> Self {
+        self.host = host.map(|x| x.into());
         self
     }
 
-    pub fn port(mut self, port: u16) -> Self {
-        self.port = Some(port);
-        self
-    }
-
-    /// Provide Some(value) to override or None to use default
-    pub fn username(mut self, username: Option<String>) -> Self {
-        self.username = convert_optional(username);
+    pub fn port(mut self, port: Option<u16>) -> Self {
+        self.port = port;
         self
     }
 
     /// Provide Some(value) to override or None to use default
-    pub fn password(mut self, password: Option<String>) -> Self {
-        self.password = convert_optional(password);
+    pub fn username(mut self, username: Option<&str>) -> Self {
+        self.username = username.map(|x| x.into());
+        self
+    }
+
+    /// Provide Some(value) to override or None to use default
+    pub fn password(mut self, password: Option<&str>) -> Self {
+        self.password = password.map(|x| x.into());
         self
     }
 
@@ -90,7 +87,7 @@ impl TetherAgentOptionsBuilder {
 
         let broker_uri = format!("tcp://{broker_host}:{broker_port}");
 
-        info!("Create connection for broker at {}", &broker_uri);
+        info!("Broker at {}", &broker_uri);
 
         let create_opts = mqtt::CreateOptionsBuilder::new()
             .server_uri(broker_uri.clone())
@@ -109,10 +106,12 @@ impl TetherAgentOptionsBuilder {
             client,
             broker_uri,
             receiver,
+            username: self.username.unwrap_or(DEFAULT_USERNAME.into()),
+            password: self.password.unwrap_or(DEFAULT_PASSWORD.into()),
         };
 
         if self.auto_connect {
-            match agent.connect(&self) {
+            match agent.connect() {
                 Ok(()) => Ok(agent),
                 Err(e) => Err(e.into()),
             }
@@ -159,12 +158,21 @@ impl TetherAgent {
         self.id = id.into();
     }
 
-    pub fn connect(&self, options: &TetherAgentOptionsBuilder) -> Result<(), mqtt::Error> {
-        let username = options.clone().username.unwrap_or("tether".into());
-        let password = options.clone().password.unwrap_or("sp_ceB0ss!".into());
+    pub fn connect(&self) -> Result<(), mqtt::Error> {
+        if self.client.is_connected() {
+            warn!("Was already connected. First disconnect...");
+            self.client
+                .disconnect(None)
+                .expect("...Failed to disconnect");
+            info!("...Disconnected");
+        }
+
+        info!("Broker at {}", &self.broker_uri);
+
         let conn_opts = mqtt::ConnectOptionsBuilder::new()
-            .user_name(username)
-            .password(password)
+            .server_uris(&[self.broker_uri.clone()])
+            .user_name(&self.username)
+            .password(&self.password)
             .connect_timeout(Duration::from_secs(TIMEOUT_SECONDS))
             .keep_alive_interval(Duration::from_secs(TIMEOUT_SECONDS))
             // .mqtt_version(mqtt::MQTT_VERSION_3_1_1)
@@ -172,7 +180,10 @@ impl TetherAgent {
             .finalize();
 
         // Make the connection to the broker
-        info!("Connecting to the MQTT server...");
+        info!(
+            "Make new connection to the MQTT server at {}...",
+            &self.broker_uri
+        );
 
         match self.client.connect(conn_opts) {
             Ok(res) => {
@@ -189,6 +200,8 @@ impl TetherAgent {
     }
 
     /// If a message is waiting return ThreePartTopic, Message (String, Message)
+    /// Messages received on topics that are not parseable as Tether Three Part Topics will be returned with
+    /// the complete Topic string instead
     pub fn check_messages(&self) -> Option<(TetherOrCustomTopic, Message)> {
         if let Some(message) = self.receiver.try_iter().find_map(|m| m) {
             if let Ok(t) = ThreePartTopic::try_from(message.topic()) {

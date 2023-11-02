@@ -36,11 +36,11 @@ fn main() {
         .build(&agent)
         .expect("failed to create output");
     let grouped_output_1 = PlugOptionsBuilder::create_output("one")
-        .id(Some("groupMessages".into()))
+        .id(Some("groupMessages"))
         .build(&agent)
         .expect("failed to create output");
     let grouped_output_2 = PlugOptionsBuilder::create_output("two")
-        .id(Some("groupMessages".into()))
+        .id(Some("groupMessages"))
         .build(&agent)
         .expect("failed to create output");
 

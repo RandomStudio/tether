@@ -47,9 +47,9 @@ pub fn send(options: &SendOptions, tether_agent: &TetherAgent) -> anyhow::Result
     let plug_name = options.plug_name.clone().unwrap_or("testMessages".into());
 
     let output = PlugOptionsBuilder::create_output(&plug_name)
-        .role(options.plug_role.clone())
-        .id(options.plug_id.clone())
-        .topic(options.plug_topic.clone())
+        .role(options.plug_role.as_deref())
+        .id(options.plug_id.as_deref())
+        .topic(options.plug_topic.as_deref())
         .build(tether_agent)
         .expect("failed to create output plug");
 
