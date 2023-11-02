@@ -48,7 +48,6 @@ export class InputPlug extends Plug {
       throw Error("trying to create an Input before client is connected");
     }
 
-    // setTimeout(() => {
     this.subscribe(options?.subscribeOptions || { qos: 1 })
       .then(() => {
         logger.info("subscribed OK to", this.definition.topic);
@@ -58,7 +57,7 @@ export class InputPlug extends Plug {
       });
   }
 
-  subscribe = async (options?: IClientSubscribeOptions) => {
+  private subscribe = async (options?: IClientSubscribeOptions) => {
     try {
       logger.debug(
         "Attempting subscribtion to topic",
