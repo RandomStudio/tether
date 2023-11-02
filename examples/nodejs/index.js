@@ -1,4 +1,4 @@
-const { TetherAgent } = require("@tether/tether-agent");
+const { TetherAgent, Input, Output } = require("tether-agent");
 const parse = require("parse-strings-in-object");
 const rc = require("rc");
 const { encode, decode } = require("@msgpack/msgpack");
@@ -14,15 +14,15 @@ console.log("Launch with config", config);
 const main = async () => {
   const agent = await TetherAgent.create(
     "dummy",
-    config.clientOptions,
-    config.loglevel,
-    "NodeJSDummy"
+    undefined,
+    undefined,
+    config.loglevel
   );
   // setTimeout(() => {
   //   agent.connect(config.clientOptions);
   // }, 5000);
-  const outputPlug = agent.createOutput("randomValue");
-  const emptyOutputPlug = agent.createOutput("emptyMessage");
+  const outputPlug = new Output(agent, "randomValue");
+  const emptyOutputPlug = new Output(agent, "emptyMessage");
 
   setInterval(() => {
     const m = {
@@ -35,46 +35,48 @@ const main = async () => {
   }, 1000);
 
   setTimeout(() => {
-    const fastOutput = agent.createOutput("fastValues");
+    const fastOutput = new Output(agent, "fastValues");
     setInterval(() => {
       const a = [Math.random(), Math.random(), Math.random()];
       fastOutput.publish(Buffer.from(encode(a)));
     }, 10);
   }, 4000);
 
-  const fastInput = agent.createInput("fastValuesReceiver", "+/+/fastValues");
-  fastInput.onMessage((payload) => {
+  const fastInput = new Input(agent, "fastValuesReceiver", "+/+/fastValues");
+  fastInput.on("message", (payload) => {
     console.log("received fastValues");
   });
 
-  const inputPlugOne = agent.createInput("randomValue");
-  inputPlugOne.onMessage((payload, topic) => {
+  const inputPlugOne = new Input(agent, "randomValue");
+  inputPlugOne.on("message", (payload, topic) => {
     console.log("received:", { payload, topic });
     const m = decode(payload);
     console.log("received message on inputPlugOne:", { topic, m });
   });
 
-  const inputPlugTwo = agent.createInput(
+  const inputPlugTwo = new Input(
+    agent,
     "moreRandomValues",
     "dummy/NodeJSDummy/randomValue"
   );
-  inputPlugTwo.onMessage((payload, topic) => {
+  inputPlugTwo.on("message", (payload, topic) => {
     const m = decode(payload);
     console.log("received message on inputPlugTwo:", { topic, m });
   });
 
-  const inputPlugThree = agent.createInput(
+  const inputPlugThree = new Input(
+    agent,
     "evenMoreRandomValues",
     "+/+/randomValue"
   );
-  inputPlugThree.onMessage((payload, topic) => {
+  inputPlugThree.on("message", (payload, topic) => {
     const m = decode(payload);
     console.log("received message on inputPlugThree:", { topic, m });
   });
 
   try {
-    const inputPlugFour = agent.createInput("randomValue", "+/+/somethingElse");
-    inputPlugFour.onMessage(() => {
+    const inputPlugFour = new Input(agent, "randomValue", "+/+/somethingElse");
+    inputPlugFour.on("message", () => {
       throw Error(
         "we didn't expect to receive anything on this plug, despite the name"
       );
@@ -84,11 +86,12 @@ const main = async () => {
   }
 
   let countReceived = 0;
-  const inputPlugJustOnce = agent.createInput(
+  const inputPlugJustOnce = new Input(
+    agent,
     "randomValueOnce",
     "+/+/randomValue"
   );
-  inputPlugJustOnce.onMessageOnce((payload, topic) => {
+  inputPlugJustOnce.once("message", (payload, topic) => {
     countReceived++;
     console.log("received", countReceived, "message on inputPlugJustOnce");
     if (countReceived > 1) {
@@ -96,10 +99,16 @@ const main = async () => {
     }
   });
 
-  const inputEmptyMessages = agent.createInput("emptyMessage");
-  inputEmptyMessages.onMessage((payload, topic) => {
+  const inputEmptyMessages = new Input(agent, "emptyMessage");
+  inputEmptyMessages.on("message", (payload, topic) => {
     console.log("received empty message:", { payload, topic });
   });
 };
 
-main();
+main()
+  .then(() => {
+    // done
+  })
+  .catch((e) => {
+    console.error("Error in main function: ", e);
+  });

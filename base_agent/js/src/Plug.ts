@@ -20,6 +20,7 @@ class Plug extends EventEmitter {
       throw Error("No name provided for input");
     }
 
+    logger.debug("Plug super definition:", JSON.stringify(definition));
     this.definition = definition;
   }
 
@@ -99,7 +100,7 @@ export class Output extends Plug {
   constructor(agent: TetherAgent, name: string, overrideTopic?: string) {
     super(agent, {
       name,
-      topic: overrideTopic || `${agent.getRole}/${agent.getID()}/${name}`,
+      topic: overrideTopic || `${agent.getRole()}/${agent.getID()}/${name}`,
     });
     if (name === undefined) {
       throw Error("No name provided for output");
@@ -119,7 +120,7 @@ export class Output extends Plug {
       );
     } else {
       try {
-        logger.debug("Sending")
+        logger.debug("Sending on topic", this.definition.topic);
         if (content === undefined) {
           this.agent
             .getClient()

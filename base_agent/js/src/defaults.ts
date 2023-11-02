@@ -1,11 +1,19 @@
 import { Config } from "./types";
 
 const defaults: Config = {
-  broker: {
+  nodeJS: {
     protocol: "tcp",
-    host: "tether-io.dev",
+    host: "localhost",
     port: 1883,
     path: "",
+    username: "tether",
+    password: "sp_ceB0ss!",
+  },
+  browser: {
+    protocol: "ws",
+    host: "localhost",
+    port: 15675,
+    path: "/ws",
     username: "tether",
     password: "sp_ceB0ss!",
   },

@@ -54,8 +54,8 @@ export class TetherAgent {
       logger.setLevel(loglevel);
     }
     logger.info("Tether Agent instance:", {
-      agentType: agentRole,
-      agentId: this.agentID,
+      role: this.agentRole,
+      id: this.agentID,
     });
   }
 
@@ -64,7 +64,7 @@ export class TetherAgent {
     shouldRetry = true // if MQTT agent retries, it will not throw connection errors!
   ) => {
     const options: IClientOptions = {
-      ...defaults.broker,
+      ...defaults.nodeJS,
       ...overrides,
     };
     logger.info("Tether Agent connecting with options", options);

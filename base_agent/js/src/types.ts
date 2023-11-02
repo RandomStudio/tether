@@ -1,7 +1,8 @@
 import { IClientOptions } from "async-mqtt";
 
 export interface Config {
-  broker: IClientOptions;
+  nodeJS: IClientOptions;
+  browser: IClientOptions;
 }
 
 export interface PlugDefinition {
