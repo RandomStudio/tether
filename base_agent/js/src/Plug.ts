@@ -35,19 +35,21 @@ export class InputPlug extends Plug {
   constructor(
     agent: TetherAgent,
     name: string,
-    overrideTopic?: string,
-    subscribeOptions?: IClientSubscribeOptions
+    options?: {
+      overrideTopic?: string;
+      subscribeOptions?: IClientSubscribeOptions;
+    }
   ) {
     super(agent, {
       name,
-      topic: overrideTopic || `+/+/${name}`,
+      topic: options?.overrideTopic || `+/+/${name}`,
     });
     if (!agent.getIsConnected()) {
       throw Error("trying to create an Input before client is connected");
     }
 
     // setTimeout(() => {
-    this.subscribe(subscribeOptions)
+    this.subscribe(options?.subscribeOptions || { qos: 1 })
       .then(() => {
         logger.info("subscribed OK to", this.definition.topic);
       })
@@ -87,16 +89,18 @@ export class OutputPlug extends Plug {
   constructor(
     agent: TetherAgent,
     name: string,
-    overrideTopic?: string,
-    publishOptions?: IClientPublishOptions
+    options?: {
+      overrideTopic?: string;
+      publishOptions?: IClientPublishOptions;
+    }
   ) {
     super(agent, {
       name,
       topic:
-        overrideTopic ||
+        options?.overrideTopic ||
         `${agent.getConfig().role}/${agent.getConfig().id}/${name}`,
     });
-    this.publishOptions = publishOptions || {
+    this.publishOptions = options?.publishOptions || {
       retain: false,
       qos: 1,
     };

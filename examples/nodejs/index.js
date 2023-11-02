@@ -42,9 +42,11 @@ const main = async () => {
   }, 1000);
 
   setTimeout(() => {
-    const fastOutput = new OutputPlug(agent, "fastValues", undefined, {
-      qos: 0,
-      retain: false,
+    const fastOutput = new OutputPlug(agent, "fastValues", {
+      publishOptions: {
+        qos: 0,
+        retain: false,
+      },
     });
     setInterval(() => {
       const a = [Math.random(), Math.random(), Math.random()];
@@ -52,11 +54,7 @@ const main = async () => {
     }, 10);
   }, 4000);
 
-  const fastInput = new InputPlug(
-    agent,
-    "fastValuesReceiver",
-    "+/+/fastValues"
-  );
+  const fastInput = new InputPlug(agent, "fastValuesReceiver");
   fastInput.on("message", (payload) => {
     console.log("received fastValues");
   });
@@ -68,35 +66,29 @@ const main = async () => {
     console.log("received message on inputPlugOne:", { topic, m });
   });
 
-  const inputPlugTwo = new InputPlug(
-    agent,
-    "moreRandomValues",
-    "dummy/NodeJSDummy/randomValue"
-  );
+  const inputPlugTwo = new InputPlug(agent, "moreRandomValues", {
+    overrideTopic: "dummy/NodeJSDummy/randomValue",
+  });
   inputPlugTwo.on("message", (payload, topic) => {
     const m = decode(payload);
     console.log("received message on inputPlugTwo:", { topic, m });
   });
 
-  const inputPlugThree = new InputPlug(
-    agent,
-    "evenMoreRandomValues",
-    "+/+/randomValue"
-  );
+  const inputPlugThree = new InputPlug(agent, "evenMoreRandomValues", {
+    overrideTopic: "+/+/randomValue",
+  });
   inputPlugThree.on("message", (payload, topic) => {
     const m = decode(payload);
     console.log("received message on inputPlugThree:", { topic, m });
   });
 
   try {
-    const inputPlugFour = new InputPlug(
-      agent,
-      "randomValue",
-      "+/+/somethingElse"
-    );
+    const inputPlugFour = new InputPlug(agent, "randomValue", {
+      overrideTopic: "+/+/somethingElse",
+    });
     inputPlugFour.on("message", () => {
       throw Error(
-        "we didn't expect to receive anything on this plug, despite the name"
+        "we didn't expect to receive anything on this plug, despite the name match"
       );
     });
   } catch (e) {
@@ -104,11 +96,7 @@ const main = async () => {
   }
 
   let countReceived = 0;
-  const inputPlugJustOnce = new InputPlug(
-    agent,
-    "randomValueOnce",
-    "+/+/randomValue"
-  );
+  const inputPlugJustOnce = new InputPlug(agent, "randomValueOnce");
   inputPlugJustOnce.once("message", (payload, topic) => {
     countReceived++;
     console.log("received", countReceived, "message on inputPlugJustOnce");
