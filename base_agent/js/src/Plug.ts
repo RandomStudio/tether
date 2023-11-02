@@ -36,7 +36,7 @@ export class InputPlug extends Plug {
     agent: TetherAgent,
     name: string,
     overrideTopic?: string,
-    options?: IClientSubscribeOptions
+    subscribeOptions?: IClientSubscribeOptions
   ) {
     super(agent, {
       name,
@@ -47,7 +47,7 @@ export class InputPlug extends Plug {
     }
 
     // setTimeout(() => {
-    this.subscribe(options)
+    this.subscribe(subscribeOptions)
       .then(() => {
         logger.info("subscribed OK to", this.definition.topic);
       })
@@ -79,26 +79,27 @@ export class InputPlug extends Plug {
       }
     });
   };
-
-  // emitMessage = (payload: Buffer, topic: string) => {
-  //   this.onMessageCallbacksList.forEach((i) => {
-  //     i.cb.call(this, payload, topic);
-  //   });
-  //   // And delete any "once only" callbacks
-  //   this.onMessageCallbacksList = this.onMessageCallbacksList.filter(
-  //     (i) => i.once === false
-  //   );
-  // };
 }
 
 export class OutputPlug extends Plug {
-  constructor(agent: TetherAgent, name: string, overrideTopic?: string) {
+  private publishOptions: IClientPublishOptions;
+
+  constructor(
+    agent: TetherAgent,
+    name: string,
+    overrideTopic?: string,
+    publishOptions?: IClientPublishOptions
+  ) {
     super(agent, {
       name,
       topic:
         overrideTopic ||
         `${agent.getConfig().role}/${agent.getConfig().id}/${name}`,
     });
+    this.publishOptions = publishOptions || {
+      retain: false,
+      qos: 1,
+    };
     if (name === undefined) {
       throw Error("No name provided for output");
     }
@@ -107,29 +108,39 @@ export class OutputPlug extends Plug {
     }
   }
 
-  publish = async (
-    content?: Buffer | Uint8Array,
-    options?: IClientPublishOptions
-  ) => {
+  publish = async (content?: Buffer | Uint8Array) => {
     if (!this.agent.getIsConnected()) {
       logger.error(
         "trying to send without connection; not possible until connected"
       );
     } else {
       try {
-        logger.debug("Sending on topic", this.definition.topic);
+        logger.debug(
+          "Sending on topic",
+          this.definition.topic,
+          "with options",
+          { ...this.publishOptions }
+        );
         if (content === undefined) {
           this.agent
             .getClient()
-            .publish(this.definition.topic, Buffer.from([]), options);
+            .publish(
+              this.definition.topic,
+              Buffer.from([]),
+              this.publishOptions
+            );
         } else if (content instanceof Uint8Array) {
           this.agent
             .getClient()
-            .publish(this.definition.topic, Buffer.from(content), options);
+            .publish(
+              this.definition.topic,
+              Buffer.from(content),
+              this.publishOptions
+            );
         } else {
           this.agent
             .getClient()
-            .publish(this.definition.topic, content, options);
+            .publish(this.definition.topic, content, this.publishOptions);
         }
       } catch (e) {
         logger.error("Error publishing message:", e);

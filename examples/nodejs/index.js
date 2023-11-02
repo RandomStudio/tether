@@ -18,7 +18,9 @@ const config = parse(
 console.log("Launch with config", config);
 
 const main = async () => {
-  const agent = await TetherAgent.create("dummy");
+  const agent = await TetherAgent.create("dummy", {
+    loglevel: config.loglevel,
+  });
 
   // Example of custom options below:
   // const agent = await TetherAgent.create("dummy", {
@@ -40,7 +42,10 @@ const main = async () => {
   }, 1000);
 
   setTimeout(() => {
-    const fastOutput = new OutputPlug(agent, "fastValues");
+    const fastOutput = new OutputPlug(agent, "fastValues", undefined, {
+      qos: 0,
+      retain: false,
+    });
     setInterval(() => {
       const a = [Math.random(), Math.random(), Math.random()];
       fastOutput.publish(Buffer.from(encode(a)));
