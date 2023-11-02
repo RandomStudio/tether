@@ -57,11 +57,6 @@ export class InputPlug extends Plug {
   }
 
   subscribe = async (options?: IClientSubscribeOptions) => {
-    if (!this.agent.getIsConnected()) {
-      logger.warn(
-        "subscribing to topic before client is connected; this is allowed but you won't receive any messages until connected"
-      );
-    }
     try {
       logger.debug(
         "Attempting subscribtion to topic",
