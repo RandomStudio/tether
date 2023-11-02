@@ -15,14 +15,16 @@ export class TetherAgent {
   private client: AsyncMqttClient | null;
 
   /**
-   * Create a new Tether Agent, and connect automatically. This is an async function, so it will return the
-   * agent via the Promise only once the connection has been made successfully.
+   * Create a new Tether Agent, and connect automatically unless . This is an async
+   * function, so it will return the agent via the Promise only once the connection
+   * has been made successfully - or immediately if you turn autoConnect off.
    *
-   * @param agentRole The Role of this Agent in the system. Describes what this type of Agent does.
-   * @param agentID An optional identifier for the Agent. Could be a unique ID for this instance or something shared for a group of agents. Defaults to "any".
-   * @param mqttOptions Connection details (host, port, etc.) for the MQTT Broker. Leave this out to use defaults.
-   * @param loglevel Make the Tether library more verbose by setting "debug", for example.
-   * @returns
+   * @param role The Role of this Agent in the system. Describes what this type of Agent does.
+   * @param options Optional object which in turn has optional fields. Use this to override defaults
+   * as necessary. For example, `{ brokerOptions.BROKER_DEFAULTS.browser }` will switch MQTT Client
+   * options to use sensible defaults for WebSocket connections, instead of the default
+   * TCP connection which is more suitable for NodeJS applications.
+   * @returns A new TetherAgent instance
    */
   public static async create(
     role: string,
