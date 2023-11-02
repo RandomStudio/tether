@@ -103,18 +103,25 @@ impl TetherRecordUtil {
         let file_path = match &self.options.file_override_path {
             Some(override_path) => String::from(override_path),
             None => {
-                let timestamp = SystemTime::now()
-                    .duration_since(SystemTime::UNIX_EPOCH)
-                    .unwrap_or(Duration::from_secs(0))
-                    .as_secs();
-                format!(
-                    "{}{}-{}.json",
-                    self.options.file_base_path, self.options.file_base_name, timestamp
-                )
+                if self.options.file_no_timestamp {
+                    format!(
+                        "{}{}.json",
+                        self.options.file_base_path, self.options.file_base_name
+                    )
+                } else {
+                    let timestamp = SystemTime::now()
+                        .duration_since(SystemTime::UNIX_EPOCH)
+                        .unwrap_or(Duration::from_secs(0))
+                        .as_secs();
+                    format!(
+                        "{}{}-{}.json",
+                        self.options.file_base_path, self.options.file_base_name, timestamp
+                    )
+                }
             }
         };
 
-        info!("Writing recorded data to {} ...", &file_path);
+        info!("Writing recorded data to \"{}\" ...", &file_path);
 
         let file = File::create(&file_path).expect("failed to create file");
         let mut file = LineWriter::new(file);
