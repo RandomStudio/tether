@@ -13,9 +13,6 @@ class Plug extends EventEmitter {
     this.agent = agent;
 
     logger.debug("Plug super definition:", JSON.stringify(definition));
-    if (this instanceof EventEmitter) {
-      logger.debug("Plug is EventEmitter!");
-    }
     this.definition = definition;
   }
 

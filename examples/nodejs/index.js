@@ -55,7 +55,6 @@ const main = async () => {
   }, 4000);
 
   const fastInput = await InputPlug.create(agent, "fastValuesReceiver");
-  console.log("typeof fastInput", typeof fastInput);
   fastInput.on("message", (payload) => {
     console.log("received fastValues");
   });
