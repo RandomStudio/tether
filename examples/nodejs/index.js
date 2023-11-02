@@ -12,10 +12,14 @@ const config = parse(
 console.log("Launch with config", config);
 
 const main = async () => {
-  const agent = await TetherAgent.create({ role: "dummy" });
-  // setTimeout(() => {
-  //   agent.connect(config.clientOptions);
-  // }, 5000);
+  const agent = await TetherAgent.create("dummy");
+
+  // Example of custom options below:
+  // const agent = await TetherAgent.create("dummy", {
+  //   id: "special",
+  //   brokerOptions: BROKER_DEFAULTS.browser,
+  // });
+
   const outputPlug = new Output(agent, "randomValue");
   const emptyOutputPlug = new Output(agent, "emptyMessage");
 

@@ -15,9 +15,8 @@ export interface TetherConfig {
 }
 
 export interface TetherOptions {
-  role: string;
   id?: string;
   brokerOptions?: IClientOptions;
-  autoConnect: boolean;
+  autoConnect?: boolean;
   loglevel?: string;
 }

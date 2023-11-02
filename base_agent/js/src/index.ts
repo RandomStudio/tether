@@ -10,7 +10,7 @@ import { LogLevelDesc } from "loglevel";
 import { TetherConfig, TetherOptions } from "./types";
 
 logger.setLevel("info");
-export { logger, BROKER_DEFAULTS as DEFAULTS };
+export { logger, BROKER_DEFAULTS };
 
 export { Input, Output, IClientOptions };
 
@@ -28,16 +28,19 @@ export class TetherAgent {
    * @param loglevel Make the Tether library more verbose by setting "debug", for example.
    * @returns
    */
-  public static async create(options: TetherOptions): Promise<TetherAgent> {
+  public static async create(
+    role: string,
+    options?: TetherOptions
+  ): Promise<TetherAgent> {
     const config: TetherConfig = {
-      role: options.role || defaults.role,
-      id: options.id || defaults.id,
-      brokerOptions: options.brokerOptions || defaults.brokerOptions,
-      autoConnect: options.autoConnect || defaults.autoConnect,
+      role,
+      id: options?.id || defaults.id,
+      brokerOptions: options?.brokerOptions || defaults.brokerOptions,
+      autoConnect: options?.autoConnect || defaults.autoConnect,
     };
     const agent = new TetherAgent(
       config,
-      (options.loglevel || "info") as LogLevelDesc
+      (options?.loglevel || "info") as LogLevelDesc
     );
     if (config.autoConnect === true) {
       await agent.connect();
