@@ -100,7 +100,9 @@ export class Output extends Plug {
   constructor(agent: TetherAgent, name: string, overrideTopic?: string) {
     super(agent, {
       name,
-      topic: overrideTopic || `${agent.getRole()}/${agent.getID()}/${name}`,
+      topic:
+        overrideTopic ||
+        `${agent.getConfig().role}/${agent.getConfig().id}/${name}`,
     });
     if (name === undefined) {
       throw Error("No name provided for output");
@@ -140,70 +142,6 @@ export class Output extends Plug {
     }
   };
 }
-
-/**
- * Define a named Output to indicate some data that this agent is expected to produce/send.
- *
- * For convenience, the topic is generated once and used for every message on this Output instance when calling its `publish` function.
- */
-// export const createOutput = (
-//   agent: TetherAgent,
-//   name: string,
-//   overrideTopic?: string
-// ) => {
-//   if (name === undefined) {
-//     throw Error("No name provided for output");
-//   }
-//   if (!agent.getIsConnected()) {
-//     throw Error("trying to create an Output before client is connected");
-//   }
-//   const definition: PlugDefinition = {
-//     name,
-//     topic: overrideTopic || `${agent.getRole}/${agent.getID()}/${name}`,
-//   };
-
-//   const output = new Output(agent, definition);
-
-//   return output;
-// };
-
-/**
- * Define a named Input to indicate some data this agent is expected to consume/receive.
- *
- * For convenience, the topic is assumed to end in the given `name`, e.g. an Input named "someTopic" will match messages on topics `foo/bar/someTopic` as well as `something/else/someTopic`.
- */
-// export const createInput = (
-//   agent: TetherAgent,
-//   name: string,
-//   overrideTopic?: string,
-//   options?: IClientSubscribeOptions
-// ) => {
-//   if (name === undefined) {
-//     throw Error("No name provided for input");
-//   }
-//   if (!agent.getIsConnected()) {
-//     throw Error("trying to create an Input before client is connected");
-//   }
-
-//   // Create a new Input
-//   const definition: PlugDefinition = {
-//     name,
-//     topic: overrideTopic || `+/+/${name}`,
-//   };
-//   const input = new Input(this, definition);
-
-//   // setTimeout(() => {
-//   input
-//     .subscribe(options)
-//     .then(() => {
-//       logger.info("subscribed OK to", definition.topic);
-//     })
-//     .catch((e) => {
-//       logger.error("failed to subscribe:", e);
-//     });
-//   // }, 0);
-//   return input;
-// };
 
 export const topicMatchesPlug = (
   plugTopic: string,

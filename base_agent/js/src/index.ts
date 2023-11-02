@@ -3,22 +3,19 @@ import mqtt, {
   IClientOptions,
   IClientSubscribeOptions,
 } from "async-mqtt";
-import defaults from "./defaults";
-import { v4 as uuidv4 } from "uuid";
-import { PlugDefinition } from "./types";
+import defaults, { BROKER_DEFAULTS } from "./defaults";
 import { Input, Output } from "./Plug";
 import logger from "loglevel";
 import { LogLevelDesc } from "loglevel";
+import { TetherConfig, TetherOptions } from "./types";
 
 logger.setLevel("info");
-export { logger };
+export { logger, BROKER_DEFAULTS as DEFAULTS };
 
 export { Input, Output, IClientOptions };
 
 export class TetherAgent {
-  private agentRole: string = null;
-  private agentID: string = null;
-
+  private config: TetherConfig;
   private client: AsyncMqttClient | null;
 
   /**
@@ -31,52 +28,52 @@ export class TetherAgent {
    * @param loglevel Make the Tether library more verbose by setting "debug", for example.
    * @returns
    */
-  public static async create(
-    agentRole: string,
-    agentID: string = "any",
-    mqttOptions?: IClientOptions,
-    loglevel?: LogLevelDesc
-  ): Promise<TetherAgent> {
-    const agent = new TetherAgent(agentRole, agentID, loglevel);
-    await agent.connect(mqttOptions, false);
+  public static async create(options: TetherOptions): Promise<TetherAgent> {
+    const config: TetherConfig = {
+      role: options.role || defaults.role,
+      id: options.id || defaults.id,
+      brokerOptions: options.brokerOptions || defaults.brokerOptions,
+      autoConnect: options.autoConnect || defaults.autoConnect,
+    };
+    const agent = new TetherAgent(
+      config,
+      (options.loglevel || "info") as LogLevelDesc
+    );
+    if (config.autoConnect === true) {
+      await agent.connect();
+    } else {
+      logger.warn(
+        "Tether Agent was initialised without auto-connect. You will need to call .connect() yourself."
+      );
+    }
     return agent;
   }
 
-  private constructor(
-    agentRole: string,
-    agentID?: string,
-    loglevel?: LogLevelDesc
-  ) {
-    this.agentRole = agentRole;
-    this.agentID = agentID || uuidv4();
+  private constructor(config: TetherConfig, loglevel?: LogLevelDesc) {
+    this.config = config;
     this.client = null;
     if (loglevel) {
       logger.setLevel(loglevel);
     }
-    logger.info("Tether Agent instance:", {
-      role: this.agentRole,
-      id: this.agentID,
-    });
+    logger.info("Tether Agent instance:", { role: config.role, id: config.id });
   }
 
-  private connect = async (
-    overrides?: IClientOptions,
-    shouldRetry = true // if MQTT agent retries, it will not throw connection errors!
-  ) => {
-    const options: IClientOptions = {
-      ...defaults.nodeJS,
-      ...overrides,
-    };
-    logger.info("Tether Agent connecting with options", options);
+  public connect = async () => {
+    logger.info("Tether Agent connecting with options", {
+      ...this.config.brokerOptions,
+    });
 
     try {
-      this.client = await mqtt.connectAsync(null, options, shouldRetry);
+      this.client = await mqtt.connectAsync(
+        null,
+        this.config.brokerOptions,
+        false
+      );
       console.info("Connected OK");
     } catch (error) {
       logger.error("Error connecting to MQTT broker:", {
         error,
-        overrides,
-        options,
+        brokerOptions: this.config.brokerOptions,
       });
       throw error;
     }
@@ -101,34 +98,5 @@ export class TetherAgent {
 
   public getIsConnected = () => this.client !== null;
 
-  public getRole = () => this.agentRole;
-  public getID = () => this.agentID;
-
-  // private listenForIncoming = () => {
-  //   this.client.on("message", (topic, payload) => {
-  //     const matchingInputPlugs = this.inputs.filter((p) => {
-  //       const plugTopic = p.getDefinition().topic;
-  //       return topicMatchesPlug(plugTopic, topic);
-  //     });
-  //     logger.debug("received message:", { topic, payload });
-  //     logger.trace(
-  //       "available input plugs:",
-  //       this.inputs.map((p) => p.getDefinition())
-  //     );
-  //     logger.debug(
-  //       `matched on ${matchingInputPlugs.length}/${this.inputs.length}`,
-  //       `plugs`
-  //     );
-  //     if (matchingInputPlugs.length > 0) {
-  //       matchingInputPlugs.forEach((p) => {
-  //         p.emitMessage(payload, topic);
-  //       });
-  //     } else {
-  //       logger.warn("message received but cannot match to Input Plug:", {
-  //         topic,
-  //         payload,
-  //       });
-  //     }
-  //   });
-  // };
+  public getConfig = () => this.config;
 }
