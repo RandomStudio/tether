@@ -12,21 +12,21 @@ const rc = require("rc");
 const config = parse(
   rc("NodeJSDummy", {
     loglevel: "debug",
-    clientOptions: {},
+    host: "localhost",
   })
 );
 console.log("Launch with config", config);
 
 const main = async () => {
-  const agent = await TetherAgent.create("dummy", {
-    loglevel: config.loglevel,
-  });
+  // const agent = await TetherAgent.create("dummy", {
+  //   loglevel: config.loglevel,
+  // });
 
   // Example of custom options below:
-  // const agent = await TetherAgent.create("dummy", {
-  //   id: "special",
-  //   brokerOptions: BROKER_DEFAULTS.browser,
-  // });
+  const agent = await TetherAgent.create("dummy", {
+    id: "special",
+    brokerOptions: { ...BROKER_DEFAULTS.browser, host: config.host },
+  });
 
   const outputPlug = new OutputPlug(agent, "randomValue");
   const emptyOutputPlug = new OutputPlug(agent, "emptyMessage");

@@ -12,10 +12,10 @@ export { logger, BROKER_DEFAULTS, encode, decode };
 export { InputPlug, OutputPlug, IClientOptions };
 
 enum State {
-  INITIALISED,
-  CONNECTING,
-  ERRORED,
-  CONNECTED,
+  INITIALISED = "INITIALISED",
+  CONNECTING = "CONNECTING",
+  ERRORED = "ERRORED",
+  CONNECTED = "CONNECTED",
 }
 
 export class TetherAgent {
@@ -63,6 +63,7 @@ export class TetherAgent {
         await agent.connect();
       } catch (e) {
         logger.error("Error on auto-connect:", e);
+        // agent.state = State.ERRORED;
       }
     } else {
       logger.warn(

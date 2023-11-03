@@ -12,7 +12,7 @@
   "dependencies": {
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "tether-agent": "../../base_agent/js/tether-agent-3.0.0.tgz"
+    "tether-agent": "../../base_agent/js"
   },
   "devDependencies": {
     "@types/react": "^18.2.15",

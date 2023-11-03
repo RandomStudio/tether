@@ -5,6 +5,7 @@ import { Tether } from "./Tether/Tether";
 import { useState } from "react";
 
 function App() {
+  const [hostInput, setHostInput] = useState("localhost");
   const [host, setHost] = useState("localhost");
   return (
     <>
@@ -18,6 +19,12 @@ function App() {
       </div>
       <h1>Vite + React</h1>
       <div className="card">
+        <input
+          type="text"
+          value={hostInput}
+          onChange={(e) => setHostInput(e.target.value)}
+        ></input>
+        <button onClick={() => setHost(hostInput)}>(Re)connect</button>
         <Tether host={host} />
       </div>
       <p className="read-the-docs">
