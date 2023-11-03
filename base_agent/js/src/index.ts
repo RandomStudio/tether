@@ -9,7 +9,7 @@ import { encode, decode } from "@msgpack/msgpack";
 logger.setLevel("info");
 export { logger, BROKER_DEFAULTS, encode, decode };
 
-export { InputPlug, OutputPlug, IClientOptions };
+export { InputPlug, OutputPlug };
 
 export class TetherAgent {
   private config: TetherConfig;

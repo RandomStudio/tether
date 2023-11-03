@@ -1,18 +1,7 @@
 {
-  "compilerOptions": {
-    "module": "commonjs",
-    "esModuleInterop": true,
-    "target": "es6",
-    "moduleResolution": "node",
-    "sourceMap": true,
-    "outDir": "dist",
-    "declaration": true
-  },
+  "extends": ["@tsconfig/vite-react", "@tsconfig/node18"],
   "include": [
     "src/**/*"
   ],
-  "exclude": ["**/*.test.ts"],
-  "lib": [
-    "es6"
-  ]
+  "exclude": ["**/*.test.ts"]
 }
