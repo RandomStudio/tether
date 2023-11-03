@@ -1,5 +1,14 @@
 {
-  "extends": ["@tsconfig/vite-react", "@tsconfig/node18"],
+  "extends": "@tsconfig/node18",
+  "compilerOptions": {
+    "module": "commonjs",
+    "esModuleInterop": true,
+    "target": "es6",
+    "moduleResolution": "node",
+    "sourceMap": true,
+    "outDir": "dist",
+    "declaration": true
+  },
   "include": [
     "src/**/*"
   ],

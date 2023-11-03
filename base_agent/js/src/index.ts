@@ -45,7 +45,9 @@ export class TetherAgent {
       options.brokerOptions.host !== undefined &&
       options.brokerOptions.hostname === undefined
     ) {
-      logger.warn("hostname must be same as host!");
+      logger.warn(
+        "hostname should be same as host; we set this for you to avoid confusion"
+      );
       options.brokerOptions.hostname = options.brokerOptions.host;
     }
     const config: TetherConfig = {
