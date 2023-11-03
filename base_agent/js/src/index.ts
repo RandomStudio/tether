@@ -31,6 +31,15 @@ export class TetherAgent {
     role: string,
     options?: TetherOptions
   ): Promise<TetherAgent> {
+    if (
+      options &&
+      options.brokerOptions &&
+      options.brokerOptions.host !== undefined &&
+      options.brokerOptions.hostname === undefined
+    ) {
+      logger.warn("hostname must be same as host!");
+      options.brokerOptions.hostname = options.brokerOptions.host;
+    }
     const config: TetherConfig = {
       role,
       id: options?.id || defaults.id,
