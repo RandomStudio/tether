@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { InputPlug, OutputPlug, TetherAgent } from "tether-agent";
+import { OutputPlug, TetherAgent } from "tether-agent";
 
 interface Props {
   agent: TetherAgent;
