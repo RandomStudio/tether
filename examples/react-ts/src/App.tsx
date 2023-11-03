@@ -28,7 +28,9 @@ function App() {
         <Tether host={host} />
       </div>
       <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
+        <a href="https://github.com/RandomStudio/tether">
+          https://github.com/RandomStudio/tether
+        </a>
       </p>
     </>
   );

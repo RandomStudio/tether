@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { TetherAgent, IClientOptions, BROKER_DEFAULTS } from "tether-agent";
+import { Sender } from "./Sender";
 
 interface Props {
   host: string;
@@ -39,6 +40,7 @@ export const Tether = (props: Props) => {
         <div>
           <div>connected? {agent?.getIsConnected() ? "true" : "false"} : </div>
           <div>State: {agent?.getState()}</div>
+          {agent && <Sender agent={agent} />}
         </div>
       )}
     </div>
