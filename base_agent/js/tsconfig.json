@@ -1,4 +1,5 @@
 {
+  "extends": "@tsconfig/node18",
   "compilerOptions": {
     "module": "commonjs",
     "esModuleInterop": true,
@@ -11,8 +12,5 @@
   "include": [
     "src/**/*"
   ],
-  "exclude": ["**/*.test.ts"],
-  "lib": [
-    "es6"
-  ]
+  "exclude": ["**/*.test.ts"]
 }

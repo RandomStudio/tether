@@ -58,13 +58,20 @@ export class InputPlug extends Plug {
   }
 
   private subscribe = async (options?: IClientSubscribeOptions) => {
+    if (this.agent.getClient() === null) {
+      throw Error("agent client not connected");
+    }
     try {
       logger.debug(
         "Attempting subscribtion to topic",
         this.definition.topic,
         `for Input Plug "${this.getDefinition().name}"...`
       );
-      await this.agent.getClient().subscribe(this.definition.topic, options);
+      if (options === undefined) {
+        await this.agent.getClient()?.subscribe(this.definition.topic);
+      } else {
+        await this.agent.getClient()?.subscribe(this.definition.topic, options);
+      }
     } catch (e) {
       logger.error("Error subscribing ", e);
       throw Error("Subscribe error: " + e);
@@ -74,7 +81,7 @@ export class InputPlug extends Plug {
       this.definition.topic,
       `for Input Plug "${this.getDefinition().name}"`
     );
-    this.agent.getClient().on("message", (topic, payload) => {
+    this.agent.getClient()?.on("message", (topic, payload) => {
       if (topicMatchesPlug(this.definition.topic, topic)) {
         this.emit("message", payload, topic);
       }
@@ -127,7 +134,7 @@ export class OutputPlug extends Plug {
         if (content === undefined) {
           this.agent
             .getClient()
-            .publish(
+            ?.publish(
               this.definition.topic,
               Buffer.from([]),
               this.publishOptions
@@ -135,7 +142,7 @@ export class OutputPlug extends Plug {
         } else if (content instanceof Uint8Array) {
           this.agent
             .getClient()
-            .publish(
+            ?.publish(
               this.definition.topic,
               Buffer.from(content),
               this.publishOptions
@@ -143,7 +150,7 @@ export class OutputPlug extends Plug {
         } else {
           this.agent
             .getClient()
-            .publish(this.definition.topic, content, this.publishOptions);
+            ?.publish(this.definition.topic, content, this.publishOptions);
         }
       } catch (e) {
         logger.error("Error publishing message:", e);
