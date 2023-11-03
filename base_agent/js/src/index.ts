@@ -9,7 +9,7 @@ import { encode, decode } from "@msgpack/msgpack";
 logger.setLevel("info");
 export { logger, BROKER_DEFAULTS, encode, decode };
 
-export { InputPlug, OutputPlug };
+export { InputPlug, OutputPlug, IClientOptions };
 
 enum State {
   INITIALISED = "INITIALISED",

@@ -163,6 +163,10 @@ export const topicMatchesPlug = (
   plugTopic: string,
   incomingTopic: string
 ): boolean => {
+  if (plugTopic == "#") {
+    return true;
+  }
+
   if (!containsWildcards(plugTopic)) {
     // No wildcards at all in full topic e.g. specified/alsoSpecified/plugName ...
     return plugTopic === incomingTopic;
