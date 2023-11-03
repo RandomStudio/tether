@@ -44,6 +44,13 @@ describe("matching topics to plugs", () => {
     ).toBeFalsy();
   });
 
+  test("# wildcard should match any topic", () => {
+    const plugDefinedTopic = "#";
+    expect(
+      topicMatchesPlug(plugDefinedTopic, "something/something/something")
+    ).toBeTruthy();
+  });
+
   test("specific use case: agentType specified, no group/ID, plug name", () => {
     const plugDefinedTopic = "LidarConsolidation/+/trackedPoints";
 
