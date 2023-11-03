@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { TetherAgent, IClientOptions, BROKER_DEFAULTS } from "tether-agent";
 import { Sender } from "./Sender";
+import { Receiver } from "./Receiver";
 
 interface Props {
   host: string;
@@ -33,14 +34,19 @@ export const Tether = (props: Props) => {
 
   return (
     <div>
-      <h1>Tether @ {props.host}</h1>
+      <h1>Tether Agent ↔︎ {props.host}</h1>
       {isBusy ? (
         <div>Busy...</div>
       ) : (
         <div>
           <div>connected? {agent?.getIsConnected() ? "true" : "false"} : </div>
           <div>State: {agent?.getState()}</div>
-          {agent && <Sender agent={agent} />}
+          {agent && (
+            <>
+              <Sender agent={agent} />
+              <Receiver agent={agent} />
+            </>
+          )}
         </div>
       )}
     </div>

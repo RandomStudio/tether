@@ -16,7 +16,7 @@ export const Sender = (props: Props) => {
 
   return (
     <div>
-      <h1>Send Plug</h1>
+      <h2>Output Plug</h2>
       <div>{plug && <code>{JSON.stringify(plug.getDefinition())}</code>}</div>
       <div>
         {useCustomTopic ? (
