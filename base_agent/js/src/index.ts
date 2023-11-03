@@ -11,7 +11,15 @@ export { logger, BROKER_DEFAULTS, encode, decode };
 
 export { InputPlug, OutputPlug, IClientOptions };
 
+enum State {
+  INITIALISED,
+  CONNECTING,
+  ERRORED,
+  CONNECTED,
+}
+
 export class TetherAgent {
+  private state: State;
   private config: TetherConfig;
   private client: AsyncMqttClient | null;
 
@@ -51,7 +59,11 @@ export class TetherAgent {
       (options?.loglevel || "info") as LogLevelDesc
     );
     if (config.autoConnect === true) {
-      await agent.connect();
+      try {
+        await agent.connect();
+      } catch (e) {
+        logger.error("Error on auto-connect:", e);
+      }
     } else {
       logger.warn(
         "Tether Agent was initialised without auto-connect. You will need to call .connect() yourself."
@@ -63,6 +75,7 @@ export class TetherAgent {
   private constructor(config: TetherConfig, loglevel?: LogLevelDesc) {
     this.config = config;
     this.client = null;
+    this.state = State.INITIALISED;
     if (loglevel) {
       logger.setLevel(loglevel);
     }
@@ -73,19 +86,24 @@ export class TetherAgent {
     logger.info("Tether Agent connecting with options", {
       ...this.config.brokerOptions,
     });
+    this.state = State.CONNECTING;
 
     try {
-      this.client = await mqtt.connectAsync(
+      const client = await mqtt.connectAsync(
         null,
         this.config.brokerOptions,
         false
       );
       console.info("Connected OK");
+      this.client = client;
+      this.state = State.CONNECTED;
     } catch (error) {
       logger.error("Error connecting to MQTT broker:", {
         error,
         brokerOptions: this.config.brokerOptions,
       });
+      this.client = null;
+      this.state = State.ERRORED;
       throw error;
     }
   };
@@ -93,7 +111,9 @@ export class TetherAgent {
   public disconnect = async () => {
     if (this.client) {
       await this.client.end();
+      this.client = null;
       logger.debug("MQTT client closed normally");
+      this.state = State.INITIALISED;
     } else {
       logger.warn("MQTT client not available on disconnect request");
     }
@@ -107,7 +127,12 @@ export class TetherAgent {
    */
   public getClient = () => this.client;
 
-  public getIsConnected = () => this.client !== null;
+  public getState = () => this.state;
+
+  public getIsConnected = () =>
+    this.client !== null &&
+    this.client.connected &&
+    this.state === State.CONNECTED;
 
   public getConfig = () => this.config;
 }
