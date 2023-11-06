@@ -21,6 +21,10 @@ pub struct PlaybackOptions {
     #[arg(long = "topic")]
     pub override_topic: Option<String>,
 
+    /// Speed up or slow down playback (e.g. 2.0 = double speed)
+    #[arg(long = "playback.speed", default_value_t = 1.0)]
+    pub playback_speed: f32,
+
     /// How many times to loop playback
     #[arg(long = "loops.count", default_value_t = 1)]
     pub loop_count: usize,
@@ -43,6 +47,7 @@ impl Default for PlaybackOptions {
             loop_count: 1,
             loop_infinite: false,
             ignore_ctrl_c: false,
+            playback_speed: 1.0,
         }
     }
 }
@@ -130,6 +135,7 @@ impl TetherPlaybackUtil {
                     tether_agent,
                     &self.options.override_topic,
                     &self.stop_request_rx,
+                    self.options.playback_speed,
                 ) {
                     warn!("Early exit; finish now");
                     finished = true;
@@ -148,6 +154,7 @@ fn parse_json_rows(
     tether_agent: &TetherAgent,
     override_topic: &Option<String>,
     should_stop_rx: &Receiver<bool>,
+    speed_factor: f32,
 ) -> bool {
     let file = File::open(filename).unwrap_or_else(|_| panic!("failed to open file {}", filename));
     let reader = BufReader::new(file);
@@ -179,8 +186,9 @@ fn parse_json_rows(
             let payload = &message.data;
 
             if !finished {
+                let delta_time = *delta_time as f64 / speed_factor as f64;
                 debug!("Sleeping {}ms ...", delta_time);
-                std::thread::sleep(std::time::Duration::from_millis(*delta_time));
+                std::thread::sleep(std::time::Duration::from_millis(delta_time as u64));
                 let topic = match &override_topic {
                     Some(t) => String::from(t),
                     None => String::from(topic),

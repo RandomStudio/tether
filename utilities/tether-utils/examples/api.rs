@@ -82,6 +82,7 @@ fn demo_playback() {
         loop_count: 1, // ignored anyway, in this case
         loop_infinite: true,
         ignore_ctrl_c: true, // this is important for programmatic use
+        playback_speed: 1.0,
     };
 
     let tether_agent = TetherAgentOptionsBuilder::new("demoTopics")
