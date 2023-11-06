@@ -5,7 +5,8 @@ use crate::three_part_topic::ThreePartTopic;
 
 pub trait PlugDefinitionCommon<'a> {
     fn name(&'a self) -> &'a str;
-    fn topic(&'a self) -> &'a str;
+    fn topic_str(&'a self) -> &'a str;
+    fn topic(&'a self) -> &'a TetherOrCustomTopic;
     fn qos(&'a self) -> i32;
 }
 
@@ -26,7 +27,7 @@ impl PlugDefinitionCommon<'_> for InputPlugDefinition {
         &self.name
     }
 
-    fn topic(&self) -> &str {
+    fn topic_str(&self) -> &str {
         match &self.topic {
             TetherOrCustomTopic::Custom(s) => {
                 debug!("Plug named \"{}\" has custom topic \"{}\"", &self.name, &s);
@@ -40,6 +41,10 @@ impl PlugDefinitionCommon<'_> for InputPlugDefinition {
                 t.topic()
             }
         }
+    }
+
+    fn topic(&'_ self) -> &'_ TetherOrCustomTopic {
+        &self.topic
     }
 
     fn qos(&self) -> i32 {
@@ -66,18 +71,20 @@ impl InputPlugDefinition {
     /// In the case where an Input Plug was defined with a completely manually-specified topic string,
     /// this function returns a warning and marks ANY incoming message as a valid match; the end-user
     /// developer is expected to match against topic strings themselves.
-    pub fn matches(&self, topic: &str) -> bool {
-        match &self.topic {
-            TetherOrCustomTopic::Custom(s) => {
-                debug!(
-                    "Custom/manual topic \"{}\" on Plug \"{}\" cannot be matched automatically; please filter manually for this",
-                    &s,
-                    self.name()
-                );
-                true
-            }
-            TetherOrCustomTopic::Tether(my_tpt) => {
-                if let Ok(incoming_three_parts) = ThreePartTopic::try_from(topic) {
+    pub fn matches(&self, incoming_topic: &TetherOrCustomTopic) -> bool {
+        // match &self.topic {
+        //     TetherOrCustomTopic::Custom(s) => {
+        //         debug!(
+        //             "Custom/manual topic \"{}\" on Plug \"{}\" cannot be matched automatically; please filter manually for this",
+        //             &s,
+        //             self.name()
+        //         );
+        //         true
+        //     }
+        // TetherOrCustomTopic::Tether(my_tpt) => {
+        match incoming_topic {
+            TetherOrCustomTopic::Tether(incoming_three_parts) => match &self.topic {
+                TetherOrCustomTopic::Tether(my_tpt) => {
                     let matches_role =
                         my_tpt.role() == "+" || my_tpt.role().eq(incoming_three_parts.role());
                     let matches_id =
@@ -86,10 +93,19 @@ impl InputPlugDefinition {
                         || my_tpt.plug_name().eq(incoming_three_parts.plug_name());
                     debug!("Test match for plug named \"{}\" with def {:?} against {:?} => matches_role? {}, matches_id? {}, matches_plug_name? {}", &self.name, &self.topic, &incoming_three_parts, matches_role, matches_id, matches_plug_name);
                     matches_role && matches_id && matches_plug_name
-                } else {
-                    error!("Incoming topic \"{}\" is not a three-part topic", topic);
+                }
+                TetherOrCustomTopic::Custom(t) => {
+                    debug!(
+                    "Custom/manual topic \"{}\" on Plug \"{}\" cannot be matched automatically; please filter manually for this",
+                    &t,
+                    self.name()
+                );
                     false
                 }
+            },
+            TetherOrCustomTopic::Custom(t) => {
+                error!("Incoming topic \"{}\" is not a three-part topic", &t);
+                false
             }
         }
     }
@@ -108,11 +124,15 @@ impl PlugDefinitionCommon<'_> for OutputPlugDefinition {
         &self.name
     }
 
-    fn topic(&self) -> &str {
+    fn topic_str(&self) -> &str {
         match &self.topic {
             TetherOrCustomTopic::Custom(s) => s,
             TetherOrCustomTopic::Tether(t) => t.topic(),
         }
+    }
+
+    fn topic(&'_ self) -> &'_ TetherOrCustomTopic {
+        &self.topic
     }
 
     fn qos(&'_ self) -> i32 {
@@ -156,12 +176,12 @@ impl PlugDefinition {
 
     pub fn topic(&self) -> &str {
         match self {
-            PlugDefinition::InputPlug(p) => p.topic(),
-            PlugDefinition::OutputPlug(p) => p.topic(),
+            PlugDefinition::InputPlug(p) => p.topic_str(),
+            PlugDefinition::OutputPlug(p) => p.topic_str(),
         }
     }
 
-    pub fn matches(&self, topic: &str) -> bool {
+    pub fn matches(&self, topic: &TetherOrCustomTopic) -> bool {
         match self {
             PlugDefinition::InputPlug(p) => p.matches(topic),
             PlugDefinition::OutputPlug(_) => {
@@ -191,10 +211,21 @@ mod tests {
         );
 
         assert_eq!(&plug_def.name, "testPlug");
-        assert_eq!(plug_def.topic(), "+/+/testPlug");
+        assert_eq!(plug_def.topic_str(), "+/+/testPlug");
         assert_eq!(parse_plug_name("+/+/testPlug"), Some("testPlug"));
-        assert!(plug_def.matches("dummy/any/testPlug"));
-        assert!(!plug_def.matches("dummy/any/anotherPlug"))
+        assert!(
+            plug_def.matches(&TetherOrCustomTopic::Tether(ThreePartTopic::new(
+                "dummy", "any", "testPlug"
+            )))
+        );
+        assert!(
+            !plug_def.matches(&TetherOrCustomTopic::Tether(ThreePartTopic::new(
+                "dummy",
+                "any",
+                "anotherPlug"
+            )))
+        );
+        // assert!(!plug_def.matches(&TetherOrCustomTopic::Custom("dummy/any/anotherPlug".into())));
     }
 
     #[test]
@@ -211,11 +242,35 @@ mod tests {
         );
 
         assert_eq!(&plug_def.name, "customPlug");
-        assert_eq!(plug_def.topic(), "customRole/+/customPlug");
-        assert!(plug_def.matches("customRole/any/customPlug"));
-        assert!(plug_def.matches("customRole/andAnythingElse/customPlug"));
-        assert!(!plug_def.matches("customRole/any/notMyPlug")); // wrong incoming Plug Name
-        assert!(!plug_def.matches("someOtherRole/any/customPlug")); // wrong incoming Role
+        assert_eq!(plug_def.topic_str(), "customRole/+/customPlug");
+        assert!(
+            plug_def.matches(&TetherOrCustomTopic::Tether(ThreePartTopic::new(
+                "customRole",
+                "any",
+                "customPlug"
+            )))
+        );
+        assert!(
+            plug_def.matches(&TetherOrCustomTopic::Tether(ThreePartTopic::new(
+                "customRole",
+                "andAnythingElse",
+                "customPlug"
+            )))
+        );
+        assert!(
+            !plug_def.matches(&TetherOrCustomTopic::Tether(ThreePartTopic::new(
+                "customRole",
+                "any",
+                "notMyPlug"
+            )))
+        ); // wrong incoming Plug N.into())ame
+        assert!(
+            !plug_def.matches(&TetherOrCustomTopic::Tether(ThreePartTopic::new(
+                "someOtherRole",
+                "any",
+                "customPlug"
+            )))
+        ); // wrong incoming R.into())ole
     }
 
     #[test]
@@ -232,11 +287,35 @@ mod tests {
         );
 
         assert_eq!(&plug_def.name, "customPlug");
-        assert_eq!(plug_def.topic(), "+/specificID/customPlug");
-        assert!(plug_def.matches("anyRole/specificID/customPlug"));
-        assert!(plug_def.matches("anotherRole/specificID/customPlug"));
-        assert!(!plug_def.matches("anyRole/specificID/notMyPlug")); // wrong incoming Plug Name
-        assert!(!plug_def.matches("anyRole/anotherID/customPlug")); // wrong incoming ID
+        assert_eq!(plug_def.topic_str(), "+/specificID/customPlug");
+        assert!(
+            plug_def.matches(&TetherOrCustomTopic::Tether(ThreePartTopic::new(
+                "anyRole",
+                "specificID",
+                "customPlug"
+            )))
+        );
+        assert!(
+            plug_def.matches(&TetherOrCustomTopic::Tether(ThreePartTopic::new(
+                "anotherRole",
+                "specificID",
+                "customPlug"
+            )))
+        ); // wrong incoming Role
+        assert!(
+            !plug_def.matches(&TetherOrCustomTopic::Tether(ThreePartTopic::new(
+                "anyRole",
+                "specificID",
+                "notMyPlug"
+            )))
+        ); // wrong incoming Plug Name
+        assert!(
+            !plug_def.matches(&TetherOrCustomTopic::Tether(ThreePartTopic::new(
+                "anyRole",
+                "anotherID",
+                "customPlug"
+            )))
+        ); // wrong incoming ID
     }
 
     #[test]
@@ -253,25 +332,37 @@ mod tests {
         );
 
         assert_eq!(&plug_def.name, "customPlug");
-        assert_eq!(plug_def.topic(), "specificRole/specificID/customPlug");
-        assert!(plug_def.matches("specificRole/specificID/customPlug"));
-        assert!(!plug_def.matches("specificRole/specificID/notMyPlug")); // wrong incoming Plug Name
-        assert!(!plug_def.matches("specificRole/anotherID/customPlug")); // wrong incoming ID
-        assert!(!plug_def.matches("anotherRole/anotherID/customPlug")); // wrong incoming Role
+        assert_eq!(plug_def.topic_str(), "specificRole/specificID/customPlug");
+        assert!(
+            plug_def.matches(&TetherOrCustomTopic::Tether(ThreePartTopic::new(
+                "specificRole",
+                "specificID",
+                "customPlug"
+            )))
+        );
+        assert!(!plug_def.matches(&TetherOrCustomTopic::Custom(
+            "specificRole/specificID/notMyPlug".into()
+        ))); // wrong incoming Plug N.into())ame
+        assert!(!plug_def.matches(&TetherOrCustomTopic::Custom(
+            "specificRole/anotherID/customPlug".into()
+        ))); // wrong incoming.into()) ID
+        assert!(!plug_def.matches(&TetherOrCustomTopic::Custom(
+            "anotherRole/anotherID/customPlug".into()
+        ))); // wrong incoming R.into())ole
     }
 
     #[test]
     fn input_match_custom_topic() {
         let plug_def = InputPlugDefinition::new(
             "customPlug",
-            TetherOrCustomTopic::Custom("one/two/three".into()),
+            TetherOrCustomTopic::Custom("one/two/three/four/five".into()), // not a standard Tether Three Part Topic
             None,
         );
 
         let incoming_topic = String::from("some/other/plug");
 
         assert_eq!(plug_def.name(), "customPlug");
-        assert!(plug_def.matches(&incoming_topic)); // it will match, but emit warning
+        assert!(!plug_def.matches(&TetherOrCustomTopic::Custom(incoming_topic.clone()))); // it will not match, and emit an error
 
         assert_eq!(parse_plug_name(&incoming_topic), Some("plug"));
         assert_eq!(parse_agent_role(&incoming_topic), Some("some"));

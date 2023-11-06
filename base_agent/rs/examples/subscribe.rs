@@ -71,7 +71,7 @@ fn main() {
                 topic_parts
             );
 
-            if input_one.matches(message.topic()) {
+            if input_one.matches(&topic_parts) {
                 info!(
                             "******** INPUT ONE:\n Received a message for plug named \"{}\" on topic {} with length {} bytes",
                             input_one.name(),
@@ -80,7 +80,7 @@ fn main() {
                         );
                 assert_eq!(parse_plug_name(message.topic()), Some("one"));
             }
-            if input_two.matches(message.topic()) {
+            if input_two.matches(&topic_parts) {
                 info!(
                         "******** INPUT TWO:\n Received a message for plug named \"{}\" on topic {} with length {} bytes",
                         input_two.name(),
@@ -103,7 +103,7 @@ fn main() {
                     }
                 };
             }
-            if input_empty.matches(message.topic()) {
+            if input_empty.matches(&topic_parts) {
                 info!(
                         "******** EMPTY MESSAGE:\n Received a message for plug named \"{}\" on topic {} with length {} bytes",
                         input_empty.name(),
@@ -112,7 +112,7 @@ fn main() {
                     );
                 assert_eq!(parse_plug_name(message.topic()), Some("nothing"));
             }
-            if input_everything.matches(message.topic()) {
+            if input_everything.matches(&topic_parts) {
                 info!(
                     "******** EVERYTHING MATCHES HERE:\n Received a message for plug named \"{}\" on topic {} with length {} bytes",
                     input_everything.name(),
@@ -120,7 +120,7 @@ fn main() {
                     message.payload().len()
                 );
             }
-            if input_specify_id.matches(message.topic()) {
+            if input_specify_id.matches(&topic_parts) {
                 info!("******** ID MATCH:\n Should match any role and plug name, but only messages with ID \"groupMessages\"");
                 info!(
                     "\n Received a message from plug named \"{}\" on topic {} with length {} bytes",
