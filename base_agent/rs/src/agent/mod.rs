@@ -233,7 +233,7 @@ impl TetherAgent {
                 panic!("You cannot publish using an Input Plug")
             }
             PlugDefinition::OutputPlug(output_plug_definition) => {
-                let topic = output_plug_definition.topic();
+                let topic = output_plug_definition.topic_str();
                 let qos = output_plug_definition.qos();
                 let message = MessageBuilder::new()
                     .topic(topic)
