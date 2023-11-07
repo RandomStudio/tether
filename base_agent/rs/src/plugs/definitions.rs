@@ -72,16 +72,6 @@ impl InputPlugDefinition {
     /// this function returns a warning and marks ANY incoming message as a valid match; the end-user
     /// developer is expected to match against topic strings themselves.
     pub fn matches(&self, incoming_topic: &TetherOrCustomTopic) -> bool {
-        // match &self.topic {
-        //     TetherOrCustomTopic::Custom(s) => {
-        //         debug!(
-        //             "Custom/manual topic \"{}\" on Plug \"{}\" cannot be matched automatically; please filter manually for this",
-        //             &s,
-        //             self.name()
-        //         );
-        //         true
-        //     }
-        // TetherOrCustomTopic::Tether(my_tpt) => {
         match incoming_topic {
             TetherOrCustomTopic::Tether(incoming_three_parts) => match &self.topic {
                 TetherOrCustomTopic::Tether(my_tpt) => {
