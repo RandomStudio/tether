@@ -64,14 +64,14 @@ fn main() {
 
     for i in 1..10 {
         info!("#{i}: Checking for messages...");
-        while let Some((topic_parts, message)) = tether_agent.check_messages() {
+        while let Some((topic, message)) = tether_agent.check_messages() {
             debug!(
                 "........ Received a message topic {} => topic parts {:?}",
                 message.topic(),
-                topic_parts
+                topic
             );
 
-            if input_one.matches(&topic_parts) {
+            if input_one.matches(&topic) {
                 info!(
                             "******** INPUT ONE:\n Received a message for plug named \"{}\" on topic {} with length {} bytes",
                             input_one.name(),
@@ -80,7 +80,7 @@ fn main() {
                         );
                 assert_eq!(parse_plug_name(message.topic()), Some("one"));
             }
-            if input_two.matches(&topic_parts) {
+            if input_two.matches(&topic) {
                 info!(
                         "******** INPUT TWO:\n Received a message for plug named \"{}\" on topic {} with length {} bytes",
                         input_two.name(),
@@ -103,7 +103,7 @@ fn main() {
                     }
                 };
             }
-            if input_empty.matches(&topic_parts) {
+            if input_empty.matches(&topic) {
                 info!(
                         "******** EMPTY MESSAGE:\n Received a message for plug named \"{}\" on topic {} with length {} bytes",
                         input_empty.name(),
@@ -112,7 +112,7 @@ fn main() {
                     );
                 assert_eq!(parse_plug_name(message.topic()), Some("nothing"));
             }
-            if input_everything.matches(&topic_parts) {
+            if input_everything.matches(&topic) {
                 info!(
                     "******** EVERYTHING MATCHES HERE:\n Received a message for plug named \"{}\" on topic {} with length {} bytes",
                     input_everything.name(),
@@ -120,7 +120,7 @@ fn main() {
                     message.payload().len()
                 );
             }
-            if input_specify_id.matches(&topic_parts) {
+            if input_specify_id.matches(&topic) {
                 info!("******** ID MATCH:\n Should match any role and plug name, but only messages with ID \"groupMessages\"");
                 info!(
                     "\n Received a message from plug named \"{}\" on topic {} with length {} bytes",
