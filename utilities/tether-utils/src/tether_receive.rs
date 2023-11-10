@@ -38,6 +38,7 @@ pub fn receive(
                 &options.subscribe_id, &options.subscribe_role, &options.subscribe_plug
             );
             PlugOptionsBuilder::create_input("all")
+                .name(options.subscribe_plug.as_deref())
                 .role(options.subscribe_role.as_deref())
                 .id(options.subscribe_id.as_deref())
                 .name(options.subscribe_plug.as_deref())

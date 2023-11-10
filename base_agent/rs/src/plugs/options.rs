@@ -123,7 +123,7 @@ impl PlugOptionsBuilder {
     /// This is mainly to facilitate wildcard subscriptions such as
     /// `someRole/someID/+` instead of `someRole/someID/originalPlugName`.
     ///
-    /// In the case of Input Topics, a wildcard `+` will be used to substitute
+    /// In the case of Input Topics, a wildcard `+` can be used to substitute
     /// the last part of the topic as in `role/id/+` but will NOT affect the stored "name"
     /// of the Plug Definition itself. Anything else will be ignored with an error.
     ///
@@ -319,13 +319,57 @@ mod tests {
     }
 
     #[test]
-    fn input_specific_id_andor_role_any_plugname() {
+    /// If the end-user implicitly specifies the plug name part (does not set it to Some(_)
+    /// or None) then the ID and/or Role parts will change but the Plug Name part will
+    /// remain the "original" / default
+    /// Contrast with input_specific_id_andor_role_no_plugname below.
+    fn input_specific_id_andor_role_with_plugname() {
         let tether_agent = TetherAgentOptionsBuilder::new("tester")
             .build()
             .expect("sorry, these tests require working localhost Broker");
 
         let input_role_only = PlugOptionsBuilder::create_input("thePlug")
-            .name(Some("+".into()))
+            .role(Some("specificRole".into()))
+            .build(&tether_agent)
+            .unwrap();
+        assert_eq!(input_role_only.name(), "thePlug");
+        assert_eq!(input_role_only.topic(), "specificRole/+/thePlug");
+
+        let input_id_only = PlugOptionsBuilder::create_input("thePlug")
+            .id(Some("specificID".into()))
+            .build(&tether_agent)
+            .unwrap();
+        assert_eq!(input_id_only.name(), "thePlug");
+        assert_eq!(input_id_only.topic(), "+/specificID/thePlug");
+
+        let input_both = PlugOptionsBuilder::create_input("thePlug")
+            .id(Some("specificID".into()))
+            .role(Some("specificRole".into()))
+            .build(&tether_agent)
+            .unwrap();
+        assert_eq!(input_both.name(), "thePlug");
+        assert_eq!(input_both.topic(), "specificRole/specificID/thePlug");
+    }
+
+    #[test]
+    /// Unlike input_specific_id_andor_role_with_plugname, this tests the situation where
+    /// the end-user (possibly) specifies the ID and/or Role, but also explicitly
+    /// sets the Plug Name to Some("+"), ie. "use a wildcard at this
+    /// position instead" - and NOT the original plug name.
+    fn input_specific_id_andor_role_no_plugname() {
+        let tether_agent = TetherAgentOptionsBuilder::new("tester")
+            .build()
+            .expect("sorry, these tests require working localhost Broker");
+
+        let input_only_plugname_none = PlugOptionsBuilder::create_input("thePlug")
+            .name(Some("+"))
+            .build(&tether_agent)
+            .unwrap();
+        assert_eq!(input_only_plugname_none.name(), "thePlug");
+        assert_eq!(input_only_plugname_none.topic(), "+/+/+");
+
+        let input_role_only = PlugOptionsBuilder::create_input("thePlug")
+            .name(Some("+"))
             .role(Some("specificRole".into()))
             .build(&tether_agent)
             .unwrap();
@@ -333,7 +377,7 @@ mod tests {
         assert_eq!(input_role_only.topic(), "specificRole/+/+");
 
         let input_id_only = PlugOptionsBuilder::create_input("thePlug")
-            .name(Some("+".into()))
+            .name(Some("+"))
             .id(Some("specificID".into()))
             .build(&tether_agent)
             .unwrap();
@@ -341,7 +385,7 @@ mod tests {
         assert_eq!(input_id_only.topic(), "+/specificID/+");
 
         let input_both = PlugOptionsBuilder::create_input("thePlug")
-            .name(Some("+".into()))
+            .name(Some("+"))
             .id(Some("specificID".into()))
             .role(Some("specificRole".into()))
             .build(&tether_agent)

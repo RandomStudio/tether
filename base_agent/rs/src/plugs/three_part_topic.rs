@@ -36,12 +36,12 @@ impl ThreePartTopic {
     /// topic is changed but the plug name itself is left alone.
     pub fn new_for_subscribe(
         plug_name: &str,
-        role: Option<&str>,
-        id: Option<&str>,
+        role_part_override: Option<&str>,
+        id_part_override: Option<&str>,
         plug_name_part_override: Option<&str>,
     ) -> ThreePartTopic {
-        let role = role.unwrap_or("+");
-        let id = id.unwrap_or("+");
+        let role = role_part_override.unwrap_or("+");
+        let id = id_part_override.unwrap_or("+");
         let plug_name_part = match plug_name_part_override {
             Some(s) => {
                 if !&s.eq("+") {
