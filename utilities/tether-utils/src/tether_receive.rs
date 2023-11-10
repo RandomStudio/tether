@@ -4,10 +4,6 @@ use tether_agent::{mqtt::Message, PlugOptionsBuilder, TetherAgent, TetherOrCusto
 
 #[derive(Args)]
 pub struct ReceiveOptions {
-    /// Topic to subscribe; by default we subscribe to everything
-    #[arg(long = "topic")]
-    pub subscribe_topic: Option<String>,
-
     /// Specify a ROLE (instead of wildcard +)
     #[arg(long = "plug.role")]
     pub subscribe_role: Option<String>,
@@ -16,9 +12,26 @@ pub struct ReceiveOptions {
     #[arg(long = "plug.id")]
     pub subscribe_id: Option<String>,
 
-    /// Specify a plug name for the topic (instead of wildcard +)
+    /// Specify a PLUG NAME part for the topic (instead of wildcard +)
     #[arg(long = "plug.name")]
-    pub subscribe_plug: Option<String>,
+    pub subscribe_plug_name: Option<String>,
+
+    /// Override topic to subscribe; setting this will
+    /// ignore any `plug.` options you may have set, since the
+    /// topic is built manually.
+    #[arg(long = "topic")]
+    pub subscribe_topic: Option<String>,
+}
+
+impl Default for ReceiveOptions {
+    fn default() -> Self {
+        ReceiveOptions {
+            subscribe_topic: None,
+            subscribe_role: None,
+            subscribe_id: None,
+            subscribe_plug_name: None,
+        }
+    }
 }
 
 pub fn receive(
@@ -28,28 +41,7 @@ pub fn receive(
 ) {
     info!("Tether Receive Utility");
 
-    let input_def = {
-        if options.subscribe_id.is_some()
-            || options.subscribe_role.is_some()
-            || options.subscribe_plug.is_some()
-        {
-            debug!(
-                "TPT Overrides apply: {:?}, {:?}, {:?}",
-                &options.subscribe_id, &options.subscribe_role, &options.subscribe_plug
-            );
-            PlugOptionsBuilder::create_input("all")
-                .role(options.subscribe_role.as_deref())
-                .id(options.subscribe_id.as_deref())
-                .name(options.subscribe_plug.as_deref())
-        } else {
-            debug!(
-                "Using custom override topic \"{:?}\"",
-                &options.subscribe_topic
-            );
-            PlugOptionsBuilder::create_input("all")
-                .topic(Some(options.subscribe_topic.as_deref().unwrap_or("#")))
-        }
-    };
+    let input_def = build_receiver_plug(options);
 
     let input = input_def
         .build(tether_agent)
@@ -88,5 +80,251 @@ pub fn receive(
         if !did_work {
             std::thread::sleep(std::time::Duration::from_micros(100)); //0.1 ms
         }
+    }
+}
+
+fn build_receiver_plug(options: &ReceiveOptions) -> PlugOptionsBuilder {
+    if options.subscribe_id.is_some()
+        || options.subscribe_role.is_some()
+        || options.subscribe_plug_name.is_some()
+    {
+        debug!(
+            "TPT Overrides apply: {:?}, {:?}, {:?}",
+            &options.subscribe_id, &options.subscribe_role, &options.subscribe_plug_name
+        );
+        PlugOptionsBuilder::create_input(match &options.subscribe_plug_name {
+            Some(provided_name) => {
+                if provided_name.as_str() == "+" {
+                    "any"
+                } else {
+                    &provided_name
+                }
+            }
+            None => "any",
+        })
+        .role(options.subscribe_role.as_deref())
+        .id(options.subscribe_id.as_deref())
+        .name(match &options.subscribe_plug_name {
+            Some(provided_name_part) => {
+                if provided_name_part.as_str() == "+" {
+                    Some("+")
+                } else {
+                    None
+                }
+            }
+            None => {
+                if options.subscribe_id.is_some() || options.subscribe_role.is_some() {
+                    // No plug name part was supplied, but other parts were; therefore
+                    // in this case Tether Receive should subscribr to all messages
+                    // matching or both of the specified Agent and/or Role
+                    Some("+")
+                } else {
+                    // No plug name part was supplied, but neither was anything else
+                    // Logically, we shouldn't reach this point because of the outer condition
+                    // but it must be provided here for completeness
+                    None
+                }
+            }
+        })
+    } else {
+        debug!(
+            "Using custom override topic \"{:?}\"",
+            &options.subscribe_topic
+        );
+        PlugOptionsBuilder::create_input("custom")
+            .topic(Some(options.subscribe_topic.as_deref().unwrap_or("#")))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use tether_agent::TetherAgentOptionsBuilder;
+
+    use crate::tether_receive::build_receiver_plug;
+
+    use super::ReceiveOptions;
+
+    #[test]
+    fn default_options() {
+        let tether_agent = TetherAgentOptionsBuilder::new("tester")
+            .build()
+            .expect("sorry, these tests require working localhost Broker");
+
+        let options = ReceiveOptions::default();
+
+        let receive_plug = build_receiver_plug(&options)
+            .build(&tether_agent)
+            .expect("build failed");
+
+        assert_eq!(receive_plug.name(), "custom");
+        assert_eq!(receive_plug.topic(), "#");
+    }
+
+    #[test]
+    fn only_topic_custom() {
+        let tether_agent = TetherAgentOptionsBuilder::new("tester")
+            .build()
+            .expect("sorry, these tests require working localhost Broker");
+
+        let options = ReceiveOptions {
+            subscribe_role: None,
+            subscribe_id: None,
+            subscribe_plug_name: None,
+            subscribe_topic: Some("some/special/plug".into()),
+        };
+
+        let receive_plug = build_receiver_plug(&options)
+            .build(&tether_agent)
+            .expect("build failed");
+
+        assert_eq!(receive_plug.name(), "custom");
+        assert_eq!(receive_plug.topic(), "some/special/plug");
+    }
+
+    #[test]
+    fn only_plug_name() {
+        let tether_agent = TetherAgentOptionsBuilder::new("tester")
+            .build()
+            .expect("sorry, these tests require working localhost Broker");
+
+        let options = ReceiveOptions {
+            subscribe_role: None,
+            subscribe_id: None,
+            subscribe_plug_name: Some("something".into()),
+            subscribe_topic: None,
+        };
+
+        let receive_plug = build_receiver_plug(&options)
+            .build(&tether_agent)
+            .expect("build failed");
+
+        assert_eq!(receive_plug.name(), "something");
+        assert_eq!(receive_plug.topic(), "+/+/something");
+    }
+
+    #[test]
+    fn only_role() {
+        let tether_agent = TetherAgentOptionsBuilder::new("tester")
+            .build()
+            .expect("sorry, these tests require working localhost Broker");
+
+        let options = ReceiveOptions {
+            subscribe_role: Some("something".into()),
+            subscribe_id: None,
+            subscribe_plug_name: None,
+            subscribe_topic: None,
+        };
+
+        let receive_plug = build_receiver_plug(&options)
+            .build(&tether_agent)
+            .expect("build failed");
+
+        assert_eq!(receive_plug.name(), "any");
+        assert_eq!(receive_plug.topic(), "something/+/+");
+    }
+
+    #[test]
+    fn only_id() {
+        let tether_agent = TetherAgentOptionsBuilder::new("tester")
+            .build()
+            .expect("sorry, these tests require working localhost Broker");
+
+        let options = ReceiveOptions {
+            subscribe_role: None,
+            subscribe_id: Some("something".into()),
+            subscribe_plug_name: None,
+            subscribe_topic: None,
+        };
+
+        let receive_plug = build_receiver_plug(&options)
+            .build(&tether_agent)
+            .expect("build failed");
+
+        assert_eq!(receive_plug.name(), "any");
+        assert_eq!(receive_plug.topic(), "+/something/+");
+    }
+
+    #[test]
+    fn role_and_id() {
+        let tether_agent = TetherAgentOptionsBuilder::new("tester")
+            .build()
+            .expect("sorry, these tests require working localhost Broker");
+
+        let options = ReceiveOptions {
+            subscribe_role: Some("x".into()),
+            subscribe_id: Some("y".into()),
+            subscribe_plug_name: None,
+            subscribe_topic: None,
+        };
+
+        let receive_plug = build_receiver_plug(&options)
+            .build(&tether_agent)
+            .expect("build failed");
+
+        assert_eq!(receive_plug.name(), "any");
+        assert_eq!(receive_plug.topic(), "x/y/+");
+    }
+
+    #[test]
+    fn role_and_plug_name() {
+        let tether_agent = TetherAgentOptionsBuilder::new("tester")
+            .build()
+            .expect("sorry, these tests require working localhost Broker");
+
+        let options = ReceiveOptions {
+            subscribe_role: Some("x".into()),
+            subscribe_id: None,
+            subscribe_plug_name: Some("z".into()),
+            subscribe_topic: None,
+        };
+
+        let receive_plug = build_receiver_plug(&options)
+            .build(&tether_agent)
+            .expect("build failed");
+
+        assert_eq!(receive_plug.name(), "z");
+        assert_eq!(receive_plug.topic(), "x/+/z");
+    }
+
+    #[test]
+    fn spec_all_three() {
+        let tether_agent = TetherAgentOptionsBuilder::new("tester")
+            .build()
+            .expect("sorry, these tests require working localhost Broker");
+
+        let options = ReceiveOptions {
+            subscribe_role: Some("x".into()),
+            subscribe_id: Some("y".into()),
+            subscribe_plug_name: Some("z".into()),
+            subscribe_topic: None,
+        };
+
+        let receive_plug = build_receiver_plug(&options)
+            .build(&tether_agent)
+            .expect("build failed");
+
+        assert_eq!(receive_plug.name(), "z");
+        assert_eq!(receive_plug.topic(), "x/y/z");
+    }
+
+    #[test]
+    fn redundant_but_valid() {
+        let tether_agent = TetherAgentOptionsBuilder::new("tester")
+            .build()
+            .expect("sorry, these tests require working localhost Broker");
+
+        let options = ReceiveOptions {
+            subscribe_role: None,
+            subscribe_id: None,
+            subscribe_plug_name: Some("+".into()),
+            subscribe_topic: None,
+        };
+
+        let receive_plug = build_receiver_plug(&options)
+            .build(&tether_agent)
+            .expect("build failed");
+
+        assert_eq!(receive_plug.name(), "any");
+        assert_eq!(receive_plug.topic(), "+/+/+");
     }
 }

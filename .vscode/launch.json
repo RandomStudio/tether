@@ -32,7 +32,7 @@
         "--manifest-path", "${workspaceFolder}/utilities/tether-utils/Cargo.toml"
       ]
     },
-    "args": ["topics"]
+    "args": ["receive", "--plug.role=custom"]
   },
   {
     "name": "Launch NodeJS example",
