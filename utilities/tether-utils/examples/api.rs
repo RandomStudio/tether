@@ -16,12 +16,7 @@ fn demo_receive() {
         .build()
         .expect("failed to init/connect Tether Agent");
 
-    let options = ReceiveOptions {
-        subscribe_topic: None,
-        subscribe_role: None,
-        subscribe_id: None,
-        subscribe_plug: None,
-    };
+    let options = ReceiveOptions::default();
 
     receive(&options, &tether_agent, |_plug_name, message, decoded| {
         let contents = decoded.unwrap_or("(empty/invalid message)".into());

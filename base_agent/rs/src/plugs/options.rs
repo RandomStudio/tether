@@ -137,7 +137,9 @@ impl PlugOptionsBuilder {
                 }
                 if let Some(s) = override_plug_name {
                     if s.eq("+") {
-                        info!("This is a wildcard; subscribe topic will use this but Plug Name will remain unchanged");
+                        info!(
+                            "Plug Name part given is a wildcard; subscribe topic will use this but Plug Name will remain unchanged"
+                        );
                     } else {
                         error!("Input Plugs cannot change their name after ::create_input constructor EXCEPT for wildcard \"+\"");
                     }
@@ -147,9 +149,34 @@ impl PlugOptionsBuilder {
                 }
             }
             PlugOptionsBuilder::OutputPlugOptions(_) => {
-                error!("Output Plugs cannot change their name after ::create_output constructor");
+                error!(
+                    "Output Plugs cannot change their name part after ::create_output constructor"
+                );
             }
         };
+        self
+    }
+
+    /// Call this if you would like your Input plug to match **any plug**.
+    /// This is equivalent to `.name(Some("+"))` but is provided for convenience
+    /// since it does not require you to remember the wildcard string.
+    ///
+    /// This also does not prevent you from further restricting the topic
+    /// subscription match by Role and/or ID. So, for example, if you are
+    /// interested in **all messages** from an Agent with the role `"brain"`,
+    /// it is valid to create a plug with `.role("brain").any_plug()` and this
+    /// will subscribe to `"brain/+/+"` as expected.
+    pub fn any_plug(mut self) -> Self {
+        match &mut self {
+            PlugOptionsBuilder::InputPlugOptions(opt) => {
+                opt.override_subscribe_plug_name = Some("+".into());
+            }
+            PlugOptionsBuilder::OutputPlugOptions(_) => {
+                error!(
+                    "Output Plugs cannot change their name part after ::create_output constructor"
+                );
+            }
+        }
         self
     }
 
@@ -166,10 +193,16 @@ impl PlugOptionsBuilder {
                 if TryInto::<ThreePartTopic>::try_into(t).is_ok() {
                     info!("Custom topic passes Three Part Topic validation");
                 } else {
-                    warn!(
-                        "Could not convert \"{}\" into Tether 3 Part Topic; presumably you know what you're doing!",
-                        t
-                    );
+                    if t == "#" {
+                        info!(
+                            "Wildcard \"#\" custom topics are not Three Part Topics but are valid"
+                        );
+                    } else {
+                        warn!(
+                            "Could not convert \"{}\" into Tether 3 Part Topic; presumably you know what you're doing!",
+                            t
+                        );
+                    }
                 }
                 match &mut self {
                     PlugOptionsBuilder::InputPlugOptions(s) => s.override_topic = Some(t.into()),
@@ -377,7 +410,8 @@ mod tests {
         assert_eq!(input_role_only.topic(), "specificRole/+/+");
 
         let input_id_only = PlugOptionsBuilder::create_input("thePlug")
-            .name(Some("+"))
+            // .name(Some("+"))
+            .any_plug() // equivalent to Some("+")
             .id(Some("specificID".into()))
             .build(&tether_agent)
             .unwrap();
