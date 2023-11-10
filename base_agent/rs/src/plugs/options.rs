@@ -138,7 +138,7 @@ impl PlugOptionsBuilder {
                 if let Some(s) = override_plug_name {
                     if s.eq("+") {
                         info!(
-                            "Plug Name part given is a wildcard; subscribe topic will use this but Plug Name will remain unchanged"
+                            "Plug Name part given is a wildcard; subscribe topic will use this but (internally) Plug Name will remain \"{}\"", &opt.plug_name
                         );
                     } else {
                         error!("Input Plugs cannot change their name after ::create_input constructor EXCEPT for wildcard \"+\"");
