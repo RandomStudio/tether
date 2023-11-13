@@ -1,7 +1,6 @@
 use log::{error, info, warn};
-use mqtt::{Client, Message, MessageBuilder, Receiver};
-use paho_mqtt as mqtt;
 use rmp_serde::to_vec_named;
+use rumqttc::{Client, Connection, Event, Incoming, MqttOptions, Outgoing, Packet, Publish, QoS};
 use serde::Serialize;
 use std::time::Duration;
 
@@ -16,8 +15,8 @@ pub struct TetherAgent {
     role: String,
     id: String,
     client: Client,
+    connection: Connection,
     broker_uri: String,
-    receiver: Receiver<Option<Message>>,
     username: String,
     password: String,
 }
@@ -89,23 +88,28 @@ impl TetherAgentOptionsBuilder {
 
         info!("Broker at {}", &broker_uri);
 
-        let create_opts = mqtt::CreateOptionsBuilder::new()
-            .server_uri(broker_uri.clone())
-            .client_id("")
-            .finalize();
+        // let create_opts = mqtt::CreateOptionsBuilder::new()
+        //     .server_uri(broker_uri.clone())
+        //     .client_id("")
+        //     .finalize();
+
+        let mqttoptions = MqttOptions::new("rumqtt-sync", "localhost", 1883)
+            .set_credentials("tether", "sp_ceB0ss!")
+            .set_keep_alive(Duration::from_secs(5))
+            .to_owned();
 
         // Create the client connection
-        let client = mqtt::Client::new(create_opts).unwrap();
+        let (client, connection) = Client::new(mqttoptions, 10);
 
         // Initialize the consumer before connecting
-        let receiver = client.start_consuming();
+        // let receiver = client.start_consuming();
 
         let agent = TetherAgent {
             role: self.role.clone(),
             id: self.id.clone().unwrap_or("any".into()),
             client,
+            connection,
             broker_uri,
-            receiver,
             username: self.username.unwrap_or(DEFAULT_USERNAME.into()),
             password: self.password.unwrap_or(DEFAULT_PASSWORD.into()),
         };
@@ -127,8 +131,17 @@ impl TetherAgent {
         &self.client
     }
 
+    pub fn client_mut(&mut self) -> &mut Client {
+        &mut self.client
+    }
+
+    pub fn connection(&self) -> &Connection {
+        &self.connection
+    }
+
     pub fn is_connected(&self) -> bool {
-        self.client.is_connected()
+        // self.client.is_connected()
+        true
     }
 
     pub fn role(&self) -> &str {
@@ -158,26 +171,26 @@ impl TetherAgent {
         self.id = id.into();
     }
 
-    pub fn connect(&self) -> Result<(), mqtt::Error> {
-        if self.client.is_connected() {
-            warn!("Was already connected. First disconnect...");
-            self.client
-                .disconnect(None)
-                .expect("...Failed to disconnect");
-            info!("...Disconnected");
-        }
+    pub fn connect(&self) -> anyhow::Result<()> {
+        // if self.client.is_connected() {
+        //     warn!("Was already connected. First disconnect...");
+        //     self.client
+        //         .disconnect(None)
+        //         .expect("...Failed to disconnect");
+        //     info!("...Disconnected");
+        // }
 
         info!("Broker at {}", &self.broker_uri);
 
-        let conn_opts = mqtt::ConnectOptionsBuilder::new()
-            .server_uris(&[self.broker_uri.clone()])
-            .user_name(&self.username)
-            .password(&self.password)
-            .connect_timeout(Duration::from_secs(TIMEOUT_SECONDS))
-            .keep_alive_interval(Duration::from_secs(TIMEOUT_SECONDS))
-            // .mqtt_version(mqtt::MQTT_VERSION_3_1_1)
-            .clean_session(true)
-            .finalize();
+        // let conn_opts = mqtt::ConnectOptionsBuilder::new()
+        //     .server_uris(&[self.broker_uri.clone()])
+        //     .user_name(&self.username)
+        //     .password(&self.password)
+        //     .connect_timeout(Duration::from_secs(TIMEOUT_SECONDS))
+        //     .keep_alive_interval(Duration::from_secs(TIMEOUT_SECONDS))
+        //     // .mqtt_version(mqtt::MQTT_VERSION_3_1_1)
+        //     .clean_session(true)
+        //     .finalize();
 
         // Make the connection to the broker
         info!(
@@ -185,36 +198,66 @@ impl TetherAgent {
             &self.broker_uri
         );
 
-        match self.client.connect(conn_opts) {
-            Ok(res) => {
-                info!("Connected OK: {res:?}");
-                Ok(())
-            }
-            Err(e) => {
-                error!("Error connecting to the broker: {e:?}");
-                // self.client.stop_consuming();
-                // self.client.disconnect(None).expect("failed to disconnect");
-                Err(e)
-            }
-        }
+        let mqttoptions = MqttOptions::new("rumqtt-sync", "localhost", 1883)
+            .set_credentials("tether", "sp_ceB0ss!")
+            .set_keep_alive(Duration::from_secs(5))
+            .to_owned();
+
+        // Create the client connection
+        let (client, connection) = Client::new(mqttoptions, 10);
+
+        Ok(())
+
+        // match self.client.connect(conn_opts) {
+        //     Ok(res) => {
+        //         info!("Connected OK: {res:?}");
+        //         Ok(())
+        //     }
+        //     Err(e) => {
+        //         error!("Error connecting to the broker: {e:?}");
+        //         // self.client.stop_consuming();
+        //         // self.client.disconnect(None).expect("failed to disconnect");
+        //         Err(e)
+        //     }
+        // }
     }
 
     /// If a message is waiting return ThreePartTopic, Message (String, Message)
     /// Messages received on topics that are not parseable as Tether Three Part Topics will be returned with
     /// the complete Topic string instead
-    pub fn check_messages(&self) -> Option<(TetherOrCustomTopic, Message)> {
-        if let Some(message) = self.receiver.try_iter().find_map(|m| m) {
-            if let Ok(t) = ThreePartTopic::try_from(message.topic()) {
-                Some((TetherOrCustomTopic::Tether(t), message))
-            } else {
-                warn!(
-                    "Could not pass Three Part Topic from \"{}\"",
-                    message.topic()
-                );
-                Some((
-                    TetherOrCustomTopic::Custom(String::from(message.topic())),
-                    message,
-                ))
+    pub fn check_messages(&mut self) -> Option<(TetherOrCustomTopic, Vec<u8>)> {
+        // if let Some(message) = self.connection.try_recv().iter().find_map(|| m)) {
+        //     if let Ok(t) = ThreePartTopic::try_from(message.topic()) {
+        //         Some((TetherOrCustomTopic::Tether(t), message))
+        //     } else {
+        //         warn!(
+        //             "Could not pass Three Part Topic from \"{}\"",
+        //             message.topic()
+        //         );
+        //         Some((
+        //             TetherOrCustomTopic::Custom(String::from(message.topic())),
+        //             message,
+        //         ))
+        //     }
+        // } else {
+        //     None
+        // }
+        if let Ok(res) = self.connection.try_recv() {
+            match res {
+                Ok(e) => match e {
+                    Event::Incoming(i) => match i {
+                        Packet::Publish(p) => {
+                            let Publish { topic, payload, .. } = p;
+                            Some((
+                                TetherOrCustomTopic::Custom(topic.to_string()),
+                                payload.into(),
+                            ))
+                        }
+                        _ => None,
+                    },
+                    Event::Outgoing(_) => None,
+                },
+                Err(_) => None,
             }
         } else {
             None
@@ -224,7 +267,7 @@ impl TetherAgent {
     /// Given a plug definition and a raw (u8 buffer) payload, generate a message
     /// on an appropriate topic and with the QOS specified in the Plug Definition
     pub fn publish(
-        &self,
+        &mut self,
         plug_definition: &PlugDefinition,
         payload: Option<&[u8]>,
     ) -> anyhow::Result<()> {
@@ -234,18 +277,32 @@ impl TetherAgent {
             }
             PlugDefinition::OutputPlug(output_plug_definition) => {
                 let topic = output_plug_definition.topic_str();
-                let qos = output_plug_definition.qos();
-                let message = MessageBuilder::new()
-                    .topic(topic)
-                    .payload(payload.unwrap_or(&[]))
-                    .retained(output_plug_definition.retain())
-                    .qos(qos)
-                    .finalize();
-                if let Err(e) = self.client.publish(message) {
-                    error!("Error publishing: {:?}", e);
-                    Err(e.into())
-                } else {
-                    Ok(())
+                let qos = match output_plug_definition.qos() {
+                    0 => QoS::AtMostOnce,
+                    1 => QoS::AtLeastOnce,
+                    2 => QoS::ExactlyOnce,
+                    _ => QoS::AtMostOnce,
+                };
+                // let message = MessageBuilder::new()
+                //     .topic(topic)
+                //     .payload(payload.unwrap_or(&[]))
+                //     .retained(output_plug_definition.retain())
+                //     .qos(qos)
+                //     .finalize();
+                // if let Err(e) = self.client.publish(message) {
+                //     error!("Error publishing: {:?}", e);
+                //     Err(e.into())
+                // } else {
+                //     Ok(())
+                // }
+                match self.client.publish(
+                    topic,
+                    qos,
+                    output_plug_definition.retain(),
+                    payload.unwrap_or_default(),
+                ) {
+                    Ok(_) => Ok(()),
+                    Err(e) => Err(e.into()),
                 }
             }
         }
@@ -253,7 +310,7 @@ impl TetherAgent {
 
     /// Similar to `publish` but serializes the data automatically before sending
     pub fn encode_and_publish<T: Serialize>(
-        &self,
+        &mut self,
         plug_definition: &PlugDefinition,
         data: T,
     ) -> anyhow::Result<()> {
@@ -267,19 +324,28 @@ impl TetherAgent {
     }
 
     pub fn publish_raw(
-        &self,
+        &mut self,
         topic: &str,
         payload: &[u8],
         qos: Option<i32>,
         retained: Option<bool>,
     ) -> anyhow::Result<()> {
-        let message = MessageBuilder::new()
-            .topic(topic)
-            .payload(payload)
-            .retained(retained.unwrap_or(false))
-            .qos(qos.unwrap_or(1))
-            .finalize();
-        if let Err(e) = self.client.publish(message) {
+        // let message = MessageBuilder::new()
+        //     .topic(topic)
+        //     .payload(payload)
+        //     .retained(retained.unwrap_or(false))
+        //     .qos(qos.unwrap_or(1))
+        //     .finalize();
+        let qos = match qos.unwrap_or(1) {
+            0 => QoS::AtMostOnce,
+            1 => QoS::AtLeastOnce,
+            2 => QoS::ExactlyOnce,
+            _ => QoS::AtMostOnce,
+        };
+        if let Err(e) = self
+            .client
+            .publish(topic, qos, retained.unwrap_or(false), payload)
+        {
             error!("Error publishing: {:?}", e);
             Err(e.into())
         } else {
