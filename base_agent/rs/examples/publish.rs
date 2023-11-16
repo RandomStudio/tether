@@ -19,38 +19,38 @@ fn main() {
 
     debug!("Debugging is enabled; could be verbose");
 
-    let agent = TetherAgentOptionsBuilder::new("RustDemoAgent")
+    let mut tether_agent = TetherAgentOptionsBuilder::new("RustDemoAgent")
         .build()
         .expect("failed to connect Tether");
-    let (role, id, _) = agent.description();
+    let (role, id, _) = tether_agent.description();
     info!("Created agent OK: {}, {}", role, id);
 
     let empty_message_output = PlugOptionsBuilder::create_output("nothing")
-        .build(&agent)
+        .build(&mut tether_agent)
         .expect("failed to create output");
     let boolean_message_output = PlugOptionsBuilder::create_output("one")
-        .build(&agent)
+        .build(&mut tether_agent)
         .expect("failed to create output");
     let custom_output = PlugOptionsBuilder::create_output("two")
         .topic(Some("custom/custom/two".into()))
-        .build(&agent)
+        .build(&mut tether_agent)
         .expect("failed to create output");
     let grouped_output_1 = PlugOptionsBuilder::create_output("one")
         .id(Some("groupMessages"))
-        .build(&agent)
+        .build(&mut tether_agent)
         .expect("failed to create output");
     let grouped_output_2 = PlugOptionsBuilder::create_output("two")
         .id(Some("groupMessages"))
-        .build(&agent)
+        .build(&mut tether_agent)
         .expect("failed to create output");
 
     for i in 1..=10 {
         info!("#{i}: Sending empty message...");
-        agent.publish(&empty_message_output, None).unwrap();
+        tether_agent.publish(&empty_message_output, None).unwrap();
 
         let bool = i % 2 == 0;
         info!("#{i}: Sending boolean message...");
-        agent
+        tether_agent
             .publish(&boolean_message_output, Some(&[bool.into()]))
             .unwrap();
 
@@ -59,13 +59,13 @@ fn main() {
             id: i,
             name: "hello".into(),
         };
-        agent
+        tether_agent
             .encode_and_publish(&custom_output, custom_message)
             .unwrap();
 
         info!("#{i}: Sending grouped messages...");
-        agent.publish(&grouped_output_1, None).unwrap();
-        agent.publish(&grouped_output_2, None).unwrap();
+        tether_agent.publish(&grouped_output_1, None).unwrap();
+        tether_agent.publish(&grouped_output_2, None).unwrap();
 
         thread::sleep(Duration::from_millis(1000))
     }

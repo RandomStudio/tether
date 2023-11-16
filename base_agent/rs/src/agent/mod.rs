@@ -1,4 +1,4 @@
-use log::{error, info, warn};
+use log::{debug, error, info, warn};
 use rmp_serde::to_vec_named;
 use rumqttc::{Client, Connection, Event, Incoming, MqttOptions, Outgoing, Packet, Publish, QoS};
 use serde::Serialize;
@@ -104,7 +104,7 @@ impl TetherAgentOptionsBuilder {
         // Initialize the consumer before connecting
         // let receiver = client.start_consuming();
 
-        let agent = TetherAgent {
+        let mut agent = TetherAgent {
             role: self.role.clone(),
             id: self.id.clone().unwrap_or("any".into()),
             client,
@@ -171,7 +171,7 @@ impl TetherAgent {
         self.id = id.into();
     }
 
-    pub fn connect(&self) -> anyhow::Result<()> {
+    pub fn connect(&mut self) -> anyhow::Result<()> {
         // if self.client.is_connected() {
         //     warn!("Was already connected. First disconnect...");
         //     self.client
@@ -205,6 +205,8 @@ impl TetherAgent {
 
         // Create the client connection
         let (client, connection) = Client::new(mqttoptions, 10);
+        self.client = client;
+        self.connection = connection;
 
         Ok(())
 
@@ -257,7 +259,10 @@ impl TetherAgent {
                     },
                     Event::Outgoing(_) => None,
                 },
-                Err(_) => None,
+                Err(e) => {
+                    error!("Got error {}", e);
+                    None
+                }
             }
         } else {
             None
@@ -301,7 +306,10 @@ impl TetherAgent {
                     output_plug_definition.retain(),
                     payload.unwrap_or_default(),
                 ) {
-                    Ok(_) => Ok(()),
+                    Ok(_) => {
+                        debug!("Publish OK on topic {}", topic);
+                        Ok(())
+                    }
                     Err(e) => Err(e.into()),
                 }
             }

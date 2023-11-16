@@ -3,7 +3,7 @@ use tether_agent::{
 };
 
 fn main() {
-    let tether_agent = TetherAgentOptionsBuilder::new("example")
+    let mut tether_agent = TetherAgentOptionsBuilder::new("example")
         .id(None)
         .host(Some("localhost"))
         .port(Some(1883))
@@ -16,15 +16,15 @@ fn main() {
         .role(Some("pretendingToBeSomethingElse"))
         .qos(Some(2))
         .retain(Some(true))
-        .build(&tether_agent);
+        .build(&mut tether_agent);
     let input_wildcard_plug = PlugOptionsBuilder::create_input("everything")
         .topic(Some("#"))
-        .build(&tether_agent);
+        .build(&mut tether_agent);
 
     let input_customid_plug = PlugOptionsBuilder::create_input("someData")
         .role(None) // i.e., just use default
         .id(Some("specificIDonly"))
-        .build(&tether_agent);
+        .build(&mut tether_agent);
 
     println!("Agent looks like this: {:?}", tether_agent.description());
     let (role, id, _) = tether_agent.description();
