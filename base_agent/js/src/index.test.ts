@@ -1,4 +1,72 @@
+import { InputPlug, OutputPlug, TetherAgent } from ".";
 import { topicMatchesPlug } from "./Plug";
+
+describe("building topic strings", () => {
+  test("Default Output Plug, no overrides", async () => {
+    const agent = await TetherAgent.create("tester");
+    const output = new OutputPlug(agent, "somePlugName");
+    expect(output.getDefinition().name).toEqual("somePlugName");
+    expect(output.getDefinition().topic).toEqual("tester/any/somePlugName");
+    agent.disconnect();
+  });
+
+  test("Default Input Plug, no overrides", async () => {
+    const agent = await TetherAgent.create("tester");
+    const input = await InputPlug.create(agent, "somePlugName");
+    expect(input.getDefinition().name).toEqual("somePlugName");
+    expect(input.getDefinition().topic).toEqual("+/+/somePlugName");
+    agent.disconnect();
+  });
+
+  test("Agent with custom ID, Output Plug with defaults", async () => {
+    const agent = await TetherAgent.create("tester", { id: "specialGroup" });
+    const output = new OutputPlug(agent, "somePlugName");
+    expect(output.getDefinition().name).toEqual("somePlugName");
+    expect(output.getDefinition().topic).toEqual(
+      "tester/specialGroup/somePlugName"
+    );
+    agent.disconnect();
+  });
+
+  test("Agent with custom ID, Input Plug with defaults; still generic", async () => {
+    const agent = await TetherAgent.create("tester", { id: "specialGroup" });
+    const input = await InputPlug.create(agent, "somePlugName");
+    expect(input.getDefinition().name).toEqual("somePlugName");
+    expect(input.getDefinition().topic).toEqual("+/+/somePlugName");
+    agent.disconnect();
+  });
+
+  test("Override ID and/or Role when creating Input", async () => {
+    const agent = await TetherAgent.create("tester");
+
+    const inputCustomID = await InputPlug.create(agent, "somePlugName", {
+      id: "stillSpecial",
+    });
+    expect(inputCustomID.getDefinition().name).toEqual("somePlugName");
+    expect(inputCustomID.getDefinition().topic).toEqual(
+      "+/stillSpecial/somePlugName"
+    );
+
+    const inputCustomRole = await InputPlug.create(agent, "somePlugName", {
+      role: "specialRole",
+    });
+    expect(inputCustomRole.getDefinition().name).toEqual("somePlugName");
+    expect(inputCustomRole.getDefinition().topic).toEqual(
+      "specialRole/+/somePlugName"
+    );
+
+    const inputCustomBoth = await InputPlug.create(agent, "somePlugName", {
+      id: "id2",
+      role: "role2",
+    });
+    expect(inputCustomBoth.getDefinition().name).toEqual("somePlugName");
+    expect(inputCustomBoth.getDefinition().topic).toEqual(
+      "role2/id2/somePlugName"
+    );
+
+    agent.disconnect();
+  });
+});
 
 describe("matching topics to plugs", () => {
   test("if Plug specified full topic, i.e. no wildcards, then only exact matches", () => {

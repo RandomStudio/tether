@@ -25,10 +25,12 @@ export class InputPlug extends Plug {
     name: string,
     options?: {
       overrideTopic?: string;
+      id?: string;
+      role?: string;
       subscribeOptions?: IClientSubscribeOptions;
     }
   ) {
-    const inputPlug = new InputPlug(agent, name, options);
+    const inputPlug = new InputPlug(agent, name, options || {});
 
     try {
       await inputPlug.subscribe(options?.subscribeOptions || { qos: 1 });
@@ -43,14 +45,18 @@ export class InputPlug extends Plug {
   private constructor(
     agent: TetherAgent,
     name: string,
-    options?: {
+    options: {
       overrideTopic?: string;
+      id?: string;
+      role?: string;
       subscribeOptions?: IClientSubscribeOptions;
     }
   ) {
     super(agent, {
       name,
-      topic: options?.overrideTopic || `+/+/${name}`,
+      topic:
+        options?.overrideTopic ||
+        buildInputPlugTopic(name, options.id, options.role),
     });
     if (!agent.getIsConnected()) {
       throw Error("trying to create an Input before client is connected");
@@ -97,6 +103,7 @@ export class OutputPlug extends Plug {
     name: string,
     options?: {
       overrideTopic?: string;
+      id?: string;
       publishOptions?: IClientPublishOptions;
     }
   ) {
@@ -104,7 +111,11 @@ export class OutputPlug extends Plug {
       name,
       topic:
         options?.overrideTopic ||
-        `${agent.getConfig().role}/${agent.getConfig().id}/${name}`,
+        buildOutputPlugTopic(
+          name,
+          agent.getConfig().role,
+          agent.getConfig().id
+        ),
     });
     this.publishOptions = options?.publishOptions || {
       retain: false,
@@ -214,6 +225,26 @@ export const topicMatchesPlug = (
 };
 
 const containsWildcards = (topicOrPart: string) => topicOrPart.includes("+");
+
+const buildInputPlugTopic = (
+  plugName: string,
+  specifyID?: string,
+  specifyRole?: string
+): string => {
+  const id = specifyID || "+";
+  const role = specifyRole || "+";
+  return `${role}/${id}/${plugName}`;
+};
+
+const buildOutputPlugTopic = (
+  plugName: string,
+  specifyRole: string,
+  specifyID?: string
+): string => {
+  const id = specifyID || "any";
+  const role = specifyRole;
+  return `${role}/${id}/${plugName}`;
+};
 
 export const parsePlugName = (topic: string) => topic.split(`/`)[2];
 export const parseAgentIdOrGroup = (topic: string) => topic.split(`/`)[1];
