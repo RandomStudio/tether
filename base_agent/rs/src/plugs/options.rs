@@ -311,6 +311,24 @@ mod tests {
     }
 
     #[test]
+    /// This is a fairly trivial example, but contrast with the test
+    /// `output_plug_default_but_agent_id_custom`: although a custom ID was set for the
+    /// Agent, this does not affect the Topic for an Input Plug created without any
+    /// explicit overrides.
+    fn default_input_plug_with_agent_custom_id() {
+        // verbose_logging();
+        let tether_agent = TetherAgentOptionsBuilder::new("tester")
+            .id(Some("verySpecialGroup"))
+            .build()
+            .expect("sorry, these tests require working localhost Broker");
+        let input = PlugOptionsBuilder::create_input("one")
+            .build(&tether_agent)
+            .unwrap();
+        assert_eq!(input.name(), "one");
+        assert_eq!(input.topic(), "+/+/one");
+    }
+
+    #[test]
     fn default_output_plug() {
         let tether_agent = TetherAgentOptionsBuilder::new("tester")
             .build()
