@@ -123,7 +123,7 @@ impl PlugOptionsBuilder {
     /// This is mainly to facilitate wildcard subscriptions such as
     /// `someRole/someID/+` instead of `someRole/someID/originalPlugName`.
     ///
-    /// In the case of Input Topics, a wildcard `+` will be used to substitute
+    /// In the case of Input Topics, a wildcard `+` can be used to substitute
     /// the last part of the topic as in `role/id/+` but will NOT affect the stored "name"
     /// of the Plug Definition itself. Anything else will be ignored with an error.
     ///
@@ -137,7 +137,9 @@ impl PlugOptionsBuilder {
                 }
                 if let Some(s) = override_plug_name {
                     if s.eq("+") {
-                        info!("This is a wildcard; subscribe topic will use this but Plug Name will remain unchanged");
+                        info!(
+                            "Plug Name part given is a wildcard; subscribe topic will use this but (internally) Plug Name will remain \"{}\"", &opt.plug_name
+                        );
                     } else {
                         error!("Input Plugs cannot change their name after ::create_input constructor EXCEPT for wildcard \"+\"");
                     }
@@ -147,9 +149,34 @@ impl PlugOptionsBuilder {
                 }
             }
             PlugOptionsBuilder::OutputPlugOptions(_) => {
-                error!("Output Plugs cannot change their name after ::create_output constructor");
+                error!(
+                    "Output Plugs cannot change their name part after ::create_output constructor"
+                );
             }
         };
+        self
+    }
+
+    /// Call this if you would like your Input plug to match **any plug**.
+    /// This is equivalent to `.name(Some("+"))` but is provided for convenience
+    /// since it does not require you to remember the wildcard string.
+    ///
+    /// This also does not prevent you from further restricting the topic
+    /// subscription match by Role and/or ID. So, for example, if you are
+    /// interested in **all messages** from an Agent with the role `"brain"`,
+    /// it is valid to create a plug with `.role("brain").any_plug()` and this
+    /// will subscribe to `"brain/+/+"` as expected.
+    pub fn any_plug(mut self) -> Self {
+        match &mut self {
+            PlugOptionsBuilder::InputPlugOptions(opt) => {
+                opt.override_subscribe_plug_name = Some("+".into());
+            }
+            PlugOptionsBuilder::OutputPlugOptions(_) => {
+                error!(
+                    "Output Plugs cannot change their name part after ::create_output constructor"
+                );
+            }
+        }
         self
     }
 
@@ -166,10 +193,16 @@ impl PlugOptionsBuilder {
                 if TryInto::<ThreePartTopic>::try_into(t).is_ok() {
                     info!("Custom topic passes Three Part Topic validation");
                 } else {
-                    warn!(
-                        "Could not convert \"{}\" into Tether 3 Part Topic; presumably you know what you're doing!",
-                        t
-                    );
+                    if t == "#" {
+                        info!(
+                            "Wildcard \"#\" custom topics are not Three Part Topics but are valid"
+                        );
+                    } else {
+                        warn!(
+                            "Could not convert \"{}\" into Tether 3 Part Topic; presumably you know what you're doing!",
+                            t
+                        );
+                    }
                 }
                 match &mut self {
                     PlugOptionsBuilder::InputPlugOptions(s) => s.override_topic = Some(t.into()),
@@ -220,10 +253,10 @@ impl PlugOptionsBuilder {
                     InputPlugDefinition::new(&plug_options.plug_name, tpt, plug_options.qos);
                 match tether_agent
                     .client()
-                    .subscribe(&plug_definition.topic(), plug_definition.qos())
+                    .subscribe(&plug_definition.topic_str(), plug_definition.qos())
                 {
                     Ok(res) => {
-                        debug!("This topic was fine: \"{}\"", plug_definition.topic());
+                        debug!("This topic was fine: \"{}\"", plug_definition.topic_str());
                         debug!("Server respond OK for subscribe: {res:?}");
                         Ok(PlugDefinition::InputPlug(plug_definition))
                     }
@@ -319,13 +352,57 @@ mod tests {
     }
 
     #[test]
-    fn input_specific_id_andor_role_any_plugname() {
+    /// If the end-user implicitly specifies the plug name part (does not set it to Some(_)
+    /// or None) then the ID and/or Role parts will change but the Plug Name part will
+    /// remain the "original" / default
+    /// Contrast with input_specific_id_andor_role_no_plugname below.
+    fn input_specific_id_andor_role_with_plugname() {
         let tether_agent = TetherAgentOptionsBuilder::new("tester")
             .build()
             .expect("sorry, these tests require working localhost Broker");
 
         let input_role_only = PlugOptionsBuilder::create_input("thePlug")
-            .name(Some("+".into()))
+            .role(Some("specificRole".into()))
+            .build(&tether_agent)
+            .unwrap();
+        assert_eq!(input_role_only.name(), "thePlug");
+        assert_eq!(input_role_only.topic(), "specificRole/+/thePlug");
+
+        let input_id_only = PlugOptionsBuilder::create_input("thePlug")
+            .id(Some("specificID".into()))
+            .build(&tether_agent)
+            .unwrap();
+        assert_eq!(input_id_only.name(), "thePlug");
+        assert_eq!(input_id_only.topic(), "+/specificID/thePlug");
+
+        let input_both = PlugOptionsBuilder::create_input("thePlug")
+            .id(Some("specificID".into()))
+            .role(Some("specificRole".into()))
+            .build(&tether_agent)
+            .unwrap();
+        assert_eq!(input_both.name(), "thePlug");
+        assert_eq!(input_both.topic(), "specificRole/specificID/thePlug");
+    }
+
+    #[test]
+    /// Unlike input_specific_id_andor_role_with_plugname, this tests the situation where
+    /// the end-user (possibly) specifies the ID and/or Role, but also explicitly
+    /// sets the Plug Name to Some("+"), ie. "use a wildcard at this
+    /// position instead" - and NOT the original plug name.
+    fn input_specific_id_andor_role_no_plugname() {
+        let tether_agent = TetherAgentOptionsBuilder::new("tester")
+            .build()
+            .expect("sorry, these tests require working localhost Broker");
+
+        let input_only_plugname_none = PlugOptionsBuilder::create_input("thePlug")
+            .name(Some("+"))
+            .build(&tether_agent)
+            .unwrap();
+        assert_eq!(input_only_plugname_none.name(), "thePlug");
+        assert_eq!(input_only_plugname_none.topic(), "+/+/+");
+
+        let input_role_only = PlugOptionsBuilder::create_input("thePlug")
+            .name(Some("+"))
             .role(Some("specificRole".into()))
             .build(&tether_agent)
             .unwrap();
@@ -333,7 +410,8 @@ mod tests {
         assert_eq!(input_role_only.topic(), "specificRole/+/+");
 
         let input_id_only = PlugOptionsBuilder::create_input("thePlug")
-            .name(Some("+".into()))
+            // .name(Some("+"))
+            .any_plug() // equivalent to Some("+")
             .id(Some("specificID".into()))
             .build(&tether_agent)
             .unwrap();
@@ -341,7 +419,7 @@ mod tests {
         assert_eq!(input_id_only.topic(), "+/specificID/+");
 
         let input_both = PlugOptionsBuilder::create_input("thePlug")
-            .name(Some("+".into()))
+            .name(Some("+"))
             .id(Some("specificID".into()))
             .role(Some("specificRole".into()))
             .build(&tether_agent)

@@ -18,14 +18,8 @@ const config = parse(
 console.log("Launch with config", config);
 
 const main = async () => {
-  // const agent = await TetherAgent.create("dummy", {
-  //   loglevel: config.loglevel,
-  // });
-
-  // Example of custom options below:
   const agent = await TetherAgent.create("dummy", {
-    id: "special",
-    brokerOptions: { ...BROKER_DEFAULTS.browser, host: config.host },
+    loglevel: config.loglevel,
   });
 
   const outputPlug = new OutputPlug(agent, "randomValue");
