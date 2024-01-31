@@ -323,6 +323,25 @@ mod tests {
     }
 
     #[test]
+    /// This is identical to the case in which an Output Plug is created with defaults (no overrides),
+    /// BUT the Agent had a custom ID set, which means that the final topic includes this custom
+    /// ID/Group value.
+    fn output_plug_default_but_agent_id_custom() {
+        let tether_agent = TetherAgentOptionsBuilder::new("tester")
+            .id(Some("specialCustomGrouping"))
+            .build()
+            .expect("sorry, these tests require working localhost Broker");
+        let input = PlugOptionsBuilder::create_output("somethingStandard")
+            .build(&tether_agent)
+            .unwrap();
+        assert_eq!(input.name(), "somethingStandard");
+        assert_eq!(
+            input.topic(),
+            "tester/specialCustomGrouping/somethingStandard"
+        );
+    }
+
+    #[test]
     fn input_id_andor_role() {
         let tether_agent = TetherAgentOptionsBuilder::new("tester")
             .build()
