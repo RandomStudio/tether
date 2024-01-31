@@ -1,4 +1,4 @@
-import { topicMatchesPlug } from ".";
+import { topicMatchesPlug } from "./Plug";
 
 describe("matching topics to plugs", () => {
   test("if Plug specified full topic, i.e. no wildcards, then only exact matches", () => {
@@ -42,6 +42,13 @@ describe("matching topics to plugs", () => {
     expect(
       topicMatchesPlug(plugDefinedTopic, "differentAgent/anything/plugName")
     ).toBeFalsy();
+  });
+
+  test("# wildcard should match any topic", () => {
+    const plugDefinedTopic = "#";
+    expect(
+      topicMatchesPlug(plugDefinedTopic, "something/something/something")
+    ).toBeTruthy();
   });
 
   test("specific use case: agentType specified, no group/ID, plug name", () => {

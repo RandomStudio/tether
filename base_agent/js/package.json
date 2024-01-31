@@ -1,6 +1,6 @@
 {
   "name": "tether-agent",
-  "version": "2.7.2",
+  "version": "3.0.0",
   "description": "",
   "main": "dist/index.js",
   "scripts": {
@@ -12,12 +12,17 @@
   "license": "ISC",
   "repository": "https://github.com/RandomStudio/tether",
   "dependencies": {
+    "@msgpack/msgpack": "^3.0.0-beta2",
     "async-mqtt": "^2.6.2",
     "buffer": "^6.0.3",
-    "loglevel": "^1.8.0",
-    "uuid": "^8.3.2"
+    "events": "^3.3.0",
+    "loglevel": "^1.8.0"
   },
   "devDependencies": {
+    "@tsconfig/node18": "^18.2.2",
+    "@tsconfig/node20": "^20.1.2",
+    "@tsconfig/recommended": "^1.0.3",
+    "@tsconfig/vite-react": "^2.0.1",
     "@types/jest": "^28.1.6",
     "@types/node": "^15.0.3",
     "@types/uuid": "^8.3.4",
@@ -25,6 +30,6 @@
     "ts-jest": "^28.0.7",
     "tslint": "^6.1.3",
     "tslint-config-prettier": "^1.18.0",
-    "typescript": "^4.5.5"
+    "typescript": "^5.2.2"
   }
 }
