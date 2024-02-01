@@ -20,6 +20,10 @@ console.log("Launch with config", config);
 const main = async () => {
   const agent = await TetherAgent.create("dummy", {
     loglevel: config.loglevel,
+    brokerOptions: {
+      ...BROKER_DEFAULTS.nodeJS,
+      host: config.host,
+    },
   });
 
   const outputPlug = new OutputPlug(agent, "randomValue");
