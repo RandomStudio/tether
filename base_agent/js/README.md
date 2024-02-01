@@ -38,3 +38,27 @@ For the JS Base Agent specifically, we encapsulate the functionality of a Tether
 - The Input and Output "Plugs" which are used to subscribe and publish respectively
 
 We also provide the `encode` and `decode` functions from the [@msgpack/msgpack JS library](https://www.npmjs.com/package/@msgpack/msgpack) dependency to allow easy encoding and decoding of payloads.
+
+## Usage
+
+You can find some ES6-style Javascript sample code in `/examples/nodejs` and some React with Typescript sample code in `/examples/react-ts`.
+
+The basic steps are usually something similar to the following:
+
+1. Create a Tether Agent instance with `const agent = await TetherAgent.create("someRole")` - this connects automatically to the MQTT broker, by default
+2. Create Output Plug(s) that you need with `const myOutputPlug = new OutputPlug("somePlugName")`
+3. Create Input Plug(s) that you need with `const myInputPlug = await InputPlug.create(agent, "somePlugName")`
+
+For Output Plugs, you can send messages like this:
+
+```
+await myOutputPlug.publish(encode({ foo: "bar }));
+```
+
+For Input Plugs, the subscription is set up automatically on `.create` but you need to handle incoming messages, e.g.:
+
+```
+myInputPlug.on("message", (payload, _topic) => {
+  const decoded = decode(payload);
+});
+```
