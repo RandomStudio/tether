@@ -1,15 +1,12 @@
 version: "1.0"
 services:
   tether_mosquitto:
-    image: "eclipse-mosquitto:2.0.15"
+    image: "eclipse-mosquitto:2.0.15-openssl"
     restart: "unless-stopped"
     volumes:
-      - ./mosquitto.conf:/mosquitto/config/mosquitto.conf
-      - ./mosquitto.passwd:/mosquitto/config/mosquitto.passwd
-      - ./self-signed.crt:/mosquitto/config/self-signed.crt
-      - ./self-signed.key:/mosquitto/config/self-signed.key
+      - ./config:/mosquitto/config/
     ports:
       # remember HOST_PORT:CONTAINER_PORT
       - "15675:9001" # Websocket, match 15676 for the outside
-      - "15676:9002" # Websocket over TLS, match 15677 for the outside
+      - "15676:9002" # Websocket over TLS, match 15676 for the outside
       - "1883:1883" # Standard TCP for MQT
