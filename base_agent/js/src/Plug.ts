@@ -4,6 +4,14 @@ import { PlugDefinition } from "./types";
 import { Buffer } from "buffer";
 import EventEmitter from "events";
 
+declare interface Plug {
+  on(
+    event: "message",
+    listener: (payload: Buffer, topic: string) => void
+  ): this;
+  on(event: string, listener: Function): this;
+}
+
 class Plug extends EventEmitter {
   protected definition: PlugDefinition;
   protected agent: TetherAgent;
