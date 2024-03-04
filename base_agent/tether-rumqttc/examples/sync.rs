@@ -9,7 +9,7 @@ fn main() {
         .to_owned();
 
     let (mut client, mut connection) = Client::new(mqttoptions, 10);
-    client.subscribe("hello/rumqtt", QoS::AtMostOnce).unwrap();
+    // client.subscribe("hello/rumqtt", QoS::AtMostOnce).unwrap();
     thread::spawn(move || {
         for i in 0..10 {
             client
