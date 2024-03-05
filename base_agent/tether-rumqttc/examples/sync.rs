@@ -21,6 +21,6 @@ fn main() {
 
     // Iterate to poll the eventloop for connection progress
     for (i, notification) in connection.iter().enumerate() {
-        println!("Notification = {:?}", notification);
+        println!("#{i}: Notification = {:?}", notification);
     }
 }

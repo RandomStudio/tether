@@ -32,7 +32,7 @@ fn main() {
         .build(&mut tether_agent)
         .expect("failed to create output");
     let custom_output = PlugOptionsBuilder::create_output("two")
-        .topic(Some("custom/custom/two".into()))
+        .topic(Some("custom/custom/two"))
         .build(&mut tether_agent)
         .expect("failed to create output");
     let grouped_output_1 = PlugOptionsBuilder::create_output("one")

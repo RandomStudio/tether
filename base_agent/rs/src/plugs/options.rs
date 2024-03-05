@@ -323,12 +323,12 @@ mod tests {
     /// explicit overrides.
     fn default_input_plug_with_agent_custom_id() {
         // verbose_logging();
-        let tether_agent = TetherAgentOptionsBuilder::new("tester")
+        let mut tether_agent = TetherAgentOptionsBuilder::new("tester")
             .id(Some("verySpecialGroup"))
             .build()
             .expect("sorry, these tests require working localhost Broker");
         let input = PlugOptionsBuilder::create_input("one")
-            .build(&tether_agent)
+            .build(&mut tether_agent)
             .unwrap();
         assert_eq!(input.name(), "one");
         assert_eq!(input.topic(), "+/+/one");
@@ -351,12 +351,12 @@ mod tests {
     /// BUT the Agent had a custom ID set, which means that the final topic includes this custom
     /// ID/Group value.
     fn output_plug_default_but_agent_id_custom() {
-        let tether_agent = TetherAgentOptionsBuilder::new("tester")
+        let mut tether_agent = TetherAgentOptionsBuilder::new("tester")
             .id(Some("specialCustomGrouping"))
             .build()
             .expect("sorry, these tests require working localhost Broker");
         let input = PlugOptionsBuilder::create_output("somethingStandard")
-            .build(&tether_agent)
+            .build(&mut tether_agent)
             .unwrap();
         assert_eq!(input.name(), "somethingStandard");
         assert_eq!(

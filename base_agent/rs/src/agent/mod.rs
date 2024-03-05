@@ -2,7 +2,7 @@ use log::{debug, error, info, warn};
 use rmp_serde::to_vec_named;
 use rumqttc::{Client, Connection, Event, Incoming, MqttOptions, Outgoing, Packet, Publish, QoS};
 use serde::Serialize;
-use std::time::Duration;
+use std::{thread, time::Duration};
 
 use crate::{
     three_part_topic::ThreePartTopic, PlugDefinition, PlugDefinitionCommon, TetherOrCustomTopic,
@@ -15,7 +15,6 @@ pub struct TetherAgent {
     role: String,
     id: String,
     client: Client,
-    connection: Connection,
     broker_uri: String,
     username: String,
     password: String,
@@ -108,7 +107,6 @@ impl TetherAgentOptionsBuilder {
             role: self.role.clone(),
             id: self.id.clone().unwrap_or("any".into()),
             client,
-            connection,
             broker_uri,
             username: self.username.unwrap_or(DEFAULT_USERNAME.into()),
             password: self.password.unwrap_or(DEFAULT_PASSWORD.into()),
@@ -135,9 +133,9 @@ impl TetherAgent {
         &mut self.client
     }
 
-    pub fn connection(&self) -> &Connection {
-        &self.connection
-    }
+    // pub fn connection(&self) -> &Connection {
+    //     &self.connection
+    // }
 
     pub fn is_connected(&self) -> bool {
         // self.client.is_connected()
@@ -180,8 +178,6 @@ impl TetherAgent {
         //     info!("...Disconnected");
         // }
 
-        info!("Broker at {}", &self.broker_uri);
-
         // let conn_opts = mqtt::ConnectOptionsBuilder::new()
         //     .server_uris(&[self.broker_uri.clone()])
         //     .user_name(&self.username)
@@ -198,17 +194,37 @@ impl TetherAgent {
             &self.broker_uri
         );
 
-        let mqttoptions = MqttOptions::new("rumqtt-sync", "localhost", 1883)
+        let mqtt_options = MqttOptions::new("tether-rumqtt-sync", "localhost", 1883)
             .set_credentials("tether", "sp_ceB0ss!")
-            .set_keep_alive(Duration::from_secs(5))
+            .set_keep_alive(Duration::from_secs(1))
             .to_owned();
 
         // Create the client connection
-        let (client, connection) = Client::new(mqttoptions, 10);
-        self.client = client;
-        self.connection = connection;
+        let (client, mut connection) = Client::new(mqtt_options, 10);
 
-        Ok(())
+        // client
+        //     .publish("hello/rumqtt", QoS::AtLeastOnce, false, vec![0])
+        //     .unwrap();
+        // thread::sleep(Duration::from_millis(100));
+        //
+        thread::spawn(move || {
+            for event in connection.iter() {
+                match event {
+                    Ok(e) => match e {
+                        Event::Incoming(i) => match i {
+                            Packet::ConnAck(_) => {
+                                info!("ConnAck received!");
+                            }
+                            _ => debug!("Ignore all others for now"),
+                        },
+                        Event::Outgoing(_) => debug!("Ignore outgoing events"),
+                    },
+                    Err(_) => todo!(),
+                }
+            }
+        });
+
+        self.client = client;
 
         // match self.client.connect(conn_opts) {
         //     Ok(res) => {
@@ -222,6 +238,7 @@ impl TetherAgent {
         //         Err(e)
         //     }
         // }
+        Ok(())
     }
 
     /// If a message is waiting return ThreePartTopic, Message (String, Message)
@@ -244,29 +261,30 @@ impl TetherAgent {
         // } else {
         //     None
         // }
-        if let Ok(res) = self.connection.try_recv() {
-            match res {
-                Ok(e) => match e {
-                    Event::Incoming(i) => match i {
-                        Packet::Publish(p) => {
-                            let Publish { topic, payload, .. } = p;
-                            Some((
-                                TetherOrCustomTopic::Custom(topic.to_string()),
-                                payload.into(),
-                            ))
-                        }
-                        _ => None,
-                    },
-                    Event::Outgoing(_) => None,
-                },
-                Err(e) => {
-                    error!("Got error {}", e);
-                    None
-                }
-            }
-        } else {
-            None
-        }
+        // if let Ok(res) = self.connection.try_recv() {
+        //     match res {
+        //         Ok(e) => match e {
+        //             Event::Incoming(i) => match i {
+        //                 Packet::Publish(p) => {
+        //                     let Publish { topic, payload, .. } = p;
+        //                     Some((
+        //                         TetherOrCustomTopic::Custom(topic.to_string()),
+        //                         payload.into(),
+        //                     ))
+        //                 }
+        //                 _ => None,
+        //             },
+        //             Event::Outgoing(_) => None,
+        //         },
+        //         Err(e) => {
+        //             error!("Got error {}", e);
+        //             None
+        //         }
+        //     }
+        // } else {
+        //     None
+        // }
+        None
     }
 
     /// Given a plug definition and a raw (u8 buffer) payload, generate a message
