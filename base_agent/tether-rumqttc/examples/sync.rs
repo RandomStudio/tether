@@ -9,11 +9,16 @@ fn main() {
         .to_owned();
 
     let (mut client, mut connection) = Client::new(mqttoptions, 10);
-    client.subscribe("hello/rumqtt", QoS::AtMostOnce).unwrap();
+    client.subscribe("+/+/plug", QoS::AtMostOnce).unwrap();
     thread::spawn(move || {
         for i in 0..10 {
             client
-                .publish("hello/rumqtt", QoS::AtLeastOnce, false, vec![i; i as usize])
+                .publish(
+                    format!("something/{i}/plug"),
+                    QoS::AtLeastOnce,
+                    false,
+                    vec![i; i as usize],
+                )
                 .unwrap();
             thread::sleep(Duration::from_millis(100));
         }

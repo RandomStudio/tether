@@ -25,7 +25,7 @@ fn main() {
 
     debug!("Debugging is enabled; could be verbose");
 
-    let mut tether_agent = TetherAgentOptionsBuilder::new("RustDemoAgent")
+    let mut tether_agent = TetherAgentOptionsBuilder::new("RustDemoSubscribe")
         .id(Some("example"))
         .build()
         .expect("failed to init Tether agent");
@@ -64,7 +64,7 @@ fn main() {
 
     for i in 1..10 {
         info!("#{i}: Checking for messages...");
-        while let Some((topic, message)) = tether_agent.check_messages() {
+        while let Some((topic, payload)) = tether_agent.check_messages() {
             // debug!(
             //     "........ Received a message topic {:?} => topic parts {:?}",
             //     topic, topic
@@ -75,7 +75,7 @@ fn main() {
                             "******** INPUT ONE:\n Received a message for plug named \"{}\" on topic {:?} with length {} bytes",
                             input_one.name(),
                             topic,
-                            message.len()
+                            payload.len()
                         );
                 // assert_eq!(parse_plug_name(topic.un), Some("one"));
             }
@@ -84,13 +84,13 @@ fn main() {
                         "******** INPUT TWO:\n Received a message for plug named \"{}\" on topic {:?} with length {} bytes",
                         input_two.name(),
                         topic,
-                        message.len()
+                        payload.len()
                     );
                 // assert_eq!(parse_plug_name(message.topic()), Some("two"));
                 // assert_ne!(parse_plug_name(message.topic()), Some("one"));
 
                 // Notice how you must give the from_slice function a type so it knows what to expect
-                let decoded = from_slice::<CustomMessage>(&message);
+                let decoded = from_slice::<CustomMessage>(&payload);
                 match decoded {
                     Ok(d) => {
                         info!("Yes, we decoded the MessagePack payload as: {:?}", d);
@@ -107,7 +107,7 @@ fn main() {
                         "******** EMPTY MESSAGE:\n Received a message for plug named \"{}\" on topic {:?} with length {} bytes",
                         input_empty.name(),
                         topic,
-                       message.len()
+                       payload.len()
                     );
                 // assert_eq!(parse_plug_name(topic), Some("nothing"));
             }
@@ -116,7 +116,7 @@ fn main() {
                     "******** EVERYTHING MATCHES HERE:\n Received a message for plug named \"{}\" on topic {:?} with length {} bytes",
                     input_everything.name(),
                     topic,
-                   message.len()
+                   payload.len()
                 );
             }
             if input_specify_id.matches(&topic) {
@@ -125,7 +125,7 @@ fn main() {
                     "\n Received a message from plug named \"{}\" on topic {:?} with length {} bytes",
                     input_specify_id.name(),
                     topic,
-                    message.len()
+                    payload.len()
                 );
                 // assert_eq!(parse_agent_id(message.topic()), Some("groupMessages"));
             }
