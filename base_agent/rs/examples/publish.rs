@@ -19,7 +19,7 @@ fn main() {
 
     debug!("Debugging is enabled; could be verbose");
 
-    let mut tether_agent = TetherAgentOptionsBuilder::new("RustDemoPublish")
+    let mut tether_agent = TetherAgentOptionsBuilder::new("RustDemo")
         .build()
         .expect("failed to connect Tether");
     let (role, id, _) = tether_agent.description();

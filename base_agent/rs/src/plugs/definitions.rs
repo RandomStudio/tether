@@ -90,13 +90,8 @@ impl InputPlugDefinition {
                     &my_custom_topic,
                     self.name()
                 );
-                    if my_custom_topic.as_str() == "#"
+                    my_custom_topic.as_str() == "#"
                         || my_custom_topic.as_str() == incoming_three_parts.topic()
-                    {
-                        true
-                    } else {
-                        false
-                    }
                 }
             },
             TetherOrCustomTopic::Custom(incoming_custom) => match &self.topic {

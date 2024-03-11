@@ -1,14 +1,15 @@
 use log::{debug, error, info, warn};
 use rmp_serde::to_vec_named;
-use rumqttc::{Client, Connection, Event, Incoming, MqttOptions, Outgoing, Packet, Publish, QoS};
+use rumqttc::{Client, Event, MqttOptions, Packet, QoS};
 use serde::Serialize;
 use std::{sync::mpsc, thread, time::Duration};
+use uuid::Uuid;
 
 use crate::{
     three_part_topic::ThreePartTopic, PlugDefinition, PlugDefinitionCommon, TetherOrCustomTopic,
 };
 
-const TIMEOUT_SECONDS: u64 = 10;
+const TIMEOUT_SECONDS: usize = 10;
 const DEFAULT_USERNAME: &str = "tether";
 const DEFAULT_PASSWORD: &str = "sp_ceB0ss!";
 
@@ -19,6 +20,7 @@ pub struct TetherAgent {
     broker_uri: String,
     message_sender: mpsc::Sender<(TetherOrCustomTopic, Vec<u8>)>,
     message_receiver: mpsc::Receiver<(TetherOrCustomTopic, Vec<u8>)>,
+    mqtt_client_id: Option<String>,
 }
 
 #[derive(Clone)]
@@ -30,6 +32,7 @@ pub struct TetherAgentOptionsBuilder {
     username: Option<String>,
     password: Option<String>,
     auto_connect: bool,
+    mqtt_client_id: Option<String>,
 }
 
 impl TetherAgentOptionsBuilder {
@@ -44,12 +47,24 @@ impl TetherAgentOptionsBuilder {
             username: None,
             password: None,
             auto_connect: true,
+            mqtt_client_id: None,
         }
     }
 
-    /// Provide Some(value) to override or None to use default
+    /// Optionally sets the **Tether ID**, as used in auto-generating topics such as `myRole/myID/myPlug` _not_ the MQTT Client ID.
+    /// Provide Some(value) to override or None to use the default `any` (when publishing) or `+` when subscribing.
     pub fn id(mut self, id: Option<&str>) -> Self {
         self.id = id.map(|x| x.into());
+        self
+    }
+
+    /// Optionally set the **MQTT Client ID** used when connecting to the MQTT broker. This is _not_ the same as the **Tether ID**
+    /// used for auto-generating topics.
+    ///
+    /// By default we use a UUID for this value, in order to avoid hard-to-debug issues where Tether Agent instances share
+    /// the same Client ID and therefore events/messages are not handled properly by all instances.
+    pub fn mqtt_client_id(mut self, client_id: Option<&str>) -> Self {
+        self.mqtt_client_id = client_id.map(|x| x.into());
         self
     }
 
@@ -89,18 +104,16 @@ impl TetherAgentOptionsBuilder {
 
         info!("Broker at {}", &broker_uri);
 
-        // let create_opts = mqtt::CreateOptionsBuilder::new()
-        //     .server_uri(broker_uri.clone())
-        //     .client_id("")
-        //     .finalize();
-
         let mqttoptions = MqttOptions::new("rumqtt-sync", "localhost", 1883)
-            .set_credentials("tether", "sp_ceB0ss!")
+            .set_credentials(
+                self.username.unwrap_or(DEFAULT_USERNAME.into()),
+                self.password.unwrap_or(DEFAULT_PASSWORD.into()),
+            )
             .set_keep_alive(Duration::from_secs(5))
             .to_owned();
 
         // Create the client connection
-        let (client, connection) = Client::new(mqttoptions, 10);
+        let (client, _connection) = Client::new(mqttoptions, TIMEOUT_SECONDS);
 
         // Initialize the consumer before connecting
         // let receiver = client.start_consuming();
@@ -114,12 +127,13 @@ impl TetherAgentOptionsBuilder {
             broker_uri,
             message_sender,
             message_receiver,
+            mqtt_client_id: self.mqtt_client_id,
         };
 
         if self.auto_connect {
             match agent.connect() {
                 Ok(()) => Ok(agent),
-                Err(e) => Err(e.into()),
+                Err(e) => Err(e),
             }
         } else {
             warn!("Auto-connect disabled; you must call .connect explicitly");
@@ -174,35 +188,22 @@ impl TetherAgent {
     }
 
     pub fn connect(&mut self) -> anyhow::Result<()> {
-        // if self.client.is_connected() {
-        //     warn!("Was already connected. First disconnect...");
-        //     self.client
-        //         .disconnect(None)
-        //         .expect("...Failed to disconnect");
-        //     info!("...Disconnected");
-        // }
-
-        // let conn_opts = mqtt::ConnectOptionsBuilder::new()
-        //     .server_uris(&[self.broker_uri.clone()])
-        //     .user_name(&self.username)
-        //     .password(&self.password)
-        //     .connect_timeout(Duration::from_secs(TIMEOUT_SECONDS))
-        //     .keep_alive_interval(Duration::from_secs(TIMEOUT_SECONDS))
-        //     // .mqtt_version(mqtt::MQTT_VERSION_3_1_1)
-        //     .clean_session(true)
-        //     .finalize();
-
-        // Make the connection to the broker
         info!(
             "Make new connection to the MQTT server at {}...",
             &self.broker_uri
         );
 
-        let mqtt_options =
-            MqttOptions::new(format!("tether-rumqtt-{}", self.role), "localhost", 1883)
-                .set_credentials("tether", "sp_ceB0ss!")
-                .set_keep_alive(Duration::from_secs(1))
-                .to_owned();
+        let mqtt_client_id = self
+            .mqtt_client_id
+            .clone()
+            .unwrap_or(Uuid::new_v4().to_string());
+
+        debug!("Using MQTT Client ID \"{}\"", mqtt_client_id);
+
+        let mqtt_options = MqttOptions::new(mqtt_client_id, "localhost", 1883)
+            .set_credentials("tether", "sp_ceB0ss!")
+            .set_keep_alive(Duration::from_secs(1))
+            .to_owned();
 
         // Create the client connection
         let (client, mut connection) = Client::new(mqtt_options, 10);
@@ -246,18 +247,6 @@ impl TetherAgent {
 
         self.client = client;
 
-        // match self.client.connect(conn_opts) {
-        //     Ok(res) => {
-        //         info!("Connected OK: {res:?}");
-        //         Ok(())
-        //     }
-        //     Err(e) => {
-        //         error!("Error connecting to the broker: {e:?}");
-        //         // self.client.stop_consuming();
-        //         // self.client.disconnect(None).expect("failed to disconnect");
-        //         Err(e)
-        //     }
-        // }
         Ok(())
     }
 

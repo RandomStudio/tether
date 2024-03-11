@@ -4,6 +4,7 @@ use env_logger::{Builder, Env};
 use log::{debug, info, warn};
 use rmp_serde::from_slice;
 use serde::Deserialize;
+use tether_agent::{PlugOptionsBuilder, TetherAgentOptionsBuilder};
 
 #[derive(Deserialize, Debug)]
 struct CustomMessage {
@@ -21,7 +22,7 @@ fn main() {
 
     debug!("Debugging is enabled; could be verbose");
 
-    let mut tether_agent = TetherAgentOptionsBuilder::new("RustDemoSubscribe")
+    let mut tether_agent = TetherAgentOptionsBuilder::new("RustDemo")
         .id(Some("example"))
         .build()
         .expect("failed to init Tether agent");
