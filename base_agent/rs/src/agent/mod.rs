@@ -1,3 +1,4 @@
+use anyhow::anyhow;
 use log::{debug, error, info, warn};
 use rmp_serde::to_vec_named;
 use rumqttc::{Client, Event, MqttOptions, Packet, QoS};
@@ -208,7 +209,7 @@ impl TetherAgent {
         // Create the client connection
         let (client, mut connection) = Client::new(mqtt_options, 10);
 
-        let tx = self.message_sender.clone();
+        let message_tx = self.message_sender.clone();
 
         thread::spawn(move || {
             for event in connection.iter() {
@@ -223,13 +224,16 @@ impl TetherAgent {
                                 let topic = p.topic;
                                 let payload: Vec<u8> = p.payload.into();
                                 if let Ok(t) = ThreePartTopic::try_from(topic.as_str()) {
-                                    tx.send((TetherOrCustomTopic::Tether(t), payload)).expect(
+                                    message_tx
+                                        .send((TetherOrCustomTopic::Tether(t), payload))
+                                        .expect(
                                         "failed to push message from thread; three-part-topic OK",
                                     );
                                 } else {
-                                    warn!("Could not pass Three Part Topic from \"{}\"", &topic);
-                                    tx.send((TetherOrCustomTopic::Custom(topic), payload))
-                                        .expect("failed to push message from threadl custom topic");
+                                    warn!("Could not parse Three Part Topic from \"{}\"", &topic);
+                                    message_tx
+                                        .send((TetherOrCustomTopic::Custom(topic), payload))
+                                        .expect("failed to push message from thread; custom topic");
                                 }
                             }
                             _ => debug!("Ignore all others for now, {:?}", incoming),
@@ -240,6 +244,10 @@ impl TetherAgent {
                     },
                     Err(e) => {
                         error!("Connection Error: {:?}", e);
+                        std::thread::sleep(Duration::from_secs(1));
+                        connection_status_tx
+                            .send(Err(anyhow!("MQTT Connection error")))
+                            .expect("failed to push error message from thread");
                     }
                 }
             }
@@ -254,51 +262,15 @@ impl TetherAgent {
     /// Messages received on topics that are not parseable as Tether Three Part Topics will be returned with
     /// the complete Topic string instead
     pub fn check_messages(&mut self) -> Option<(TetherOrCustomTopic, Vec<u8>)> {
+        // if let Ok(e) = self.connection_status_receiver.try_recv() {
+        //     panic!("check_messages received error: {}", e);
+        // }
         if let Ok(message) = self.message_receiver.try_recv() {
             debug!("Message ready on queue");
             Some(message)
         } else {
             None
         }
-        // if let Some(message) = self.connection.try_recv().iter().find_map(|| m)) {
-        //     if let Ok(t) = ThreePartTopic::try_from(message.topic()) {
-        //         Some((TetherOrCustomTopic::Tether(t), message))
-        //     } else {
-        //         warn!(
-        //             "Could not pass Three Part Topic from \"{}\"",
-        //             message.topic()
-        //         );
-        //         Some((
-        //             TetherOrCustomTopic::Custom(String::from(message.topic())),
-        //             message,
-        //         ))
-        //     }
-        // } else {
-        //     None
-        // }
-        // if let Ok(res) = self.connection.try_recv() {
-        //     match res {
-        //         Ok(e) => match e {
-        //             Event::Incoming(i) => match i {
-        //                 Packet::Publish(p) => {
-        //                     let Publish { topic, payload, .. } = p;
-        //                     Some((
-        //                         TetherOrCustomTopic::Custom(topic.to_string()),
-        //                         payload.into(),
-        //                     ))
-        //                 }
-        //                 _ => None,
-        //             },
-        //             Event::Outgoing(_) => None,
-        //         },
-        //         Err(e) => {
-        //             error!("Got error {}", e);
-        //             None
-        //         }
-        //     }
-        // } else {
-        //     None
-        // }
     }
 
     /// Given a plug definition and a raw (u8 buffer) payload, generate a message
@@ -320,18 +292,7 @@ impl TetherAgent {
                     2 => QoS::ExactlyOnce,
                     _ => QoS::AtMostOnce,
                 };
-                // let message = MessageBuilder::new()
-                //     .topic(topic)
-                //     .payload(payload.unwrap_or(&[]))
-                //     .retained(output_plug_definition.retain())
-                //     .qos(qos)
-                //     .finalize();
-                // if let Err(e) = self.client.publish(message) {
-                //     error!("Error publishing: {:?}", e);
-                //     Err(e.into())
-                // } else {
-                //     Ok(())
-                // }
+
                 match self.client.publish(
                     topic,
                     qos,
@@ -370,12 +331,6 @@ impl TetherAgent {
         qos: Option<i32>,
         retained: Option<bool>,
     ) -> anyhow::Result<()> {
-        // let message = MessageBuilder::new()
-        //     .topic(topic)
-        //     .payload(payload)
-        //     .retained(retained.unwrap_or(false))
-        //     .qos(qos.unwrap_or(1))
-        //     .finalize();
         let qos = match qos.unwrap_or(1) {
             0 => QoS::AtMostOnce,
             1 => QoS::AtLeastOnce,
