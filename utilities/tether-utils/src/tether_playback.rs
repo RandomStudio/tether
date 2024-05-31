@@ -13,8 +13,8 @@ use tether_agent::TetherAgent;
 
 #[derive(Args, Clone)]
 pub struct PlaybackOptions {
-    /// Specify the full path to the JSON file containing recorded messages
-    #[arg(long = "file.path", default_value_t=String::from("./demo.json"))]
+    /// JSON file to load recording from
+    #[arg(default_value_t=String::from("./demo.json"))]
     pub file_path: String,
 
     /// Overide any original topics saved in the file, to use with every published message
