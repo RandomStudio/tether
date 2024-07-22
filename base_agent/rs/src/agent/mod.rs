@@ -1,6 +1,6 @@
 use log::{error, info, warn};
 use mqtt::{Client, Message, MessageBuilder, Receiver};
-use paho_mqtt as mqtt;
+use paho_mqtt::{self as mqtt, MQTT_VERSION_DEFAULT};
 use rmp_serde::to_vec_named;
 use serde::Serialize;
 use std::time::Duration;
@@ -40,6 +40,7 @@ impl TetherAgentOptionsBuilder {
         TetherAgentOptionsBuilder {
             role: String::from(role),
             id: None,
+            protocol: None,
             host: None,
             port: None,
             username: None,
@@ -51,6 +52,12 @@ impl TetherAgentOptionsBuilder {
     /// Provide Some(value) to override or None to use default
     pub fn id(mut self, id: Option<&str>) -> Self {
         self.id = id.map(|x| x.into());
+        self
+    }
+
+    /// Provide Some(value) to override or None to use default
+    pub fn protocol(mut self, protocol: Option<&str>) -> Self {
+        self.protocol = protocol.map(|x| x.into());
         self
     }
 
@@ -83,16 +90,18 @@ impl TetherAgentOptionsBuilder {
     }
 
     pub fn build(self) -> anyhow::Result<TetherAgent> {
+        let protocol = self.protocol.clone().unwrap_or("tcp".into());
         let broker_host = self.host.clone().unwrap_or("localhost".into());
         let broker_port = self.port.unwrap_or(1883);
 
-        let broker_uri = format!("tcp://{broker_host}:{broker_port}");
+        let broker_uri = format!("{protocol}://{broker_host}:{broker_port}");
 
-        info!("Broker at {}", &broker_uri);
+        info!("Will create broker client with URI {}", &broker_uri);
 
         let create_opts = mqtt::CreateOptionsBuilder::new()
-            .server_uri(broker_uri.clone())
             .client_id("")
+            .mqtt_version(MQTT_VERSION_DEFAULT)
+            .server_uri(broker_uri.clone())
             .finalize();
 
         // Create the client connection
@@ -168,15 +177,17 @@ impl TetherAgent {
             info!("...Disconnected");
         }
 
-        info!("Broker at {}", &self.broker_uri);
+        info!("Will connect to broker at {}", &self.broker_uri);
+
+        let ssl_options = mqtt::SslOptionsBuilder::new().finalize();
 
         let conn_opts = mqtt::ConnectOptionsBuilder::new()
+            .ssl_options(ssl_options)
             .server_uris(&[self.broker_uri.clone()])
             .user_name(&self.username)
             .password(&self.password)
             .connect_timeout(Duration::from_secs(TIMEOUT_SECONDS))
             .keep_alive_interval(Duration::from_secs(TIMEOUT_SECONDS))
-            // .mqtt_version(mqtt::MQTT_VERSION_3_1_1)
             .clean_session(true)
             .finalize();
 
