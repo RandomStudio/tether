@@ -25,6 +25,7 @@ pub struct TetherAgent {
 pub struct TetherAgentOptionsBuilder {
     role: String,
     id: Option<String>,
+    protocol: Option<String>,
     host: Option<String>,
     port: Option<u16>,
     username: Option<String>,
