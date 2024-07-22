@@ -24,8 +24,8 @@ export class TetherAgent {
   private client: AsyncMqttClient | null;
 
   /**
-   * Create a new Tether Agent, and connect automatically unless . This is an async
-   * function, so it will return the agent via the Promise only once the connection
+   * Create a new Tether Agent, and connect automatically unless options.autoConnect is.set to `false`.
+   * This is an async function, so it will return the agent via the Promise only once the connection
    * has been made successfully - or immediately if you turn autoConnect off.
    *
    * @param role The Role of this Agent in the system. Describes what this type of Agent does.
