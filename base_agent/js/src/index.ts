@@ -5,6 +5,7 @@ import logger from "loglevel";
 import { LogLevelDesc } from "loglevel";
 import { TetherConfig, TetherOptions } from "./types";
 import { encode, decode } from "@msgpack/msgpack";
+export { parsePlugName, parseAgentIdOrGroup, parseAgentType } from "./Plug";
 
 logger.setLevel("info");
 export { logger, BROKER_DEFAULTS, encode, decode };
