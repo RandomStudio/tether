@@ -1,0 +1,9 @@
+name: "tether-broker"
+services:
+  mosquitto:
+    image: "randomstudiotools/tether-broker"
+    restart: "unless-stopped"
+    ports:
+      # remember HOST_PORT:CONTAINER_PORT
+      - "15675:8083" # Websocket, match 15676 for the outside
+      - "1883:1883" # Standard TCP for MQTT
