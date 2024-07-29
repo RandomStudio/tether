@@ -9,13 +9,7 @@ The easiest way to deploy an MQTT Broker is to use Docker. To use this, make sur
 You can use our public `tether-broker` Docker container, running it as follows using custom credentials:
 
 ```
-docker run --name tether-broker -p 15675:9001 -p 1883:1883 randomstudiotools/tether-broker
-```
-
-If you want to run the broker as a daemon and start at launch, include the `-d` and `--restart unless-stopped` arguments:
-
-```
-docker run -d --restart unless-stopped -p 15675:9001 -p 1883:1883 randomstudiotools/tether-broker
+docker run --name tether-broker -d -p 15675:9001 -p 1883:1883 randomstudiotools/tether-broker
 ```
 
 Note: in case you need to run the Tether broker on a Linux ARMv7 system (e.g. Raspberry Pi 3), you can use the `randomstudiotools/tether-broker:armv7` version of the image.
