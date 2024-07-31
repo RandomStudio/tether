@@ -40,6 +40,9 @@ export class TetherAgent {
     role: string,
     options?: TetherOptions
   ): Promise<TetherAgent> {
+    if (options?.loglevel) {
+      logger.setLevel(options.loglevel as LogLevelDesc);
+    }
     if (
       options &&
       options.brokerOptions &&
