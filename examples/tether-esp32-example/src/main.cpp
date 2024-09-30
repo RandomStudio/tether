@@ -8,8 +8,8 @@ String outputTopic = "tetherduino/output/mcuData";
 
 WiFiClient wifiClient;
 
-#define WLAN_SSID "Random Wireless"
-#define WLAN_PASS "Fragile-Freedom"
+#define WLAN_SSID "Random Guest"
+#define WLAN_PASS "beourguest"
 
 void connectWiFi() {
   Serial.println("Connecting to WiFi");
@@ -28,8 +28,8 @@ void setup() {
 
   sleep(3);
   Serial.println("start");
-  
-  connectWifi();
+
+  connectWiFi();
 
    const char* json = "{\"sensor\":\"gps\",\"time\":1351824120,\"data\":[48.756080,2.302038]}";
 
