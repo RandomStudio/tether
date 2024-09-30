@@ -1,25 +1,59 @@
 #include <Arduino.h>
 #include <WiFi.h>
 #include <ArduinoJson.h>
+#include <PubSubClient.h>
 
 // Globals
-JsonDocument doc;
-String outputTopic = "tetherduino/output/mcuData";
 
 WiFiClient wifiClient;
+PubSubClient client(wifiClient);
 
-#define WLAN_SSID "Random Guest"
-#define WLAN_PASS "beourguest"
+const char* ssid = "lab_2.4";
+const char* password = "sp_ceB0ss!";
+const char* mqtt_server = "192.168.27.12";
+
+unsigned long lastMsg = 0;
 
 void connectWiFi() {
   Serial.println("Connecting to WiFi");
-  WiFi.begin(WLAN_SSID, WLAN_PASS);
+  WiFi.begin(ssid, password);
   delay(2000);
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     Serial.print(".");
   }
   Serial.println("WiFi connected");
+}
+
+void connectMQTT() {
+  // Loop until we're reconnected
+  while (!client.connected()) {
+    Serial.print("Attempting MQTT connection...");
+    // Create a random client ID
+    String clientId = "ESP8266Client-";
+    clientId += String(random(0xffff), HEX);
+    // Attempt to connect
+    if (client.connect(clientId.c_str(), "tether", "sp_ceB0ss!")) {
+      Serial.println("connected");
+    } else {
+      Serial.print("failed, rc=");
+      Serial.print(client.state());
+      Serial.println(" try again in 5 seconds");
+      // Wait 5 seconds before retrying
+      delay(5000);
+    }
+  }
+}
+
+void publish() {
+  JsonDocument doc;
+  doc["hello"] = "world";
+
+  char buffer[256];
+  serializeMsgPack(doc, buffer);
+
+  client.publish("dummy/any/testMessage", buffer);
+  
 }
 
 void setup() {
@@ -30,34 +64,18 @@ void setup() {
   Serial.println("start");
 
   connectWiFi();
-
-   const char* json = "{\"sensor\":\"gps\",\"time\":1351824120,\"data\":[48.756080,2.302038]}";
-
-
-  DeserializationError error = deserializeJson(doc, json);
-  if (error) {
-    Serial.print(F("deserializeJson() failed: "));
-    Serial.println(error.c_str());
-    return;
-  }
-
-  // Extract the values
-  const char* sensor = doc["sensor"];
-  long time = doc["time"];
-  double latitude = doc["data"][0];
-  double longitude = doc["data"][1];
-
-  // Print the values
-  Serial.println(sensor);
-  Serial.println(time);
-  Serial.println(latitude, 6);
-  Serial.println(longitude, 6);}
-
-void loop() {
-  // put your main code here, to run repeatedly:
+  client.setServer(mqtt_server, 1883);
 }
 
-// put function definitions here:
-int myFunction(int x, int y) {
-  return x + y;
+void loop() {
+  if (!client.connected()) {
+    connectMQTT();
+  }
+  client.loop();
+
+  unsigned long now = millis();
+  if (now - lastMsg > 4000) {
+    lastMsg = now;
+    publish();
+  }
 }
