@@ -70,9 +70,15 @@ cargo install tether-utils
 
 ### Note on `--message`:
 
-This will be automatically converted into a MessagePack payload if it is valid JSON. Remember to escape characters such as `"`, `[`, `]`, `{` and `}`.
+This will be automatically converted into a MessagePack payload if it is valid JSON. You can typically enclose everything in single-quotes, like this:
 
-Example:
+```
+tether send --message '{"foo":[1,2,3]}
+tether send --message '[0,1,2]'
+tether send --message '{"hello":"world", "arr":[1,2,3]}'
+```
+
+Alternatively, escape characters such as `"`, `[`, `]`, `{` and `}`:
 
 ```
 tether send --message \{\"hello\":\"world\"\,\"arr\":\[1,2,3\]\}
