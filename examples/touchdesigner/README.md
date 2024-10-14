@@ -8,3 +8,4 @@ cd /Applications/TouchDesigner.app/Contents/Frameworks/Python.framework/Versions
 bin/python3.11 -m pip install tether_agent
 ```
 
+Even better, use a virtual env for a Python 3.11 version 
