@@ -1,21 +1,12 @@
 # Python Tether agent
 
 This module contains a Tether agent for Python.  
-It has been tested with Python 3.9.
+It has been tested with Python 3.11 (the same version currently used by TouchDesigner)
 
 ## Installation
 
-In future, we may package this and publish to a registry (e.g. PyPi), but for now:
-
-- Copy the `tether_agent.py` file into your own project (e.g., in the same folder as your `main.py`)
-- Copy the entries in `requirements.txt` into your own `requirements.txt` as necessary
-
-## Dependencies
-
-Install the dependencies by running
-
 ```
-python -m pip install -r requirements.txt
+pip install tether-agent
 ```
 
 ## Usage
@@ -53,3 +44,16 @@ while True:
         out_plug.publish(None if value <= 0 else value)
         value += 1
 ```
+
+## Developer / packager notes
+Create (if necessary) and activate a virtual environment for building/publishing, using pyenv and virtualenv:
+```
+pyenv virtualenv tether_build
+pyenv activate tether_build
+```
+
+Upgrade (if necessary) Python Packaging build:
+```
+pip install --upgrade build
+```
+
