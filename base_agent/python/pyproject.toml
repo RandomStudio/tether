@@ -4,6 +4,11 @@ build-backend = "hatchling.build"
 
 [project]
 name = "tether_agent"
-version = "1.1.0"
+version = "1.1.2"
 dependencies = ["paho_mqtt==1.6.1", "msgpack==1.0.6"]
 requires-python = ">= 3.11"
+description = "Standardised MQTT+MessagePack for inter-process communication"
+authors = [
+  { name = "Stephen Buchanan", email = "stephen.buchanan@random.studio" },
+]
+readme = "README.md"

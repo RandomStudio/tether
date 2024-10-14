@@ -6,7 +6,7 @@ It has been tested with Python 3.11 (the same version currently used by TouchDes
 ## Installation
 
 ```
-pip install tether-agent
+pip install tether_agent
 ```
 
 ## Usage
@@ -63,3 +63,11 @@ pip install --upgrade twine
 ```
 
 Upload to TEST pypi
+```
+python -m twine upload --repository testpypi dist/*
+```
+
+Upload to ACTUAL pypi
+```
+python -m twine upload dist/*
+```
