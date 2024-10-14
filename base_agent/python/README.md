@@ -57,3 +57,9 @@ Upgrade (if necessary) Python Packaging build:
 pip install --upgrade build
 ```
 
+Install Twine (distribution uploading):
+```
+pip install --upgrade twine
+```
+
+Upload to TEST pypi
