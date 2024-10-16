@@ -57,6 +57,12 @@ Upgrade (if necessary) Python Packaging build:
 pip install --upgrade build
 ```
 
+Actually build:
+```
+rm -rf dist
+python -m build
+```
+
 Install Twine (distribution uploading):
 ```
 pip install --upgrade twine
@@ -71,3 +77,8 @@ Upload to ACTUAL pypi
 ```
 python -m twine upload dist/*
 ```
+
+Install from TEST pypi
+```
+pip install install --index-url https://test.pypi.org/simple/ tether_agent
+```tettether
