@@ -8,7 +8,8 @@ def on_message(message):
     print("*** Received from topic " + topic + ": " + str(payload))
 
 
-agent = TetherAgent("test", "abc123", LogLevel.DEBUG)
+# If you want things more verbose, try LogLevel.DEBUG
+agent = TetherAgent("test", "abc123", LogLevel.WARNING)
 in_plug = agent.create_input("test")
 in_plug.add_listener(on_message)
 out_plug = agent.create_output("test")
