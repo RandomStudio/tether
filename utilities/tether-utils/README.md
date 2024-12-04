@@ -105,6 +105,7 @@ By default, a file named `recording-00000000.json` (where the numbers are a time
 ## Playback
 
 - Run with defaults: `tether playback`
+- Only emit messages where the topics match a simple string pattern by passing `--topics.filter`
 - More options can be found using `tether playback --help`
 
 If you don't specify a file, an included demo file (`demo.json`) will be used instead. **You probably want to specify a path to a real file, in most cases.**
