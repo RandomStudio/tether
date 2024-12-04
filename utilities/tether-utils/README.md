@@ -107,6 +107,6 @@ By default, a file named `recording-00000000.json` (where the numbers are a time
 - Run with defaults: `tether playback`
 - More options can be found using `tether playback --help`
 
-If you don't specify a file with `--file.path`, an included demo file (`demo.json`) will be used instead. **You probably want to specify a path to a real file, in most cases.**
+If you don't specify a file, an included demo file (`demo.json`) will be used instead. **You probably want to specify a path to a real file, in most cases.**
 
 > 💡Tip: loop the playback infinitely by passing `--loops.infinite`

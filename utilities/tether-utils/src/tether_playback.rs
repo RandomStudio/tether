@@ -17,8 +17,12 @@ pub struct PlaybackOptions {
     #[arg(default_value_t=String::from("./demo.json"))]
     pub file_path: String,
 
+    /// Comma-separated strings used to filter messages by topic
+    #[arg(long = "topic.filter")]
+    pub topic_filters: Option<String>,
+
     /// Overide any original topics saved in the file, to use with every published message
-    #[arg(long = "topic")]
+    #[arg(long = "topic.override")]
     pub override_topic: Option<String>,
 
     /// Speed up or slow down playback (e.g. 2.0 = double speed)
@@ -48,6 +52,7 @@ impl Default for PlaybackOptions {
             loop_infinite: false,
             ignore_ctrl_c: false,
             playback_speed: 1.0,
+            topic_filters: None,
         }
     }
 }
@@ -92,6 +97,12 @@ impl TetherPlaybackUtil {
     pub fn start(&self, tether_agent: &TetherAgent) {
         info!("Tether Playback Utility: start playback");
 
+        let filters: Option<Vec<String>> = self
+            .options
+            .topic_filters
+            .as_ref()
+            .map(|f_string| f_string.split(',').map(String::from).collect());
+
         if let Some(t) = &self.options.override_topic {
             warn!("Override topic provided; ALL topics in JSON entries will be ignored and replaced with \"{}\"",t);
         }
@@ -133,6 +144,7 @@ impl TetherPlaybackUtil {
                 if parse_json_rows(
                     &self.options.file_path,
                     tether_agent,
+                    &filters,
                     &self.options.override_topic,
                     &self.stop_request_rx,
                     self.options.playback_speed,
@@ -149,9 +161,11 @@ impl TetherPlaybackUtil {
     }
 }
 
+/// Parse rows and return true when finished
 fn parse_json_rows(
     filename: &str,
     tether_agent: &TetherAgent,
+    filters: &Option<Vec<String>>,
     override_topic: &Option<String>,
     should_stop_rx: &Receiver<bool>,
     speed_factor: f32,
@@ -183,20 +197,34 @@ fn parse_json_rows(
                 delta_time,
             } = &row;
 
-            let payload = &message.data;
+            let mut should_send = false;
 
-            if !finished {
-                let delta_time = *delta_time as f64 / speed_factor as f64;
-                debug!("Sleeping {}ms ...", delta_time);
-                std::thread::sleep(std::time::Duration::from_millis(delta_time as u64));
-                let topic = match &override_topic {
-                    Some(t) => String::from(t),
-                    None => String::from(topic),
-                };
+            if let Some(filters) = filters {
+                for f in filters.iter() {
+                    if topic.contains(f) {
+                        should_send = true;
+                    }
+                }
+            } else {
+                should_send = true;
+            }
 
-                tether_agent
-                    .publish_raw(&topic, payload, None, None)
-                    .expect("failed to publish");
+            if should_send {
+                let payload = &message.data;
+
+                if !finished {
+                    let delta_time = *delta_time as f64 / speed_factor as f64;
+                    debug!("Sleeping {}ms ...", delta_time);
+                    std::thread::sleep(std::time::Duration::from_millis(delta_time as u64));
+                    let topic = match &override_topic {
+                        Some(t) => String::from(t),
+                        None => String::from(topic),
+                    };
+
+                    tether_agent
+                        .publish_raw(&topic, payload, None, None)
+                        .expect("failed to publish");
+                }
             }
 
             debug!("Got row {:?}", row);

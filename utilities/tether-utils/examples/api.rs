@@ -78,6 +78,7 @@ fn demo_playback() {
         loop_infinite: true,
         ignore_ctrl_c: true, // this is important for programmatic use
         playback_speed: 1.0,
+        topic_filters: None,
     };
 
     let tether_agent = TetherAgentOptionsBuilder::new("demoTopics")
@@ -168,7 +169,7 @@ fn demo_record() {
 
 fn main() {
     println!(
-        "This example shows how the tether-utils library can be used programmatically, 
+        "This example shows how the tether-utils library can be used programmatically,
     i.e. not from the CLI"
     );
     println!("Press Ctrl+C to stop");
@@ -178,14 +179,14 @@ fn main() {
     env_builder.init();
 
     let handles = vec![
-        spawn(|| demo_receive()),
-        spawn(|| demo_send()),
-        spawn(|| demo_topics()),
+        spawn(demo_receive),
+        spawn(demo_send),
+        spawn(demo_topics),
         spawn(|| {
             std::thread::sleep(std::time::Duration::from_secs(4));
             demo_playback();
         }),
-        spawn(|| demo_record()),
+        spawn(demo_record),
     ];
 
     for handle in handles {
