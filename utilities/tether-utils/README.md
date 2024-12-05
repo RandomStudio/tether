@@ -43,17 +43,22 @@ Here's an example of using the `receive` subcommand but specifying some non-defa
 tether --host 10.0.0.1 --username myUserName --password myPaSsWorD! receive --topic +/+/someSpecificPlug
 ```
 
-### Receive
+___
+## Subcommands
+
+### `tether receive`
 
 - Run with defaults: `tether receive`
 - More options can be found using `tether send --help`
 
-### Send
+___
+### `tether send`
+
 
 - Run with defaults: `tether send`
 - More options can be found using `tether send --help`
 
-### Note on `--message`:
+#### Note on `--message`:
 
 This will be automatically converted into a MessagePack payload if it is valid JSON. You can typically enclose everything in single-quotes, like this:
 
@@ -69,7 +74,8 @@ Alternatively, escape characters such as `"`, `[`, `]`, `{` and `}`:
 tether send --message \{\"hello\":\"world\"\,\"arr\":\[1,2,3\]\}
 ```
 
-### Topics
+___
+### `tether topics`
 
 Super useful for seeing which Agents are online, and how message topics are being parsed according to Agent Role, Agent ID and Plug Name. Now also provides live rate calculations (messages per second) and activity graph as below:
 
@@ -80,14 +86,16 @@ Super useful for seeing which Agents are online, and how message topics are bein
 - Run with defaults: `tether topics`
 - More options can be found using `tether topics --help`
 
-### Record
+___
+### `tether record`
 
 - Run with defaults: `tether record`
 - More options can be found using `tether record --help`
 
 By default, a file named `recording-00000000.json` (where the numbers are a timestamp) is generated in the current directory.
 
-### Playback
+___
+### `tether playback`
 
 - Run with defaults: `tether playback`
 - Only emit messages where the topics match a simple string pattern by passing `--topics.filter`
