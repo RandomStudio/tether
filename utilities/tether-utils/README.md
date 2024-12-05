@@ -12,7 +12,8 @@ With the CLI tool, users are provided a single binary with subcommands as follow
 - [record](#record): Record messages to disk. Useful for simulation, in combination with `playback` below
 - [playback](#playback): Playback messages with their original topics and timing, to simulate one or more Agents
 
-Usage as a library is not documented well yet, but see [examples/api.rs](./examples/api.rs) for a quick overview.
+The utils are also provided as a library with an API; extensive use of this facility has been made by [tether-egui](https://github.com/RandomStudio/tether-egui) (a
+GUI application providing much of the same utility as above, plus more). For example of API usage, see [examples/api.rs](./examples/api.rs) for a quick overview.
 
 ## Passing arguments
 
