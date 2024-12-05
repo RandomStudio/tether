@@ -197,17 +197,10 @@ fn parse_json_rows(
                 delta_time,
             } = &row;
 
-            let mut should_send = false;
-
-            if let Some(filters) = filters {
-                for f in filters.iter() {
-                    if topic.contains(f) {
-                        should_send = true;
-                    }
-                }
-            } else {
-                should_send = true;
-            }
+            let should_send: bool = match filters {
+                Some(filters) => filters.iter().map(String::from).any(|f| topic.contains(&f)),
+                None => true,
+            };
 
             if should_send {
                 let payload = &message.data;
