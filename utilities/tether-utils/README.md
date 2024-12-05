@@ -15,7 +15,18 @@ With the CLI tool, users are provided a single binary with subcommands as follow
 The utils are also provided as a library with an API; extensive use of this facility has been made by [tether-egui](https://github.com/RandomStudio/tether-egui) (a
 GUI application providing much of the same utility as above, plus more). For example of API usage, see [examples/api.rs](./examples/api.rs) for a quick overview.
 
-## Passing arguments
+## Quick start
+Install
+```
+cargo install tether-utils
+```
+
+Monitor messages on all topics:
+```
+tether receive
+```
+
+## More detailed instructions
 
 There are always **two parts** to the CLI command
 
@@ -32,39 +43,12 @@ Here's an example of using the `receive` subcommand but specifying some non-defa
 tether --host 10.0.0.1 --username myUserName --password myPaSsWorD! receive --topic +/+/someSpecificPlug
 ```
 
-## Installation
-
-### Using homebrew
-
-The simplest installation method is using the [homebrew](https://brew.sh/) package manager for Mac. This is currently only working for MacOS running Apple Silicon.
-
-Simply run the following two commands:
-
-```
-brew tap randomstudio/tether
-brew install tether
-```
-
-(The formula and release files are hosted at https://github.com/RandomStudio/homebrew-tether - but you don't need to know that.)
-
-### Using Cargo
-
-If you have the Rust toolchain installed, you can install the executable using...
-
-```
-cargo install tether-utils
-```
-
-... This has the advantage of re-compiling for your architecture automatically. The crate is published at https://crates.io/crates/tether-utils
-
----
-
-## Receive
+### Receive
 
 - Run with defaults: `tether receive`
 - More options can be found using `tether send --help`
 
-## Send
+### Send
 
 - Run with defaults: `tether send`
 - More options can be found using `tether send --help`
@@ -85,7 +69,7 @@ Alternatively, escape characters such as `"`, `[`, `]`, `{` and `}`:
 tether send --message \{\"hello\":\"world\"\,\"arr\":\[1,2,3\]\}
 ```
 
-## Topics
+### Topics
 
 Super useful for seeing which Agents are online, and how message topics are being parsed according to Agent Role, Agent ID and Plug Name. Now also provides live rate calculations (messages per second) and activity graph as below:
 
@@ -96,14 +80,14 @@ Super useful for seeing which Agents are online, and how message topics are bein
 - Run with defaults: `tether topics`
 - More options can be found using `tether topics --help`
 
-## Record
+### Record
 
 - Run with defaults: `tether record`
 - More options can be found using `tether record --help`
 
 By default, a file named `recording-00000000.json` (where the numbers are a timestamp) is generated in the current directory.
 
-## Playback
+### Playback
 
 - Run with defaults: `tether playback`
 - Only emit messages where the topics match a simple string pattern by passing `--topics.filter`
