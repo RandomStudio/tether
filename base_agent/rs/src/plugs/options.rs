@@ -4,8 +4,10 @@ use log::{debug, error, info, warn};
 use crate::{
     definitions::{InputPlugDefinition, OutputPlugDefinition, PlugDefinitionCommon},
     three_part_topic::ThreePartTopic,
-    PlugDefinition, TetherAgent, TetherOrCustomTopic,
+    PlugDefinition, TetherAgent,
 };
+
+use super::three_part_topic::TetherOrCustomTopic;
 
 pub struct InputPlugOptions {
     plug_name: String,
@@ -65,13 +67,15 @@ impl PlugOptionsBuilder {
         self
     }
 
-    /// Override the "role" part of the topic that gets generated for this Plug.
-    /// - For Input Plugs, this means you want to be specific about the Role part
-    /// of the topic, instead of using the default wildcard `+` at this location
-    /// - For Output Plugs, this means you want to override the Role part instead
-    /// of using your Agent's "own" Role with which you created the Tether Agent
-    ///
-    /// If you override the entire topic using `.topic` this will be ignored.
+    /**
+    Override the "role" part of the topic that gets generated for this Plug.
+    - For Input Plugs, this means you want to be specific about the Role part
+      of the topic, instead of using the default wildcard `+` at this location
+    - For Output Plugs, this means you want to override the Role part instead
+      of using your Agent's "own" Role with which you created the Tether Agent
+
+    If you override the entire topic using `.topic` this will be ignored.
+    */
     pub fn role(mut self, role: Option<&str>) -> Self {
         match &mut self {
             PlugOptionsBuilder::InputPlugOptions(s) => {
@@ -92,14 +96,16 @@ impl PlugOptionsBuilder {
         self
     }
 
-    /// Override the "id" part of the topic that gets generated for this Plug.
-    /// - For Input Plugs, this means you want to be specific about the ID part
-    /// of the topic, instead of using the default wildcard `+` at this location
-    /// - For Output Plugs, this means you want to override the ID part instead
-    /// of using your Agent's "own" ID which you specified (or left blank, i.e. "any")
-    /// when creating the Tether Agent
-    ///
-    /// If you override the entire topic using `.topic` this will be ignored.
+    /**
+    Override the "id" part of the topic that gets generated for this Plug.
+    - For Input Plugs, this means you want to be specific about the ID part
+      of the topic, instead of using the default wildcard `+` at this location
+    - For Output Plugs, this means you want to override the ID part instead
+      of using your Agent's "own" ID which you specified (or left blank, i.e. "any")
+      when creating the Tether Agent
+
+    If you override the entire topic using `.topic` this will be ignored.
+    */
     pub fn id(mut self, id: Option<&str>) -> Self {
         match &mut self {
             PlugOptionsBuilder::InputPlugOptions(s) => {
@@ -248,21 +254,25 @@ impl PlugOptionsBuilder {
                 };
                 let plug_definition =
                     InputPlugDefinition::new(&plug_options.plug_name, tpt, plug_options.qos);
-                match tether_agent.client_mut().subscribe(
-                    plug_definition.topic_str(),
-                    match plug_definition.qos() {
-                        0 => rumqttc::QoS::AtMostOnce,
-                        1 => rumqttc::QoS::AtLeastOnce,
-                        2 => rumqttc::QoS::ExactlyOnce,
-                        _ => rumqttc::QoS::AtLeastOnce,
-                    },
-                ) {
-                    Ok(res) => {
-                        debug!("This topic was fine: \"{}\"", plug_definition.topic_str());
-                        debug!("Server respond OK for subscribe: {res:?}");
-                        Ok(PlugDefinition::InputPlug(plug_definition))
+                if let Some(client) = &tether_agent.client {
+                    match client.subscribe(
+                        plug_definition.topic_str(),
+                        match plug_definition.qos() {
+                            0 => rumqttc::QoS::AtMostOnce,
+                            1 => rumqttc::QoS::AtLeastOnce,
+                            2 => rumqttc::QoS::ExactlyOnce,
+                            _ => rumqttc::QoS::AtLeastOnce,
+                        },
+                    ) {
+                        Ok(res) => {
+                            debug!("This topic was fine: \"{}\"", plug_definition.topic_str());
+                            debug!("Server respond OK for subscribe: {res:?}");
+                            Ok(PlugDefinition::InputPlug(plug_definition))
+                        }
+                        Err(_e) => Err(anyhow!("ClientError")),
                     }
-                    Err(_e) => Err(anyhow!("ClientError")),
+                } else {
+                    Err(anyhow!("Client not available for subscription"))
                 }
             }
             Self::OutputPlugOptions(plug_options) => {

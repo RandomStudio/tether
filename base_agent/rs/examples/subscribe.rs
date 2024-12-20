@@ -12,12 +12,14 @@ struct CustomMessage {
     name: String,
 }
 // Test this by sending a message like
-// tether-send --host localhost --topic test/any/two --message \{\"id\":1,\"name\":\"boo\"\}
+// tether send --topic specific/any/two --message '{"id":1,"name":"boo"}'
 
 fn main() {
     println!("Rust Tether Agent subscribe example");
 
     let mut builder = Builder::from_env(Env::default().default_filter_or("debug"));
+    builder.filter_module("tether_agent", log::LevelFilter::Warn);
+    builder.filter_module("rumqttc", log::LevelFilter::Warn);
     builder.init();
 
     debug!("Debugging is enabled; could be verbose");
@@ -30,12 +32,12 @@ fn main() {
     let input_one = PlugOptionsBuilder::create_input("one")
         .build(&mut tether_agent)
         .expect("failed to create input");
-    debug!("input one {} = {}", input_one.name(), input_one.topic());
+    info!("input one {} = {}", input_one.name(), input_one.topic());
     let input_two = PlugOptionsBuilder::create_input("two")
         .role(Some("specific"))
         .build(&mut tether_agent)
         .expect("failed to create input");
-    debug!("input two {} = {}", input_two.name(), input_two.topic());
+    info!("input two {} = {}", input_two.name(), input_two.topic());
     let input_empty = PlugOptionsBuilder::create_input("nothing")
         .build(&mut tether_agent)
         .expect("failed to create input");
@@ -59,8 +61,8 @@ fn main() {
 
     info!("Checking messages every 1s, 10x...");
 
-    for i in 1..10 {
-        info!("#{i}: Checking for messages...");
+    loop {
+        debug!("Checking for messages...");
         while let Some((topic, payload)) = tether_agent.check_messages() {
             // debug!(
             //     "........ Received a message topic {:?} => topic parts {:?}",

@@ -91,7 +91,7 @@ impl TetherRecordUtil {
     pub fn get_stop_tx(&self) -> mpsc::Sender<bool> {
         self.stop_request_tx.clone()
     }
-    pub fn start_recording(&self, tether_agent: &TetherAgent) {
+    pub fn start_recording(&self, tether_agent: &mut TetherAgent) {
         info!("Tether Record Utility: start recording");
 
         let _input = PlugOptionsBuilder::create_input("all")
@@ -225,7 +225,7 @@ impl TetherRecordUtil {
                 finished = true;
             } else {
                 let mut did_work = false;
-                while let Some((_plug_name, message)) = tether_agent.check_messages() {
+                while let Some((topic, payload)) = tether_agent.check_messages() {
                     did_work = true;
 
                     let delta_time = if count == 0 && !self.options.timing_nonzero_start {
@@ -236,13 +236,14 @@ impl TetherRecordUtil {
                     };
                     previous_message_time = SystemTime::now();
 
-                    debug!("Received message on topic \"{}\"", message.topic());
-                    let bytes = message.payload();
+                    let full_topic_string = topic.full_topic_string();
+
+                    debug!("Received message on topic \"{}\"", &full_topic_string);
                     let row = SimulationRow {
-                        topic: message.topic().into(),
+                        topic: full_topic_string,
                         message: SimulationMessage {
                             r#type: "Buffer".into(),
-                            data: bytes.to_vec(),
+                            data: payload.to_vec(),
                         },
                         delta_time: delta_time.as_millis() as u64,
                     };

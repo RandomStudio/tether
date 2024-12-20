@@ -41,7 +41,7 @@ struct DummyData {
     a_string: String,
 }
 
-pub fn send(options: &SendOptions, tether_agent: &TetherAgent) -> anyhow::Result<()> {
+pub fn send(options: &SendOptions, tether_agent: &mut TetherAgent) -> anyhow::Result<()> {
     info!("Tether Send Utility");
 
     let plug_name = options.plug_name.clone().unwrap_or("testMessages".into());

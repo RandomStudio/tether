@@ -12,6 +12,21 @@ pub struct ThreePartTopic {
     full_topic: String,
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+pub enum TetherOrCustomTopic {
+    Tether(ThreePartTopic),
+    Custom(String),
+}
+
+impl TetherOrCustomTopic {
+    pub fn full_topic_string(&self) -> String {
+        match self {
+            TetherOrCustomTopic::Tether(three_part_topic) => String::from(three_part_topic.topic()),
+            TetherOrCustomTopic::Custom(t) => String::from(t),
+        }
+    }
+}
+
 impl ThreePartTopic {
     /// Publish topics fall back to the ID and/or role associated with the agent, if not explicitly provided
     pub fn new_for_publish(

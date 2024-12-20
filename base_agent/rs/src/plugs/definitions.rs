@@ -1,7 +1,7 @@
 use log::{debug, error, warn};
 use serde::{Deserialize, Serialize};
 
-use crate::three_part_topic::ThreePartTopic;
+use super::three_part_topic::TetherOrCustomTopic;
 
 pub trait PlugDefinitionCommon<'a> {
     fn name(&'a self) -> &'a str;
@@ -10,11 +10,6 @@ pub trait PlugDefinitionCommon<'a> {
     fn qos(&'a self) -> i32;
 }
 
-#[derive(Serialize, Deserialize, Debug)]
-pub enum TetherOrCustomTopic {
-    Tether(ThreePartTopic),
-    Custom(String),
-}
 #[derive(Serialize, Deserialize, Debug)]
 pub struct InputPlugDefinition {
     name: String,
@@ -202,8 +197,8 @@ impl PlugDefinition {
 mod tests {
 
     use crate::{
-        three_part_topic::{parse_plug_name, ThreePartTopic},
-        InputPlugDefinition, PlugDefinitionCommon, TetherOrCustomTopic,
+        three_part_topic::{parse_plug_name, TetherOrCustomTopic, ThreePartTopic},
+        InputPlugDefinition, PlugDefinitionCommon,
     };
 
     #[test]

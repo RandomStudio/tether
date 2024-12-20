@@ -1,5 +1,5 @@
 use circular_buffer::CircularBuffer;
-use tether_agent::{mqtt::Message, PlugOptionsBuilder, TetherAgent};
+use tether_agent::{three_part_topic::TetherOrCustomTopic, PlugOptionsBuilder, TetherAgent};
 
 use crate::tether_topics::{agent_tree::AgentTree, sampler::Sampler};
 use std::{
@@ -39,7 +39,7 @@ impl fmt::Display for Insights {
 }
 
 impl Insights {
-    pub fn new(options: &TopicOptions, tether_agent: &TetherAgent) -> Self {
+    pub fn new(options: &TopicOptions, tether_agent: &mut TetherAgent) -> Self {
         if !tether_agent.is_connected() {
             panic!("Insights utility needs already-connected Tether Agent");
         }
@@ -69,44 +69,46 @@ impl Insights {
         &self.sampler
     }
 
-    pub fn update(&mut self, message: &Message) -> bool {
+    pub fn update(&mut self, topic: TetherOrCustomTopic, payload: Vec<u8>) -> bool {
         self.message_count += 1;
 
         if self.log_start.is_none() {
             self.log_start = Some(SystemTime::now());
         }
 
-        let bytes = message.payload();
-        if bytes.is_empty() {
+        let full_topic_string = topic.full_topic_string();
+
+        if payload.is_empty() {
             self.message_log
-                .push_back((message.topic().into(), "[EMPTY_MESSAGE]".into()));
+                .push_back((String::from(&full_topic_string), "[EMPTY_MESSAGE]".into()));
         } else {
             let value: rmpv::Value =
-                rmp_serde::from_slice(bytes).expect("failed to decode msgpack");
+                rmp_serde::from_slice(&payload).expect("failed to decode msgpack");
             let json = serde_json::to_string(&value).expect("failed to stringify JSON");
-            self.message_log.push_back((message.topic().into(), json));
+            self.message_log
+                .push_back((String::from(&full_topic_string), json));
         }
 
         let mut did_change = false;
 
         // Collect some stats...
-        if add_if_unique(message.topic(), &mut self.topics) {
+        if add_if_unique(&full_topic_string, &mut self.topics) {
             did_change = true;
         }
         if add_if_unique(
-            parse_agent_role(message.topic()).unwrap_or("unknown"),
+            parse_agent_role(&full_topic_string).unwrap_or("unknown"),
             &mut self.roles,
         ) {
             did_change = true;
         }
         if add_if_unique(
-            parse_agent_id(message.topic()).unwrap_or("unknown"),
+            parse_agent_id(&full_topic_string).unwrap_or("unknown"),
             &mut self.ids,
         ) {
             did_change = true;
         }
         if add_if_unique(
-            parse_plug_name(message.topic()).unwrap_or("unknown"),
+            parse_plug_name(&full_topic_string).unwrap_or("unknown"),
             &mut self.plugs,
         ) {
             did_change = true;
