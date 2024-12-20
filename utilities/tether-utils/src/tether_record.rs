@@ -14,7 +14,6 @@ use crate::tether_playback::{SimulationMessage, SimulationRow};
 #[derive(Args, Clone)]
 pub struct RecordOptions {
     /// Specify the full path for the recording file; overrides any other file args
-    #[arg(long = "file.overridePath")]
     pub file_override_path: Option<String>,
 
     /// Base path for recording file

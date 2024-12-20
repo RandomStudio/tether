@@ -1,10 +1,11 @@
 [package]
 name = "tether-utils"
 description = "Utilities for Tether Systems"
-version = "0.7.2"
+version = "0.10.6"
 edition = "2021"
 license = "MIT"
 repository = "https://github.com/RandomStudio/tether"
+homepage = "https://github.com/RandomStudio/tether"
 
 [lib]
 
@@ -14,7 +15,7 @@ name = "tether"
 
 [dependencies]
 # tether-agent = { path = "../../base_agent/rs" }
-tether-agent = "0.12.1"
+tether-agent = "0.13.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0.91"
 rmp-serde = "1.1.1"
@@ -26,3 +27,4 @@ ctrlc = "3.4.0"
 anyhow = "1.0.71"
 circular-buffer = "0.1.1"
 crossterm = "0.26.1"
+paho-mqtt = "0.12.5"

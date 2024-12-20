@@ -1,4 +1,4 @@
-FROM eclipse-mosquitto:2.0.15
+FROM arm64v8/eclipse-mosquitto:2.0.15
 
 WORKDIR /mosquitto/config
 
@@ -12,8 +12,8 @@ RUN echo $'listener 9001' >> mosquitto.conf
 RUN echo $'protocol websockets' >> mosquitto.conf
 
 # Set credentials to defaults and encode
-# RUN echo "${USERNAME}:${PASSWORD}" > mosquitto.passwd
-# RUN mosquitto_passwd -U mosquitto.passwd
+RUN echo "tether:sp_ceB0ss!" > mosquitto.passwd
+RUN mosquitto_passwd -U mosquitto.passwd
 
 # create shell script
 RUN echo "#!/bin/sh" > entrypoint.sh
@@ -33,4 +33,4 @@ EXPOSE 15675
 EXPOSE 1883
 
 # use shell script as entrypoint
-ENTRYPOINT /mosquitto/config/entrypoint.sh ${USERNAME:-"tether"} ${PASSWORD:-"sp_ceB0ss!"}
+ENTRYPOINT /mosquitto/config/entrypoint.sh tether sp_ceB0ss!

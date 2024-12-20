@@ -22,6 +22,9 @@ pub struct Cli {
     #[command(subcommand)]
     command: Commands,
 
+    #[arg(long = "protocol", default_value_t=String::from("tcp"))]
+    pub tether_protocol: String,
+
     #[arg(long = "host", default_value_t=String::from("localhost"))]
     pub tether_host: String,
 
@@ -67,6 +70,7 @@ fn main() {
 
     let tether_agent = TetherAgentOptionsBuilder::new(&cli.tether_role)
         .id(Some(cli.tether_id).as_deref())
+        .protocol(Some(cli.tether_protocol).as_deref())
         .host(Some(cli.tether_host.clone()).as_deref())
         .port(cli.tether_port)
         .username(Some(cli.tether_username).as_deref())

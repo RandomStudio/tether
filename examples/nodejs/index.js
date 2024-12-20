@@ -13,6 +13,8 @@ const config = parse(
   rc("NodeJSDummy", {
     loglevel: "debug",
     host: "localhost",
+    port: 1883,
+    protocol: "tcp",
   })
 );
 console.log("Launch with config", config);
@@ -23,6 +25,8 @@ const main = async () => {
     brokerOptions: {
       ...BROKER_DEFAULTS.nodeJS,
       host: config.host,
+      port: config.port,
+      protocol: config.protocol,
     },
   });
 

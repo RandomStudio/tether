@@ -1,11 +1,10 @@
+"""Tether Base Agent for python projects"""
+
 from enum import Enum
 from uuid import uuid4
 import logging
 import paho.mqtt.client as mqtt
 import msgpack
-
-# Convenience enum purely meant to reduce the need for additional imports in the script that uses this module
-
 
 class LogLevel(Enum):
     DEBUG = logging.DEBUG

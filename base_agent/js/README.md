@@ -62,3 +62,15 @@ myInputPlug.on("message", (payload, _topic) => {
   const decoded = decode(payload);
 });
 ```
+
+## Usage with Vite
+Vite seems to have a little difficulty with the "Buffer" package which this library depends on. The following addition to the `vite.config.js` file appears to resolve this:
+
+```
+resolve: {
+    alias: {
+      Buffer: "buffer",
+      mqtt: "mqtt/dist/mqtt.js",
+    },
+  },
+```

@@ -28,6 +28,7 @@ pub struct TetherAgent {
 pub struct TetherAgentOptionsBuilder {
     role: String,
     id: Option<String>,
+    protocol: Option<String>,
     host: Option<String>,
     port: Option<u16>,
     username: Option<String>,
@@ -43,6 +44,7 @@ impl TetherAgentOptionsBuilder {
         TetherAgentOptionsBuilder {
             role: String::from(role),
             id: None,
+            protocol: None,
             host: None,
             port: None,
             username: None,
@@ -56,6 +58,12 @@ impl TetherAgentOptionsBuilder {
     /// Provide Some(value) to override or None to use the default `any` (when publishing) or `+` when subscribing.
     pub fn id(mut self, id: Option<&str>) -> Self {
         self.id = id.map(|x| x.into());
+        self
+    }
+
+    /// Provide Some(value) to override or None to use default
+    pub fn protocol(mut self, protocol: Option<&str>) -> Self {
+        self.protocol = protocol.map(|x| x.into());
         self
     }
 
@@ -98,12 +106,13 @@ impl TetherAgentOptionsBuilder {
     }
 
     pub fn build(self) -> anyhow::Result<TetherAgent> {
+        let protocol = self.protocol.clone().unwrap_or("tcp".into());
         let broker_host = self.host.clone().unwrap_or("localhost".into());
         let broker_port = self.port.unwrap_or(1883);
 
-        let broker_uri = format!("tcp://{broker_host}:{broker_port}");
+        let broker_uri = format!("{protocol}://{broker_host}:{broker_port}");
 
-        info!("Broker at {}", &broker_uri);
+        info!("Will create broker client with URI {}", &broker_uri);
 
         let mqttoptions = MqttOptions::new("rumqtt-sync", "localhost", 1883)
             .set_credentials(

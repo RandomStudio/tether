@@ -2,7 +2,7 @@ use clap::Args;
 use log::{debug, error, info, warn};
 use tether_agent::{mqtt::Message, PlugOptionsBuilder, TetherAgent, TetherOrCustomTopic};
 
-#[derive(Args)]
+#[derive(Args, Default)]
 pub struct ReceiveOptions {
     /// Specify a ROLE (instead of wildcard +)
     #[arg(long = "plug.role")]
@@ -21,17 +21,6 @@ pub struct ReceiveOptions {
     /// topic is built manually.
     #[arg(long = "topic")]
     pub subscribe_topic: Option<String>,
-}
-
-impl Default for ReceiveOptions {
-    fn default() -> Self {
-        ReceiveOptions {
-            subscribe_topic: None,
-            subscribe_role: None,
-            subscribe_id: None,
-            subscribe_plug_name: None,
-        }
-    }
 }
 
 pub fn receive(
@@ -97,7 +86,7 @@ fn build_receiver_plug(options: &ReceiveOptions) -> PlugOptionsBuilder {
                 if provided_name.as_str() == "+" {
                     "any"
                 } else {
-                    &provided_name
+                    provided_name
                 }
             }
             None => "any",

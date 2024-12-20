@@ -5,6 +5,7 @@ import logger from "loglevel";
 import { LogLevelDesc } from "loglevel";
 import { TetherConfig, TetherOptions } from "./types";
 import { encode, decode } from "@msgpack/msgpack";
+export { parsePlugName, parseAgentIdOrGroup, parseAgentType } from "./Plug";
 
 logger.setLevel("info");
 export { logger, BROKER_DEFAULTS, encode, decode };
@@ -24,8 +25,8 @@ export class TetherAgent {
   private client: AsyncMqttClient | null;
 
   /**
-   * Create a new Tether Agent, and connect automatically unless . This is an async
-   * function, so it will return the agent via the Promise only once the connection
+   * Create a new Tether Agent, and connect automatically unless options.autoConnect is.set to `false`.
+   * This is an async function, so it will return the agent via the Promise only once the connection
    * has been made successfully - or immediately if you turn autoConnect off.
    *
    * @param role The Role of this Agent in the system. Describes what this type of Agent does.
@@ -39,6 +40,9 @@ export class TetherAgent {
     role: string,
     options?: TetherOptions
   ): Promise<TetherAgent> {
+    if (options?.loglevel) {
+      logger.setLevel(options.loglevel as LogLevelDesc);
+    }
     if (
       options &&
       options.brokerOptions &&
