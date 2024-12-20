@@ -1,0 +1,3 @@
+[workspace]
+
+members = ["base_agent/rs", "utilities/tether-utils"]
