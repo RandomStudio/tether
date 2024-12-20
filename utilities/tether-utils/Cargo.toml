@@ -1,10 +1,11 @@
 [package]
 name = "tether-utils"
 description = "Utilities for Tether Systems"
-version = "0.10.5"
+version = "0.10.6"
 edition = "2021"
 license = "MIT"
 repository = "https://github.com/RandomStudio/tether"
+homepage = "https://github.com/RandomStudio/tether"
 
 [lib]
 
