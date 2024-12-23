@@ -1,7 +1,8 @@
 use ::anyhow::anyhow;
 use log::{debug, error, info, warn};
 use rmp_serde::to_vec_named;
-use rumqttc::{Client, Event, MqttOptions, Packet, QoS};
+use rumqttc::tokio_rustls::rustls::ClientConfig;
+use rumqttc::{Client, Event, MqttOptions, Packet, QoS, Transport};
 use serde::Serialize;
 use std::{sync::mpsc, thread, time::Duration};
 use uuid::Uuid;
@@ -196,23 +197,31 @@ impl TetherAgent {
 
         debug!("Using MQTT Client ID \"{}\"", mqtt_client_id);
 
-        // TODO: if using protocol mttqs, need something like the following:
-        // Use rustls-native-certs to load root certificates from the operating system.
-        // let mut root_cert_store = tokio_rustls::rustls::RootCertStore::empty();
-        // root_cert_store.add_parsable_certificates(
-        //     rustls_native_certs::load_native_certs().expect("could not load platform certs"),
-        // );
-
-        // let client_config = ClientConfig::builder()
-        //     .with_root_certificates(root_cert_store)
-        //     .with_no_client_auth();
-
-        // mqttoptions.set_transport(Transport::tls_with_config(client_config.into()));
-
-        let mqtt_options = MqttOptions::new(mqtt_client_id, &self.host, self.port)
+        let mut mqtt_options = MqttOptions::new(mqtt_client_id, &self.host, self.port)
             .set_credentials(&self.username, &self.password)
             .set_keep_alive(Duration::from_secs(TIMEOUT_SECONDS))
             .to_owned();
+
+        match self.protocol.as_str() {
+            "mqtts" => {
+                // Use rustls-native-certs to load root certificates from the operating system.
+                let mut root_cert_store = rumqttc::tokio_rustls::rustls::RootCertStore::empty();
+                root_cert_store.add_parsable_certificates(
+                    rustls_native_certs::load_native_certs()
+                        .expect("could not load platform certs"),
+                );
+
+                let client_config = ClientConfig::builder()
+                    .with_root_certificates(root_cert_store)
+                    .with_no_client_auth();
+                mqtt_options.set_transport(Transport::tls_with_config(client_config.into()));
+            }
+            "ws" => {
+                debug!("Using Websocket protocol...");
+                mqtt_options.set_transport(Transport::Ws);
+            }
+            _ => {}
+        };
 
         // Create the client connection
         let (client, mut connection) = Client::new(mqtt_options, 10);
@@ -225,7 +234,7 @@ impl TetherAgent {
                     Ok(e) => match e {
                         Event::Incoming(incoming) => match incoming {
                             Packet::ConnAck(_) => {
-                                debug!("(Connected) ConnAck received!");
+                                info!("(Connected) ConnAck received!");
                             }
                             Packet::Publish(p) => {
                                 debug!("Incoming Publish packet (message received), {:?}", &p);
