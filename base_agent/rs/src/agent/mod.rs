@@ -121,7 +121,7 @@ impl TetherAgentOptionsBuilder {
     }
 
     pub fn build(self) -> anyhow::Result<TetherAgent> {
-        let protocol = self.protocol.clone().unwrap_or("tcp".into());
+        let protocol = self.protocol.clone().unwrap_or("mqtt".into());
         let host = self.host.clone().unwrap_or("localhost".into());
         let port = self.port.unwrap_or(1883);
         let username = self.username.unwrap_or(DEFAULT_USERNAME.into());
@@ -176,7 +176,7 @@ impl TetherAgent {
         &self.id
     }
 
-    /// Returns the Agent Role, ID (group) and Broker URI
+    /// Returns the Agent Role, ID (group), Broker URI
     pub fn description(&self) -> (String, String, String) {
         (
             String::from(&self.role),
@@ -188,7 +188,10 @@ impl TetherAgent {
     /// Return the URI (protocol, IP address, port, path) that
     /// was used to connect to the MQTT broker
     pub fn broker_uri(&self) -> String {
-        format!("{}://{}:{}", &self.protocol, self.host, self.port)
+        format!(
+            "{}://{}:{}{}",
+            &self.protocol, self.host, self.port, self.base_path
+        )
     }
 
     pub fn set_role(&mut self, role: &str) {
