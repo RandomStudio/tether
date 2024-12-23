@@ -63,7 +63,7 @@ fn demo_topics() {
 
     loop {
         while let Some((topic, payload)) = tether_agent.check_messages() {
-            if insights.update(topic, payload) {
+            if insights.update(&topic, payload) {
                 println!("TOPICS: Insights update: \n{}", insights);
             }
         }

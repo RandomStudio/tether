@@ -107,7 +107,7 @@ fn main() {
                     std::thread::sleep(Duration::from_millis(1));
                 }
                 while let Some((topic, payload)) = tether_agent.check_messages() {
-                    let topics_did_udate = insights.update(topic, payload);
+                    let topics_did_udate = insights.update(&topic, payload);
                     print_insights_summary(&insights, topics_did_udate, options.graph_enable);
                 }
                 if let Ok(elapsed) = last_update.elapsed() {

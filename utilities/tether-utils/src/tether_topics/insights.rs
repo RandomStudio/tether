@@ -69,7 +69,7 @@ impl Insights {
         &self.sampler
     }
 
-    pub fn update(&mut self, topic: TetherOrCustomTopic, payload: Vec<u8>) -> bool {
+    pub fn update(&mut self, topic: &TetherOrCustomTopic, payload: Vec<u8>) -> bool {
         self.message_count += 1;
 
         if self.log_start.is_none() {
