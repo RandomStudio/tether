@@ -28,8 +28,11 @@ pub struct Cli {
     #[arg(long = "host", default_value_t=String::from("localhost"))]
     pub tether_host: String,
 
-    #[arg(long = "port")]
-    pub tether_port: Option<u16>,
+    #[arg(long = "port", default_value_t = 1883)]
+    pub tether_port: u16,
+
+    #[arg(long = "path", default_value_t=String::from("/"))]
+    pub tether_base_path: String,
 
     #[arg(long = "username", default_value_t=String::from("tether"))]
     pub tether_username: String,
@@ -72,7 +75,8 @@ fn main() {
         .id(Some(cli.tether_id).as_deref())
         .protocol(Some(cli.tether_protocol).as_deref())
         .host(Some(cli.tether_host.clone()).as_deref())
-        .port(cli.tether_port)
+        .port(Some(cli.tether_port))
+        .base_path(Some(cli.tether_base_path).as_deref())
         .username(Some(cli.tether_username).as_deref())
         .password(Some(cli.tether_password).as_deref())
         .build()
@@ -80,7 +84,7 @@ fn main() {
             error!("Failed to initialise and/or connect the Tether Agent");
             warn!(
                 "Check your Tether settings and ensure that you have a correctly-configured MQTT broker running at {}:{}",
-                &cli.tether_host, cli.tether_port.unwrap_or(1883)
+                &cli.tether_host, cli.tether_port
             );
             panic!("Failed to init/connect Tether Agent")
         });

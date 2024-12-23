@@ -24,6 +24,7 @@ pub struct TetherAgent {
     protocol: String,
     username: String,
     password: String,
+    base_path: String,
     mqtt_client_id: Option<String>,
     pub(crate) client: Option<Client>,
     message_sender: mpsc::Sender<(TetherOrCustomTopic, Vec<u8>)>,
@@ -39,6 +40,7 @@ pub struct TetherAgentOptionsBuilder {
     port: Option<u16>,
     username: Option<String>,
     password: Option<String>,
+    base_path: Option<String>,
     auto_connect: bool,
     mqtt_client_id: Option<String>,
 }
@@ -55,6 +57,7 @@ impl TetherAgentOptionsBuilder {
             port: None,
             username: None,
             password: None,
+            base_path: None,
             auto_connect: true,
             mqtt_client_id: None,
         }
@@ -106,6 +109,12 @@ impl TetherAgentOptionsBuilder {
         self
     }
 
+    /// Provide Some(value) to override or None to use default
+    pub fn base_path(mut self, base_path: Option<&str>) -> Self {
+        self.base_path = base_path.map(|x| x.into());
+        self
+    }
+
     pub fn auto_connect(mut self, should_auto_connect: bool) -> Self {
         self.auto_connect = should_auto_connect;
         self
@@ -117,6 +126,7 @@ impl TetherAgentOptionsBuilder {
         let port = self.port.unwrap_or(1883);
         let username = self.username.unwrap_or(DEFAULT_USERNAME.into());
         let password = self.password.unwrap_or(DEFAULT_PASSWORD.into());
+        let base_path = self.base_path.unwrap_or("/".into());
 
         debug!(
             "final build uses options protocol = {}, host = {}, port = {}",
@@ -133,6 +143,7 @@ impl TetherAgentOptionsBuilder {
             username,
             password,
             protocol,
+            base_path,
             client: None,
             message_sender,
             message_receiver,
@@ -221,10 +232,40 @@ impl TetherAgent {
                     .with_no_client_auth();
                 mqtt_options.set_transport(Transport::tls_with_config(client_config.into()));
             }
+            "wss" => {
+                // If using websocket protocol, rumqttc does NOT automatically add protocol and port
+                // into the URL!
+                let full_host = format!(
+                    "{}://{}:{}{}",
+                    self.protocol, self.host, self.port, self.base_path
+                );
+                debug!("WSS using full host URL: {}", &full_host);
+                mqtt_options = MqttOptions::new(mqtt_client_id.clone(), &full_host, self.port) // here, port is ignored anyway
+                    .set_credentials(&self.username, &self.password)
+                    .set_keep_alive(Duration::from_secs(TIMEOUT_SECONDS))
+                    .to_owned();
+
+                // Use rustls-native-certs to load root certificates from the operating system.
+                let mut root_cert_store = rumqttc::tokio_rustls::rustls::RootCertStore::empty();
+                root_cert_store.add_parsable_certificates(
+                    rustls_native_certs::load_native_certs()
+                        .expect("could not load platform certs"),
+                );
+
+                let client_config = ClientConfig::builder()
+                    .with_root_certificates(root_cert_store)
+                    .with_no_client_auth();
+                mqtt_options.set_transport(Transport::wss_with_config(client_config.into()));
+            }
             "ws" => {
                 // If using websocket protocol, rumqttc does NOT automatically add protocol and port
                 // into the URL!
-                let full_host = format!("{}://{}:{}", self.protocol, self.host, self.port);
+                let full_host = format!(
+                    "{}://{}:{}{}",
+                    self.protocol, self.host, self.port, self.base_path
+                );
+                debug!("WS using full host URL: {}", &full_host);
+
                 mqtt_options = MqttOptions::new(mqtt_client_id.clone(), &full_host, self.port) // here, port is ignored anyway
                     .set_credentials(&self.username, &self.password)
                     .set_keep_alive(Duration::from_secs(TIMEOUT_SECONDS))
