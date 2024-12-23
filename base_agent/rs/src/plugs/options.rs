@@ -1,10 +1,13 @@
+use anyhow::anyhow;
 use log::{debug, error, info, warn};
 
 use crate::{
     definitions::{InputPlugDefinition, OutputPlugDefinition, PlugDefinitionCommon},
     three_part_topic::ThreePartTopic,
-    PlugDefinition, TetherAgent, TetherOrCustomTopic,
+    PlugDefinition, TetherAgent,
 };
+
+use super::three_part_topic::TetherOrCustomTopic;
 
 pub struct InputPlugOptions {
     plug_name: String,
@@ -64,13 +67,15 @@ impl PlugOptionsBuilder {
         self
     }
 
-    /// Override the "role" part of the topic that gets generated for this Plug.
-    /// - For Input Plugs, this means you want to be specific about the Role part
-    /// of the topic, instead of using the default wildcard `+` at this location
-    /// - For Output Plugs, this means you want to override the Role part instead
-    /// of using your Agent's "own" Role with which you created the Tether Agent
-    ///
-    /// If you override the entire topic using `.topic` this will be ignored.
+    /**
+    Override the "role" part of the topic that gets generated for this Plug.
+    - For Input Plugs, this means you want to be specific about the Role part
+      of the topic, instead of using the default wildcard `+` at this location
+    - For Output Plugs, this means you want to override the Role part instead
+      of using your Agent's "own" Role with which you created the Tether Agent
+
+    If you override the entire topic using `.topic` this will be ignored.
+    */
     pub fn role(mut self, role: Option<&str>) -> Self {
         match &mut self {
             PlugOptionsBuilder::InputPlugOptions(s) => {
@@ -91,14 +96,16 @@ impl PlugOptionsBuilder {
         self
     }
 
-    /// Override the "id" part of the topic that gets generated for this Plug.
-    /// - For Input Plugs, this means you want to be specific about the ID part
-    /// of the topic, instead of using the default wildcard `+` at this location
-    /// - For Output Plugs, this means you want to override the ID part instead
-    /// of using your Agent's "own" ID which you specified (or left blank, i.e. "any")
-    /// when creating the Tether Agent
-    ///
-    /// If you override the entire topic using `.topic` this will be ignored.
+    /**
+    Override the "id" part of the topic that gets generated for this Plug.
+    - For Input Plugs, this means you want to be specific about the ID part
+      of the topic, instead of using the default wildcard `+` at this location
+    - For Output Plugs, this means you want to override the ID part instead
+      of using your Agent's "own" ID which you specified (or left blank, i.e. "any")
+      when creating the Tether Agent
+
+    If you override the entire topic using `.topic` this will be ignored.
+    */
     pub fn id(mut self, id: Option<&str>) -> Self {
         match &mut self {
             PlugOptionsBuilder::InputPlugOptions(s) => {
@@ -192,17 +199,13 @@ impl PlugOptionsBuilder {
             Some(t) => {
                 if TryInto::<ThreePartTopic>::try_into(t).is_ok() {
                     info!("Custom topic passes Three Part Topic validation");
+                } else if t == "#" {
+                    info!("Wildcard \"#\" custom topics are not Three Part Topics but are valid");
                 } else {
-                    if t == "#" {
-                        info!(
-                            "Wildcard \"#\" custom topics are not Three Part Topics but are valid"
-                        );
-                    } else {
-                        warn!(
-                            "Could not convert \"{}\" into Tether 3 Part Topic; presumably you know what you're doing!",
-                            t
-                        );
-                    }
+                    warn!(
+                        "Could not convert \"{}\" into Tether 3 Part Topic; presumably you know what you're doing!",
+                        t
+                    );
                 }
                 match &mut self {
                     PlugOptionsBuilder::InputPlugOptions(s) => s.override_topic = Some(t.into()),
@@ -233,7 +236,7 @@ impl PlugOptionsBuilder {
 
     /// Finalise the options (substituting suitable defaults if no custom values have been
     /// provided) and return a valid PlugDefinition that you can actually use.
-    pub fn build(self, tether_agent: &TetherAgent) -> anyhow::Result<PlugDefinition> {
+    pub fn build(self, tether_agent: &mut TetherAgent) -> anyhow::Result<PlugDefinition> {
         match self {
             Self::InputPlugOptions(plug_options) => {
                 let tpt: TetherOrCustomTopic = match plug_options.override_topic {
@@ -251,16 +254,25 @@ impl PlugOptionsBuilder {
                 };
                 let plug_definition =
                     InputPlugDefinition::new(&plug_options.plug_name, tpt, plug_options.qos);
-                match tether_agent
-                    .client()
-                    .subscribe(&plug_definition.topic_str(), plug_definition.qos())
-                {
-                    Ok(res) => {
-                        debug!("This topic was fine: \"{}\"", plug_definition.topic_str());
-                        debug!("Server respond OK for subscribe: {res:?}");
-                        Ok(PlugDefinition::InputPlug(plug_definition))
+                if let Some(client) = &tether_agent.client {
+                    match client.subscribe(
+                        plug_definition.topic_str(),
+                        match plug_definition.qos() {
+                            0 => rumqttc::QoS::AtMostOnce,
+                            1 => rumqttc::QoS::AtLeastOnce,
+                            2 => rumqttc::QoS::ExactlyOnce,
+                            _ => rumqttc::QoS::AtLeastOnce,
+                        },
+                    ) {
+                        Ok(res) => {
+                            debug!("This topic was fine: \"{}\"", plug_definition.topic_str());
+                            debug!("Server respond OK for subscribe: {res:?}");
+                            Ok(PlugDefinition::InputPlug(plug_definition))
+                        }
+                        Err(_e) => Err(anyhow!("ClientError")),
                     }
-                    Err(e) => Err(e.into()),
+                } else {
+                    Err(anyhow!("Client not available for subscription"))
                 }
             }
             Self::OutputPlugOptions(plug_options) => {
@@ -300,11 +312,11 @@ mod tests {
     #[test]
     fn default_input_plug() {
         // verbose_logging();
-        let tether_agent = TetherAgentOptionsBuilder::new("tester")
+        let mut tether_agent = TetherAgentOptionsBuilder::new("tester")
             .build()
             .expect("sorry, these tests require working localhost Broker");
         let input = PlugOptionsBuilder::create_input("one")
-            .build(&tether_agent)
+            .build(&mut tether_agent)
             .unwrap();
         assert_eq!(input.name(), "one");
         assert_eq!(input.topic(), "+/+/one");
@@ -317,12 +329,12 @@ mod tests {
     /// explicit overrides.
     fn default_input_plug_with_agent_custom_id() {
         // verbose_logging();
-        let tether_agent = TetherAgentOptionsBuilder::new("tester")
+        let mut tether_agent = TetherAgentOptionsBuilder::new("tester")
             .id(Some("verySpecialGroup"))
             .build()
             .expect("sorry, these tests require working localhost Broker");
         let input = PlugOptionsBuilder::create_input("one")
-            .build(&tether_agent)
+            .build(&mut tether_agent)
             .unwrap();
         assert_eq!(input.name(), "one");
         assert_eq!(input.topic(), "+/+/one");
@@ -330,11 +342,11 @@ mod tests {
 
     #[test]
     fn default_output_plug() {
-        let tether_agent = TetherAgentOptionsBuilder::new("tester")
+        let mut tether_agent = TetherAgentOptionsBuilder::new("tester")
             .build()
             .expect("sorry, these tests require working localhost Broker");
         let input = PlugOptionsBuilder::create_output("two")
-            .build(&tether_agent)
+            .build(&mut tether_agent)
             .unwrap();
         assert_eq!(input.name(), "two");
         assert_eq!(input.topic(), "tester/any/two");
@@ -345,12 +357,12 @@ mod tests {
     /// BUT the Agent had a custom ID set, which means that the final topic includes this custom
     /// ID/Group value.
     fn output_plug_default_but_agent_id_custom() {
-        let tether_agent = TetherAgentOptionsBuilder::new("tester")
+        let mut tether_agent = TetherAgentOptionsBuilder::new("tester")
             .id(Some("specialCustomGrouping"))
             .build()
             .expect("sorry, these tests require working localhost Broker");
         let input = PlugOptionsBuilder::create_output("somethingStandard")
-            .build(&tether_agent)
+            .build(&mut tether_agent)
             .unwrap();
         assert_eq!(input.name(), "somethingStandard");
         assert_eq!(
@@ -361,28 +373,28 @@ mod tests {
 
     #[test]
     fn input_id_andor_role() {
-        let tether_agent = TetherAgentOptionsBuilder::new("tester")
+        let mut tether_agent = TetherAgentOptionsBuilder::new("tester")
             .build()
             .expect("sorry, these tests require working localhost Broker");
 
         let input_role_only = PlugOptionsBuilder::create_input("thePlug")
-            .role(Some("specificRole".into()))
-            .build(&tether_agent)
+            .role(Some("specificRole"))
+            .build(&mut tether_agent)
             .unwrap();
         assert_eq!(input_role_only.name(), "thePlug");
         assert_eq!(input_role_only.topic(), "specificRole/+/thePlug");
 
         let input_id_only = PlugOptionsBuilder::create_input("thePlug")
-            .id(Some("specificID".into()))
-            .build(&tether_agent)
+            .id(Some("specificID"))
+            .build(&mut tether_agent)
             .unwrap();
         assert_eq!(input_id_only.name(), "thePlug");
         assert_eq!(input_id_only.topic(), "+/specificID/thePlug");
 
         let input_both = PlugOptionsBuilder::create_input("thePlug")
-            .id(Some("specificID".into()))
-            .role(Some("specificRole".into()))
-            .build(&tether_agent)
+            .id(Some("specificID"))
+            .role(Some("specificRole"))
+            .build(&mut tether_agent)
             .unwrap();
         assert_eq!(input_both.name(), "thePlug");
         assert_eq!(input_both.topic(), "specificRole/specificID/thePlug");
@@ -394,28 +406,28 @@ mod tests {
     /// remain the "original" / default
     /// Contrast with input_specific_id_andor_role_no_plugname below.
     fn input_specific_id_andor_role_with_plugname() {
-        let tether_agent = TetherAgentOptionsBuilder::new("tester")
+        let mut tether_agent = TetherAgentOptionsBuilder::new("tester")
             .build()
             .expect("sorry, these tests require working localhost Broker");
 
         let input_role_only = PlugOptionsBuilder::create_input("thePlug")
-            .role(Some("specificRole".into()))
-            .build(&tether_agent)
+            .role(Some("specificRole"))
+            .build(&mut tether_agent)
             .unwrap();
         assert_eq!(input_role_only.name(), "thePlug");
         assert_eq!(input_role_only.topic(), "specificRole/+/thePlug");
 
         let input_id_only = PlugOptionsBuilder::create_input("thePlug")
-            .id(Some("specificID".into()))
-            .build(&tether_agent)
+            .id(Some("specificID"))
+            .build(&mut tether_agent)
             .unwrap();
         assert_eq!(input_id_only.name(), "thePlug");
         assert_eq!(input_id_only.topic(), "+/specificID/thePlug");
 
         let input_both = PlugOptionsBuilder::create_input("thePlug")
-            .id(Some("specificID".into()))
-            .role(Some("specificRole".into()))
-            .build(&tether_agent)
+            .id(Some("specificID"))
+            .role(Some("specificRole"))
+            .build(&mut tether_agent)
             .unwrap();
         assert_eq!(input_both.name(), "thePlug");
         assert_eq!(input_both.topic(), "specificRole/specificID/thePlug");
@@ -427,21 +439,21 @@ mod tests {
     /// sets the Plug Name to Some("+"), ie. "use a wildcard at this
     /// position instead" - and NOT the original plug name.
     fn input_specific_id_andor_role_no_plugname() {
-        let tether_agent = TetherAgentOptionsBuilder::new("tester")
+        let mut tether_agent = TetherAgentOptionsBuilder::new("tester")
             .build()
             .expect("sorry, these tests require working localhost Broker");
 
         let input_only_plugname_none = PlugOptionsBuilder::create_input("thePlug")
             .name(Some("+"))
-            .build(&tether_agent)
+            .build(&mut tether_agent)
             .unwrap();
         assert_eq!(input_only_plugname_none.name(), "thePlug");
         assert_eq!(input_only_plugname_none.topic(), "+/+/+");
 
         let input_role_only = PlugOptionsBuilder::create_input("thePlug")
             .name(Some("+"))
-            .role(Some("specificRole".into()))
-            .build(&tether_agent)
+            .role(Some("specificRole"))
+            .build(&mut tether_agent)
             .unwrap();
         assert_eq!(input_role_only.name(), "thePlug");
         assert_eq!(input_role_only.topic(), "specificRole/+/+");
@@ -449,17 +461,17 @@ mod tests {
         let input_id_only = PlugOptionsBuilder::create_input("thePlug")
             // .name(Some("+"))
             .any_plug() // equivalent to Some("+")
-            .id(Some("specificID".into()))
-            .build(&tether_agent)
+            .id(Some("specificID"))
+            .build(&mut tether_agent)
             .unwrap();
         assert_eq!(input_id_only.name(), "thePlug");
         assert_eq!(input_id_only.topic(), "+/specificID/+");
 
         let input_both = PlugOptionsBuilder::create_input("thePlug")
             .name(Some("+"))
-            .id(Some("specificID".into()))
-            .role(Some("specificRole".into()))
-            .build(&tether_agent)
+            .id(Some("specificID"))
+            .role(Some("specificRole"))
+            .build(&mut tether_agent)
             .unwrap();
         assert_eq!(input_both.name(), "thePlug");
         assert_eq!(input_both.topic(), "specificRole/specificID/+");
@@ -467,28 +479,28 @@ mod tests {
 
     #[test]
     fn output_custom() {
-        let tether_agent = TetherAgentOptionsBuilder::new("tester")
+        let mut tether_agent = TetherAgentOptionsBuilder::new("tester")
             .build()
             .expect("sorry, these tests require working localhost Broker");
 
         let output_custom_role = PlugOptionsBuilder::create_output("theOutputPlug")
-            .role(Some("customRole".into()))
-            .build(&tether_agent)
+            .role(Some("customRole"))
+            .build(&mut tether_agent)
             .unwrap();
         assert_eq!(output_custom_role.name(), "theOutputPlug");
         assert_eq!(output_custom_role.topic(), "customRole/any/theOutputPlug");
 
         let output_custom_id = PlugOptionsBuilder::create_output("theOutputPlug")
-            .id(Some("customID".into()))
-            .build(&tether_agent)
+            .id(Some("customID"))
+            .build(&mut tether_agent)
             .unwrap();
         assert_eq!(output_custom_id.name(), "theOutputPlug");
         assert_eq!(output_custom_id.topic(), "tester/customID/theOutputPlug");
 
         let output_custom_both = PlugOptionsBuilder::create_output("theOutputPlug")
-            .role(Some("customRole".into()))
-            .id(Some("customID".into()))
-            .build(&tether_agent)
+            .role(Some("customRole"))
+            .id(Some("customID"))
+            .build(&mut tether_agent)
             .unwrap();
         assert_eq!(output_custom_both.name(), "theOutputPlug");
         assert_eq!(
@@ -499,20 +511,20 @@ mod tests {
 
     #[test]
     fn input_manual_topics() {
-        let tether_agent = TetherAgentOptionsBuilder::new("tester")
+        let mut tether_agent = TetherAgentOptionsBuilder::new("tester")
             .build()
             .expect("sorry, these tests require working localhost Broker");
 
         let input_all = PlugOptionsBuilder::create_input("everything")
-            .topic(Some("#".into()))
-            .build(&tether_agent)
+            .topic(Some("#"))
+            .build(&mut tether_agent)
             .unwrap();
         assert_eq!(input_all.name(), "everything");
         assert_eq!(input_all.topic(), "#");
 
         let input_nontether = PlugOptionsBuilder::create_input("weird")
-            .topic(Some("foo/bar/baz/one/two/three".into()))
-            .build(&tether_agent)
+            .topic(Some("foo/bar/baz/one/two/three"))
+            .build(&mut tether_agent)
             .unwrap();
         assert_eq!(input_nontether.name(), "weird");
         assert_eq!(input_nontether.topic(), "foo/bar/baz/one/two/three");

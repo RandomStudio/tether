@@ -28,8 +28,11 @@ pub struct Cli {
     #[arg(long = "host", default_value_t=String::from("localhost"))]
     pub tether_host: String,
 
-    #[arg(long = "port")]
-    pub tether_port: Option<u16>,
+    #[arg(long = "port", default_value_t = 1883)]
+    pub tether_port: u16,
+
+    #[arg(long = "path", default_value_t=String::from("/"))]
+    pub tether_base_path: String,
 
     #[arg(long = "username", default_value_t=String::from("tether"))]
     pub tether_username: String,
@@ -68,11 +71,12 @@ fn main() {
 
     debug!("Debugging is enabled; could be verbose");
 
-    let tether_agent = TetherAgentOptionsBuilder::new(&cli.tether_role)
+    let mut tether_agent = TetherAgentOptionsBuilder::new(&cli.tether_role)
         .id(Some(cli.tether_id).as_deref())
         .protocol(Some(cli.tether_protocol).as_deref())
         .host(Some(cli.tether_host.clone()).as_deref())
-        .port(cli.tether_port)
+        .port(Some(cli.tether_port))
+        .base_path(Some(cli.tether_base_path).as_deref())
         .username(Some(cli.tether_username).as_deref())
         .password(Some(cli.tether_password).as_deref())
         .build()
@@ -80,34 +84,30 @@ fn main() {
             error!("Failed to initialise and/or connect the Tether Agent");
             warn!(
                 "Check your Tether settings and ensure that you have a correctly-configured MQTT broker running at {}:{}",
-                &cli.tether_host, cli.tether_port.unwrap_or(1883)
+                &cli.tether_host, cli.tether_port
             );
             panic!("Failed to init/connect Tether Agent")
         });
 
     match &cli.command {
         Commands::Receive(options) => {
-            tether_receive::receive(options, &tether_agent, |_plug_name, message, decoded| {
+            tether_receive::receive(options, &mut tether_agent, |_plug_name, topic, decoded| {
                 let contents = decoded.unwrap_or("(empty/invalid message)".into());
-                info!(
-                    "Received on topic \"{}\" :: \n{}\n",
-                    message.topic(),
-                    contents
-                );
+                info!("Received on topic \"{}\" :: \n{}\n", topic, contents);
             })
         }
-        Commands::Send(options) => tether_send::send(options, &tether_agent)
+        Commands::Send(options) => tether_send::send(options, &mut tether_agent)
             .unwrap_or_else(|e| error!("Failed to send: {}", e)),
         Commands::Topics(options) => {
-            let mut insights = tether_topics::insights::Insights::new(options, &tether_agent);
+            let mut insights = tether_topics::insights::Insights::new(options, &mut tether_agent);
             let mut last_update = SystemTime::now();
 
             loop {
                 if !insights.sample() {
                     std::thread::sleep(Duration::from_millis(1));
                 }
-                while let Some((_plug_name, message)) = tether_agent.check_messages() {
-                    let topics_did_udate = insights.update(&message);
+                while let Some((topic, payload)) = tether_agent.check_messages() {
+                    let topics_did_udate = insights.update(topic, payload);
                     print_insights_summary(&insights, topics_did_udate, options.graph_enable);
                 }
                 if let Ok(elapsed) = last_update.elapsed() {
@@ -124,7 +124,7 @@ fn main() {
         }
         Commands::Record(options) => {
             let recorder = tether_record::TetherRecordUtil::new(options.clone());
-            recorder.start_recording(&tether_agent);
+            recorder.start_recording(&mut tether_agent);
         }
     }
 }

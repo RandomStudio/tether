@@ -12,20 +12,20 @@ use tether_utils::{
 };
 
 fn demo_receive() {
-    let tether_agent = TetherAgentOptionsBuilder::new("demoReceive")
+    let mut tether_agent = TetherAgentOptionsBuilder::new("demoReceive")
         .build()
         .expect("failed to init/connect Tether Agent");
 
     let options = ReceiveOptions::default();
 
-    receive(&options, &tether_agent, |_plug_name, message, decoded| {
+    receive(&options, &mut tether_agent, |_plug_name, topic, decoded| {
         let contents = decoded.unwrap_or("(empty/invalid message)".into());
-        println!("RECEIVE: \"{}\" :: {}", message.topic(), contents);
+        println!("RECEIVE: \"{}\" :: {}", topic, contents);
     })
 }
 
 fn demo_send() {
-    let tether_agent = TetherAgentOptionsBuilder::new("demoSend")
+    let mut tether_agent = TetherAgentOptionsBuilder::new("demoSend")
         .build()
         .expect("failed to init/connect Tether Agent");
 
@@ -44,12 +44,12 @@ fn demo_send() {
         std::thread::sleep(std::time::Duration::from_secs(1));
         count += 1;
         println!("SEND: sending message #{}", count);
-        send(&options, &tether_agent).expect("failed to send");
+        send(&options, &mut tether_agent).expect("failed to send");
     }
 }
 
 fn demo_topics() {
-    let tether_agent = TetherAgentOptionsBuilder::new("demoTopics")
+    let mut tether_agent = TetherAgentOptionsBuilder::new("demoTopics")
         .build()
         .expect("failed to init/connect Tether Agent");
 
@@ -59,11 +59,11 @@ fn demo_topics() {
         graph_enable: false,
     };
 
-    let mut insights = Insights::new(&options, &tether_agent);
+    let mut insights = Insights::new(&options, &mut tether_agent);
 
     loop {
-        while let Some((_plug_name, message)) = tether_agent.check_messages() {
-            if insights.update(&message) {
+        while let Some((topic, payload)) = tether_agent.check_messages() {
+            if insights.update(topic, payload) {
                 println!("TOPICS: Insights update: \n{}", insights);
             }
         }
@@ -119,7 +119,7 @@ fn demo_playback() {
 }
 
 fn demo_record() {
-    let tether_agent = TetherAgentOptionsBuilder::new("demoPlayback")
+    let mut tether_agent = TetherAgentOptionsBuilder::new("demoPlayback")
         .build()
         .expect("failed to init/connect Tether Agent");
 
@@ -158,7 +158,7 @@ fn demo_record() {
             println!("...Bye");
         }),
         spawn(move || {
-            recorder.start_recording(&tether_agent);
+            recorder.start_recording(&mut tether_agent);
         }),
     ];
 

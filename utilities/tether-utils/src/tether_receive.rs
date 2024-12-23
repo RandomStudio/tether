@@ -1,6 +1,6 @@
 use clap::Args;
 use log::{debug, error, info, warn};
-use tether_agent::{mqtt::Message, PlugOptionsBuilder, TetherAgent, TetherOrCustomTopic};
+use tether_agent::{three_part_topic::TetherOrCustomTopic, PlugOptionsBuilder, TetherAgent};
 
 #[derive(Args, Default)]
 pub struct ReceiveOptions {
@@ -25,8 +25,8 @@ pub struct ReceiveOptions {
 
 pub fn receive(
     options: &ReceiveOptions,
-    tether_agent: &TetherAgent,
-    on_message: fn(plug_name: String, message: Message, decoded: Option<String>),
+    tether_agent: &mut TetherAgent,
+    on_message: fn(plug_name: String, topic: String, decoded: Option<String>),
 ) {
     info!("Tether Receive Utility");
 
@@ -40,30 +40,30 @@ pub fn receive(
 
     loop {
         let mut did_work = false;
-        while let Some((topic, message)) = tether_agent.check_messages() {
+        while let Some((topic, payload)) = tether_agent.check_messages() {
             did_work = true;
-            debug!("Received message on topic \"{}\"", message.topic());
+            let full_topic_string = topic.full_topic_string();
+            debug!("Received message on topic \"{}\"", &full_topic_string);
             let plug_name = match topic {
                 TetherOrCustomTopic::Custom(_) => String::from("unknown"),
                 TetherOrCustomTopic::Tether(tpt) => String::from(tpt.plug_name()),
             };
 
-            let bytes = message.payload();
-            if bytes.is_empty() {
+            if payload.is_empty() {
                 debug!("Empty message payload");
-                on_message(plug_name, message, None);
-            } else if let Ok(value) = rmp_serde::from_slice::<rmpv::Value>(bytes) {
+                on_message(plug_name, full_topic_string, None);
+            } else if let Ok(value) = rmp_serde::from_slice::<rmpv::Value>(&payload) {
                 let json = serde_json::to_string(&value).expect("failed to stringify JSON");
                 debug!("Decoded MessagePack payload: {}", json);
-                on_message(plug_name, message, Some(json));
+                on_message(plug_name, full_topic_string, Some(json));
             } else {
                 debug!("Failed to decode MessagePack payload");
-                if let Ok(s) = String::from_utf8(bytes.to_vec()) {
+                if let Ok(s) = String::from_utf8(payload.to_vec()) {
                     warn!("String representation of payload: \"{}\"", s);
                 } else {
                     error!("Could not decode payload bytes as string, either");
                 }
-                on_message(plug_name, message, None);
+                on_message(plug_name, full_topic_string, None);
             }
         }
         if !did_work {
@@ -135,14 +135,14 @@ mod tests {
 
     #[test]
     fn default_options() {
-        let tether_agent = TetherAgentOptionsBuilder::new("tester")
+        let mut tether_agent = TetherAgentOptionsBuilder::new("tester")
             .build()
             .expect("sorry, these tests require working localhost Broker");
 
         let options = ReceiveOptions::default();
 
         let receive_plug = build_receiver_plug(&options)
-            .build(&tether_agent)
+            .build(&mut tether_agent)
             .expect("build failed");
 
         assert_eq!(receive_plug.name(), "custom");
@@ -151,7 +151,7 @@ mod tests {
 
     #[test]
     fn only_topic_custom() {
-        let tether_agent = TetherAgentOptionsBuilder::new("tester")
+        let mut tether_agent = TetherAgentOptionsBuilder::new("tester")
             .build()
             .expect("sorry, these tests require working localhost Broker");
 
@@ -163,7 +163,7 @@ mod tests {
         };
 
         let receive_plug = build_receiver_plug(&options)
-            .build(&tether_agent)
+            .build(&mut tether_agent)
             .expect("build failed");
 
         assert_eq!(receive_plug.name(), "custom");
@@ -172,7 +172,7 @@ mod tests {
 
     #[test]
     fn only_plug_name() {
-        let tether_agent = TetherAgentOptionsBuilder::new("tester")
+        let mut tether_agent = TetherAgentOptionsBuilder::new("tester")
             .build()
             .expect("sorry, these tests require working localhost Broker");
 
@@ -184,7 +184,7 @@ mod tests {
         };
 
         let receive_plug = build_receiver_plug(&options)
-            .build(&tether_agent)
+            .build(&mut tether_agent)
             .expect("build failed");
 
         assert_eq!(receive_plug.name(), "something");
@@ -193,7 +193,7 @@ mod tests {
 
     #[test]
     fn only_role() {
-        let tether_agent = TetherAgentOptionsBuilder::new("tester")
+        let mut tether_agent = TetherAgentOptionsBuilder::new("tester")
             .build()
             .expect("sorry, these tests require working localhost Broker");
 
@@ -205,7 +205,7 @@ mod tests {
         };
 
         let receive_plug = build_receiver_plug(&options)
-            .build(&tether_agent)
+            .build(&mut tether_agent)
             .expect("build failed");
 
         assert_eq!(receive_plug.name(), "any");
@@ -214,7 +214,7 @@ mod tests {
 
     #[test]
     fn only_id() {
-        let tether_agent = TetherAgentOptionsBuilder::new("tester")
+        let mut tether_agent = TetherAgentOptionsBuilder::new("tester")
             .build()
             .expect("sorry, these tests require working localhost Broker");
 
@@ -226,7 +226,7 @@ mod tests {
         };
 
         let receive_plug = build_receiver_plug(&options)
-            .build(&tether_agent)
+            .build(&mut tether_agent)
             .expect("build failed");
 
         assert_eq!(receive_plug.name(), "any");
@@ -235,7 +235,7 @@ mod tests {
 
     #[test]
     fn role_and_id() {
-        let tether_agent = TetherAgentOptionsBuilder::new("tester")
+        let mut tether_agent = TetherAgentOptionsBuilder::new("tester")
             .build()
             .expect("sorry, these tests require working localhost Broker");
 
@@ -247,7 +247,7 @@ mod tests {
         };
 
         let receive_plug = build_receiver_plug(&options)
-            .build(&tether_agent)
+            .build(&mut tether_agent)
             .expect("build failed");
 
         assert_eq!(receive_plug.name(), "any");
@@ -256,7 +256,7 @@ mod tests {
 
     #[test]
     fn role_and_plug_name() {
-        let tether_agent = TetherAgentOptionsBuilder::new("tester")
+        let mut tether_agent = TetherAgentOptionsBuilder::new("tester")
             .build()
             .expect("sorry, these tests require working localhost Broker");
 
@@ -268,7 +268,7 @@ mod tests {
         };
 
         let receive_plug = build_receiver_plug(&options)
-            .build(&tether_agent)
+            .build(&mut tether_agent)
             .expect("build failed");
 
         assert_eq!(receive_plug.name(), "z");
@@ -277,7 +277,7 @@ mod tests {
 
     #[test]
     fn spec_all_three() {
-        let tether_agent = TetherAgentOptionsBuilder::new("tester")
+        let mut tether_agent = TetherAgentOptionsBuilder::new("tester")
             .build()
             .expect("sorry, these tests require working localhost Broker");
 
@@ -289,7 +289,7 @@ mod tests {
         };
 
         let receive_plug = build_receiver_plug(&options)
-            .build(&tether_agent)
+            .build(&mut tether_agent)
             .expect("build failed");
 
         assert_eq!(receive_plug.name(), "z");
@@ -298,7 +298,7 @@ mod tests {
 
     #[test]
     fn redundant_but_valid() {
-        let tether_agent = TetherAgentOptionsBuilder::new("tester")
+        let mut tether_agent = TetherAgentOptionsBuilder::new("tester")
             .build()
             .expect("sorry, these tests require working localhost Broker");
 
@@ -310,7 +310,7 @@ mod tests {
         };
 
         let receive_plug = build_receiver_plug(&options)
-            .build(&tether_agent)
+            .build(&mut tether_agent)
             .expect("build failed");
 
         assert_eq!(receive_plug.name(), "any");
