@@ -334,7 +334,7 @@ impl TetherAgent {
     /// If a message is waiting return ThreePartTopic, Message (String, Message)
     /// Messages received on topics that are not parseable as Tether Three Part Topics will be returned with
     /// the complete Topic string instead
-    pub fn check_messages(&mut self) -> Option<(TetherOrCustomTopic, Vec<u8>)> {
+    pub fn check_messages(&self) -> Option<(TetherOrCustomTopic, Vec<u8>)> {
         // if let Ok(e) = self.connection_status_receiver.try_recv() {
         //     panic!("check_messages received error: {}", e);
         // }
@@ -384,7 +384,7 @@ impl TetherAgent {
 
     /// Similar to `publish` but serializes the data automatically before sending
     pub fn encode_and_publish<T: Serialize>(
-        &mut self,
+        &self,
         plug_definition: &PlugDefinition,
         data: T,
     ) -> anyhow::Result<()> {
