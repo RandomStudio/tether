@@ -1,7 +1,7 @@
 [package]
 name = "tether-utils"
 description = "Utilities for Tether Systems"
-version = "0.11.0"
+version = "0.11.1"
 edition = "2021"
 license = "MIT"
 repository = "https://github.com/RandomStudio/tether"
@@ -27,4 +27,3 @@ ctrlc = "3.4.0"
 anyhow = "1.0.71"
 circular-buffer = "0.1.1"
 crossterm = "0.26.1"
-paho-mqtt = "0.12.5"
