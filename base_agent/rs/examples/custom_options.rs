@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use tether_agent::{
     PlugDefinition, PlugDefinitionCommon, PlugOptionsBuilder, TetherAgentOptionsBuilder,
 };
@@ -16,7 +18,8 @@ fn main() {
         .role(Some("pretendingToBeSomethingElse"))
         .qos(Some(2))
         .retain(Some(true))
-        .build(&mut tether_agent);
+        .build(&mut tether_agent)
+        .expect("failed to create output plug");
     let input_wildcard_plug = PlugOptionsBuilder::create_input("everything")
         .topic(Some("#"))
         .build(&mut tether_agent);
@@ -31,11 +34,19 @@ fn main() {
     assert_eq!(role, "example");
     assert_eq!(id, "any"); // because we set None
 
-    if let PlugDefinition::OutputPlug(p) = output_plug.unwrap() {
+    if let PlugDefinition::OutputPlug(p) = &output_plug {
         println!("output plug: {:?}", p);
         assert_eq!(p.topic_str(), "pretendingToBeSomethingElse/any/anOutput");
     }
 
     println!("wildcard input plug: {:?}", input_wildcard_plug);
     println!("speific ID input plug: {:?}", input_customid_plug);
+
+    let payload =
+        rmp_serde::to_vec::<String>(&String::from("boo")).expect("failed to serialise payload");
+    tether_agent
+        .publish(&output_plug, Some(&payload))
+        .expect("failed to publish");
+
+    std::thread::sleep(Duration::from_millis(4000));
 }
