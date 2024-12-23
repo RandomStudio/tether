@@ -118,6 +118,11 @@ impl TetherAgentOptionsBuilder {
         let username = self.username.unwrap_or(DEFAULT_USERNAME.into());
         let password = self.password.unwrap_or(DEFAULT_PASSWORD.into());
 
+        debug!(
+            "final build uses options protocol = {}, host = {}, port = {}",
+            protocol, host, port
+        );
+
         let (message_sender, message_receiver) = mpsc::channel::<(TetherOrCustomTopic, Vec<u8>)>();
 
         let mut agent = TetherAgent {
@@ -197,7 +202,7 @@ impl TetherAgent {
 
         debug!("Using MQTT Client ID \"{}\"", mqtt_client_id);
 
-        let mut mqtt_options = MqttOptions::new(mqtt_client_id, &self.host, self.port)
+        let mut mqtt_options = MqttOptions::new(mqtt_client_id.clone(), &self.host, self.port)
             .set_credentials(&self.username, &self.password)
             .set_keep_alive(Duration::from_secs(TIMEOUT_SECONDS))
             .to_owned();
@@ -217,7 +222,14 @@ impl TetherAgent {
                 mqtt_options.set_transport(Transport::tls_with_config(client_config.into()));
             }
             "ws" => {
-                debug!("Using Websocket protocol...");
+                // If using websocket protocol, rumqttc does NOT automatically add protocol and port
+                // into the URL!
+                let full_host = format!("{}://{}:{}", self.protocol, self.host, self.port);
+                mqtt_options = MqttOptions::new(mqtt_client_id.clone(), &full_host, self.port) // here, port is ignored anyway
+                    .set_credentials(&self.username, &self.password)
+                    .set_keep_alive(Duration::from_secs(TIMEOUT_SECONDS))
+                    .to_owned();
+
                 mqtt_options.set_transport(Transport::Ws);
             }
             _ => {}
