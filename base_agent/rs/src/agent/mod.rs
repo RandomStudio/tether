@@ -328,6 +328,8 @@ impl TetherAgent {
 
         self.client = Some(client);
 
+        std::thread::sleep(Duration::from_millis(3000));
+
         Ok(())
     }
 
