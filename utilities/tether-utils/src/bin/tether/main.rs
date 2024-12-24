@@ -99,6 +99,10 @@ fn main() {
         Commands::Send(options) => {
             tether_send::send(options, &mut tether_agent)
                 .unwrap_or_else(|e| error!("Failed to send: {}", e));
+            // This silliness (below) is only needed because the command might
+            // finish before the message is even sent!
+            // Less of an issue with long-running applications, and should
+            // be properly solved with an async version.
             std::thread::sleep(std::time::Duration::from_millis(1000));
         }
         Commands::Topics(options) => {

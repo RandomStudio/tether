@@ -4,6 +4,7 @@ use rmp_serde::to_vec_named;
 use rumqttc::tokio_rustls::rustls::ClientConfig;
 use rumqttc::{Client, Event, MqttOptions, Packet, QoS, Transport};
 use serde::Serialize;
+use std::sync::{Arc, Mutex};
 use std::{sync::mpsc, thread, time::Duration};
 use uuid::Uuid;
 
@@ -29,6 +30,7 @@ pub struct TetherAgent {
     pub(crate) client: Option<Client>,
     message_sender: mpsc::Sender<(TetherOrCustomTopic, Vec<u8>)>,
     message_receiver: mpsc::Receiver<(TetherOrCustomTopic, Vec<u8>)>,
+    is_connected: Arc<Mutex<bool>>,
 }
 
 #[derive(Clone)]
@@ -148,6 +150,7 @@ impl TetherAgentOptionsBuilder {
             message_sender,
             message_receiver,
             mqtt_client_id: self.mqtt_client_id,
+            is_connected: Arc::new(Mutex::new(false)),
         };
 
         if self.auto_connect {
@@ -283,19 +286,18 @@ impl TetherAgent {
 
         let message_tx = self.message_sender.clone();
 
-        let (connected_tx, connected_rx) = mpsc::channel();
+        let connection_state = Arc::clone(&self.is_connected);
 
         thread::spawn(move || {
-            let send_connected = connected_tx.clone();
             for event in connection.iter() {
                 match event {
                     Ok(e) => match e {
                         Event::Incoming(incoming) => match incoming {
                             Packet::ConnAck(_) => {
                                 info!("(Connected) ConnAck received!");
-                                send_connected
-                                    .send(true)
-                                    .expect("failed to push connected status form thread");
+                                let mut is_c =
+                                    connection_state.lock().expect("failed to lock mutex");
+                                *is_c = true;
                             }
                             Packet::Publish(p) => {
                                 debug!("Incoming Publish packet (message received), {:?}", &p);
@@ -334,11 +336,15 @@ impl TetherAgent {
         let mut is_ready = false;
 
         while !is_ready {
-            std::thread::sleep(Duration::from_millis(100));
+            debug!("Check whether connected...");
+            std::thread::sleep(Duration::from_millis(1));
             trace!("Is ready? {}", is_ready);
-            if let Ok(is_connected) = connected_rx.try_recv() {
-                is_ready = is_connected;
-                trace!("Is connected? {}", is_connected);
+            let get_state = *self.is_connected.lock().expect("failed to lock mutex");
+            if get_state {
+                info!("Connection status confirmed");
+                is_ready = true;
+            } else {
+                debug!("Not connected yet...");
             }
         }
 
