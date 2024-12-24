@@ -1,5 +1,5 @@
 use ::anyhow::anyhow;
-use log::{debug, error, info, warn};
+use log::{debug, error, info, trace, warn};
 use rmp_serde::to_vec_named;
 use rumqttc::tokio_rustls::rustls::ClientConfig;
 use rumqttc::{Client, Event, MqttOptions, Packet, QoS, Transport};
@@ -164,8 +164,7 @@ impl TetherAgentOptionsBuilder {
 
 impl TetherAgent {
     pub fn is_connected(&self) -> bool {
-        // self.client.is_connected()
-        true
+        self.client.is_some()
     }
 
     pub fn role(&self) -> &str {
@@ -284,13 +283,19 @@ impl TetherAgent {
 
         let message_tx = self.message_sender.clone();
 
+        let (connected_tx, connected_rx) = mpsc::channel();
+
         thread::spawn(move || {
+            let send_connected = connected_tx.clone();
             for event in connection.iter() {
                 match event {
                     Ok(e) => match e {
                         Event::Incoming(incoming) => match incoming {
                             Packet::ConnAck(_) => {
                                 info!("(Connected) ConnAck received!");
+                                send_connected
+                                    .send(true)
+                                    .expect("failed to push connected status form thread");
                             }
                             Packet::Publish(p) => {
                                 debug!("Incoming Publish packet (message received), {:?}", &p);
@@ -326,9 +331,18 @@ impl TetherAgent {
             }
         });
 
-        self.client = Some(client);
+        let mut is_ready = false;
 
-        std::thread::sleep(Duration::from_millis(3000));
+        while !is_ready {
+            std::thread::sleep(Duration::from_millis(100));
+            trace!("Is ready? {}", is_ready);
+            if let Ok(is_connected) = connected_rx.try_recv() {
+                is_ready = is_connected;
+                trace!("Is connected? {}", is_connected);
+            }
+        }
+
+        self.client = Some(client);
 
         Ok(())
     }
@@ -369,14 +383,16 @@ impl TetherAgent {
                 };
 
                 if let Some(client) = &self.client {
-                    client
+                    let res = client
                         .publish(
                             topic,
                             qos,
                             output_plug_definition.retain(),
                             payload.unwrap_or_default(),
                         )
-                        .map_err(anyhow::Error::msg)
+                        .map_err(anyhow::Error::msg);
+                    debug!("Published OK");
+                    res
                 } else {
                     Err(anyhow!("Client not ready for publish"))
                 }

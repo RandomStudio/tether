@@ -96,8 +96,11 @@ fn main() {
                 info!("Received on topic \"{}\" :: \n{}\n", topic, contents);
             })
         }
-        Commands::Send(options) => tether_send::send(options, &mut tether_agent)
-            .unwrap_or_else(|e| error!("Failed to send: {}", e)),
+        Commands::Send(options) => {
+            tether_send::send(options, &mut tether_agent)
+                .unwrap_or_else(|e| error!("Failed to send: {}", e));
+            std::thread::sleep(std::time::Duration::from_millis(1000));
+        }
         Commands::Topics(options) => {
             let mut insights = tether_topics::insights::Insights::new(options, &mut tether_agent);
             let mut last_update = SystemTime::now();
