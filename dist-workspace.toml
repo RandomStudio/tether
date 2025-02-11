@@ -28,4 +28,4 @@ install-updater = false
 
 [dist.dependencies.apt]
 cmake = '*'
-openssl = "*"
+libssl-dev = "*"
