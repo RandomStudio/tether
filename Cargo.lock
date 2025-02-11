@@ -1494,8 +1494,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "tether-agent"
+version = "0.14.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8ab49a3f3cd1e64e6d894e7e88c175e9c933506354b8d43cf2742b4fd3ed50d7"
+dependencies = [
+ "anyhow",
+ "env_logger",
+ "log",
+ "rmp-serde",
+ "rumqttc",
+ "rustls-native-certs 0.8.1",
+ "serde",
+ "serde_json",
+ "uuid",
+]
+
+[[package]]
 name = "tether-utils"
-version = "0.11.4"
+version = "0.11.5"
 dependencies = [
  "anyhow",
  "circular-buffer",
@@ -1508,7 +1525,7 @@ dependencies = [
  "rmpv",
  "serde",
  "serde_json",
- "tether-agent",
+ "tether-agent 0.14.2 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]

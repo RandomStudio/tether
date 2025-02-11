@@ -98,7 +98,10 @@ export class TetherAgent {
     try {
       const client = await mqtt.connectAsync(
         null,
-        this.config.brokerOptions,
+        {
+          ...this.config.brokerOptions,
+          clientId: `tether-${this.config.role}`,
+        },
         false
       );
       console.info("Connected OK");
