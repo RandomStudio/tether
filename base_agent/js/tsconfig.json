@@ -1,4 +1,5 @@
 {
+  "extends": "@tsconfig/node18",
   "compilerOptions": {
     "module": "commonjs",
     "esModuleInterop": true,
@@ -8,11 +9,9 @@
     "outDir": "dist",
     "declaration": true
   },
+  "typeAcquisition": { "include": ["jest"] },
   "include": [
     "src/**/*"
   ],
-  "exclude": ["**/*.test.ts"],
-  "lib": [
-    "es6"
-  ]
+  "exclude": ["**/*.test.ts"]
 }

@@ -1,11 +1,10 @@
+"""Tether Base Agent for python projects"""
+
 from enum import Enum
 from uuid import uuid4
 import logging
 import paho.mqtt.client as mqtt
 import msgpack
-
-# Convenience enum purely meant to reduce the need for additional imports in the script that uses this module
-
 
 class LogLevel(Enum):
     DEBUG = logging.DEBUG
@@ -130,7 +129,7 @@ class TetherAgent:
     # @param password The password to use when authenticating to the broker, if any. Only used if `username` is not `None`. Defaults to `None`.
     # @param keepalive Maximum delay in seconds between messages. If no messages are sent for this amount of time, this will be the ping rate.
     # @param local_ip The local network interface to use for the MQTT connection. You only need to provide this value if you require a specific interface to be used.
-    def connect(self, host="127.0.0.1", port=1883, username=None, password=None, keepalive=60, local_ip=""):
+    def connect(self, host="127.0.0.1", port=1883, username="tether", password="sp_ceB0ss!", keepalive=60, local_ip=""):
         self.host = host
         self.port = port
         if username is not None:

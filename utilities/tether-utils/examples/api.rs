@@ -1,6 +1,7 @@
 use std::{thread::spawn, time::SystemTime};
 
 use env_logger::{Builder, Env};
+use log::LevelFilter;
 use tether_agent::TetherAgentOptionsBuilder;
 use tether_utils::{
     tether_playback::{PlaybackOptions, TetherPlaybackUtil},
@@ -11,30 +12,30 @@ use tether_utils::{
 };
 
 fn demo_receive() {
-    let tether_agent = TetherAgentOptionsBuilder::new("demoReceive")
+    let mut tether_agent = TetherAgentOptionsBuilder::new("demoReceive")
         .build()
         .expect("failed to init/connect Tether Agent");
 
-    let options = ReceiveOptions {
-        subscribe_topic: "#".into(),
-    };
+    let options = ReceiveOptions::default();
 
-    receive(&options, &tether_agent, |_plug_name, message, decoded| {
+    receive(&options, &mut tether_agent, |_plug_name, topic, decoded| {
         let contents = decoded.unwrap_or("(empty/invalid message)".into());
-        println!("RECEIVE: \"{}\" :: {}", message.topic(), contents);
+        println!("RECEIVE: \"{}\" :: {}", topic, contents);
     })
 }
 
 fn demo_send() {
-    let tether_agent = TetherAgentOptionsBuilder::new("demoSend")
+    let mut tether_agent = TetherAgentOptionsBuilder::new("demoSend")
         .build()
         .expect("failed to init/connect Tether Agent");
 
     let mut count = 0;
 
     let options = SendOptions {
-        plug_name: "dummyData".into(),
+        plug_name: Some("dummyData".into()),
         plug_topic: None,
+        plug_id: None,
+        plug_role: None,
         message_payload_json: None,
         use_dummy_data: true,
     };
@@ -43,25 +44,26 @@ fn demo_send() {
         std::thread::sleep(std::time::Duration::from_secs(1));
         count += 1;
         println!("SEND: sending message #{}", count);
-        send(&options, &tether_agent).expect("failed to send");
+        send(&options, &mut tether_agent).expect("failed to send");
     }
 }
 
 fn demo_topics() {
-    let tether_agent = TetherAgentOptionsBuilder::new("demoTopics")
+    let mut tether_agent = TetherAgentOptionsBuilder::new("demoTopics")
         .build()
         .expect("failed to init/connect Tether Agent");
 
     let options = TopicOptions {
         topic: "#".into(),
         sampler_interval: 1000,
+        graph_enable: false,
     };
 
-    let mut insights = Insights::new(&options, &tether_agent);
+    let mut insights = Insights::new(&options, &mut tether_agent);
 
     loop {
-        while let Some((_plug_name, message)) = tether_agent.check_messages() {
-            if insights.update(&message) {
+        while let Some((topic, payload)) = tether_agent.check_messages() {
+            if insights.update(&topic, payload) {
                 println!("TOPICS: Insights update: \n{}", insights);
             }
         }
@@ -75,6 +77,8 @@ fn demo_playback() {
         loop_count: 1, // ignored anyway, in this case
         loop_infinite: true,
         ignore_ctrl_c: true, // this is important for programmatic use
+        playback_speed: 1.0,
+        topic_filters: None,
     };
 
     let tether_agent = TetherAgentOptionsBuilder::new("demoTopics")
@@ -115,7 +119,7 @@ fn demo_playback() {
 }
 
 fn demo_record() {
-    let tether_agent = TetherAgentOptionsBuilder::new("demoPlayback")
+    let mut tether_agent = TetherAgentOptionsBuilder::new("demoPlayback")
         .build()
         .expect("failed to init/connect Tether Agent");
 
@@ -154,7 +158,7 @@ fn demo_record() {
             println!("...Bye");
         }),
         spawn(move || {
-            recorder.start_recording(&tether_agent);
+            recorder.start_recording(&mut tether_agent);
         }),
     ];
 
@@ -165,23 +169,24 @@ fn demo_record() {
 
 fn main() {
     println!(
-        "This example shows how the tether-utils library can be used programmatically, 
+        "This example shows how the tether-utils library can be used programmatically,
     i.e. not from the CLI"
     );
     println!("Press Ctrl+C to stop");
 
     let mut env_builder = Builder::from_env(Env::default().default_filter_or("info"));
+    env_builder.filter_module("paho_mqtt", LevelFilter::Warn);
     env_builder.init();
 
     let handles = vec![
-        spawn(|| demo_receive()),
-        spawn(|| demo_send()),
-        spawn(|| demo_topics()),
+        spawn(demo_receive),
+        spawn(demo_send),
+        spawn(demo_topics),
         spawn(|| {
             std::thread::sleep(std::time::Duration::from_secs(4));
             demo_playback();
         }),
-        spawn(|| demo_record()),
+        spawn(demo_record),
     ];
 
     for handle in handles {

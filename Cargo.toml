@@ -1,0 +1,9 @@
+[workspace]
+
+members = ["base_agent/rs", "utilities/tether-utils"]
+resolver = "2"
+
+# The profile that 'dist' will build with
+[profile.dist]
+inherits = "release"
+lto = "thin"

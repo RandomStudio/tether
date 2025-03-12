@@ -20,9 +20,9 @@ fn main() {
     debug!("Debugging is enabled; could be verbose");
 
     let tether_agent = TetherAgentOptionsBuilder::new("RustDemoAgent")
-        .host("10.112.10.10")
-        .username("connected.space")
-        .password("connected.space")
+        .host(Some("10.112.10.10"))
+        .username(Some("connected.space"))
+        .password(Some("connected.space"))
         .build()
         .expect("Failed to initialise and connect");
     let (role, id, _) = tether_agent.description();

@@ -12,60 +12,84 @@ struct CustomMessage {
     name: String,
 }
 // Test this by sending a message like
-// tether-send --host localhost --topic test/any/two --message \{\"id\":1,\"name\":\"boo\"\}
+// tether send --topic specific/any/two --message '{"id":1,"name":"boo"}'
 
 fn main() {
     println!("Rust Tether Agent subscribe example");
 
     let mut builder = Builder::from_env(Env::default().default_filter_or("debug"));
+    builder.filter_module("tether_agent", log::LevelFilter::Warn);
+    builder.filter_module("rumqttc", log::LevelFilter::Warn);
     builder.init();
 
     debug!("Debugging is enabled; could be verbose");
 
-    let tether_agent = TetherAgentOptionsBuilder::new("RustDemoAgent")
-        .id("example")
+    let mut tether_agent = TetherAgentOptionsBuilder::new("RustDemo")
+        .id(Some("example"))
         .build()
         .expect("failed to init Tether agent");
 
     let input_one = PlugOptionsBuilder::create_input("one")
-        .build(&tether_agent)
+        .build(&mut tether_agent)
         .expect("failed to create input");
-    debug!("input one {} = {}", input_one.name(), input_one.topic());
+    info!("input one {} = {}", input_one.name(), input_one.topic());
     let input_two = PlugOptionsBuilder::create_input("two")
-        .build(&tether_agent)
+        .role(Some("specific"))
+        .build(&mut tether_agent)
         .expect("failed to create input");
-    debug!("input two {} = {}", input_two.name(), input_two.topic());
+    info!("input two {} = {}", input_two.name(), input_two.topic());
     let input_empty = PlugOptionsBuilder::create_input("nothing")
-        .build(&tether_agent)
+        .build(&mut tether_agent)
         .expect("failed to create input");
+
+    let input_everything = PlugOptionsBuilder::create_input("everything")
+        .topic(Some("#"))
+        .build(&mut tether_agent)
+        .expect("failed to create input");
+
+    let input_specify_id = PlugOptionsBuilder::create_input("groupMessages")
+        .id(Some("someGroup"))
+        .name(None)
+        .build(&mut tether_agent)
+        .expect("failed to create input");
+
+    debug!(
+        "input everything {} = {}",
+        input_everything.name(),
+        input_everything.topic()
+    );
 
     info!("Checking messages every 1s, 10x...");
 
-    for i in 1..10 {
-        info!("#{i}: Checking for messages...");
-        while let Some((plug_name, message)) = tether_agent.check_messages() {
-            debug!(
-                "Received a message topic {} => plug name {}",
-                message.topic(),
-                plug_name
-            );
-            if &plug_name == input_one.name() {
+    loop {
+        debug!("Checking for messages...");
+        while let Some((topic, payload)) = tether_agent.check_messages() {
+            // debug!(
+            //     "........ Received a message topic {:?} => topic parts {:?}",
+            //     topic, topic
+            // );
+
+            if input_one.matches(&topic) {
                 info!(
-                    "******** INPUT ONE:\n Received a message from plug named \"{}\" on topic {} with length {} bytes",
-                    input_one.name(),
-                    message.topic(),
-                    message.payload().len()
-                );
+                            "******** INPUT ONE:\n Received a message for plug named \"{}\" on topic {:?} with length {} bytes",
+                            input_one.name(),
+                            topic,
+                            payload.len()
+                        );
+                // assert_eq!(parse_plug_name(topic.un), Some("one"));
             }
-            if &plug_name == input_two.name() {
+            if input_two.matches(&topic) {
                 info!(
-                    "******** INPUT TWO:\n Received a message from plug named \"{}\" on topic {} with length {} bytes",
-                    input_two.name(),
-                    message.topic(),
-                    message.payload().len()
-                );
+                        "******** INPUT TWO:\n Received a message for plug named \"{}\" on topic {:?} with length {} bytes",
+                        input_two.name(),
+                        topic,
+                        payload.len()
+                    );
+                // assert_eq!(parse_plug_name(message.topic()), Some("two"));
+                // assert_ne!(parse_plug_name(message.topic()), Some("one"));
+
                 // Notice how you must give the from_slice function a type so it knows what to expect
-                let decoded = from_slice::<CustomMessage>(&message.payload());
+                let decoded = from_slice::<CustomMessage>(&payload);
                 match decoded {
                     Ok(d) => {
                         info!("Yes, we decoded the MessagePack payload as: {:?}", d);
@@ -77,15 +101,35 @@ fn main() {
                     }
                 };
             }
-            if &plug_name == input_empty.name() {
+            if input_empty.matches(&topic) {
                 info!(
-                    "******** EMPTY MESSAGE:\n Received a message from plug named \"{}\" on topic {} with length {} bytes",
-                    input_empty.name(),
-                    message.topic(),
-                    message.payload().len()
+                        "******** EMPTY MESSAGE:\n Received a message for plug named \"{}\" on topic {:?} with length {} bytes",
+                        input_empty.name(),
+                        topic,
+                       payload.len()
+                    );
+                // assert_eq!(parse_plug_name(topic), Some("nothing"));
+            }
+            if input_everything.matches(&topic) {
+                info!(
+                    "******** EVERYTHING MATCHES HERE:\n Received a message for plug named \"{}\" on topic {:?} with length {} bytes",
+                    input_everything.name(),
+                    topic,
+                   payload.len()
                 );
             }
+            if input_specify_id.matches(&topic) {
+                info!("******** ID MATCH:\n Should match any role and plug name, but only messages with ID \"groupMessages\"");
+                info!(
+                    "\n Received a message from plug named \"{}\" on topic {:?} with length {} bytes",
+                    input_specify_id.name(),
+                    topic,
+                    payload.len()
+                );
+                // assert_eq!(parse_agent_id(message.topic()), Some("groupMessages"));
+            }
         }
+
         thread::sleep(Duration::from_millis(1000))
     }
 }

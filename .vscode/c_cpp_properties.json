@@ -8,8 +8,7 @@
             "defines": [],
             "macFrameworkPath": [],
             "cStandard": "gnu17",
-            "cppStandard": "gnu++17",
-            "intelliSenseMode": "macos-gcc-x64"
+            "cppStandard": "gnu++17"
         }
     ],
     "version": 4

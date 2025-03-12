@@ -1,3 +1,0 @@
-paho-mqtt==1.6.1
-msgpack=1.0.4
-
