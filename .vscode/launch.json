@@ -41,20 +41,26 @@
     "skipFiles": [
       "<node_internals>/**"
     ],
-    "type": "pwa-node"
+    "type": "node"
   },
-    {
-      "type": "pwa-node",
-      "request": "launch",
-      "name": "Launch Program",
-      "skipFiles": [
-        "<node_internals>/**"
-      ],
-      "program": "${workspaceFolder}/src/index.ts",
-      "preLaunchTask": "tsc: build - tsconfig.json",
-      "outFiles": [
-        "${workspaceFolder}/dist/**/*.js"
-      ]
-    }
+  {
+    "name": "Debug NodeJS Base Agent Tests",
+    "type": "node",
+            "request": "launch",
+            "runtimeExecutable": "${workspaceRoot}/base_agent/js/node_modules/.bin/jest",
+            "args": [
+                "${fileBasenameNoExtension}",
+                "--runInBand",
+                "--watch",
+                "--coverage=false",
+                "--no-cache"
+            ],
+            "cwd": "${workspaceRoot}/base_agent/js",
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen",
+            "sourceMaps": true,
+            
+  }
+    
   ]
 }

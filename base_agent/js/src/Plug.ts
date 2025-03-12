@@ -52,7 +52,7 @@ export class InputPlug extends Plug {
 
   private constructor(
     agent: TetherAgent,
-    name: string,
+    plugName: string,
     options: {
       overrideTopic?: string;
       id?: string;
@@ -61,10 +61,10 @@ export class InputPlug extends Plug {
     }
   ) {
     super(agent, {
-      name,
+      name: plugName,
       topic:
         options?.overrideTopic ||
-        buildInputPlugTopic(name, options.id, options.role),
+        buildInputPlugTopic(plugName, options.role, options.id),
     });
     if (!agent.getIsConnected()) {
       throw Error("trying to create an Input before client is connected");
@@ -122,7 +122,7 @@ export class OutputPlug extends Plug {
         buildOutputPlugTopic(
           name,
           agent.getConfig().role,
-          options ? options.id : agent.getConfig().id
+          options?.id || agent.getConfig().id
         ),
     });
     this.publishOptions = options?.publishOptions || {
@@ -197,7 +197,7 @@ export const topicMatchesPlug = (
 
   if (!containsWildcards(incomingPlugName)) {
     if (
-      containsWildcards(parseAgentType(plugTopic)) &&
+      containsWildcards(parseAgentRole(plugTopic)) &&
       containsWildcards(parseAgentIdOrGroup(plugTopic))
       // if ONLY the Plug Name was specified (which is the default), then MATCH
       // anything that matches the Plug Name, regardless of the rest
@@ -209,8 +209,8 @@ export const topicMatchesPlug = (
 
     // if AgentType specified, see if this matches, otherwise pass all AgentTypes as matches
     // e.g. specified/+/plugName
-    const agentTypeMatches = !containsWildcards(parseAgentType(plugTopic))
-      ? parseAgentType(plugTopic) === parseAgentType(incomingTopic)
+    const agentTypeMatches = !containsWildcards(parseAgentRole(plugTopic))
+      ? parseAgentRole(plugTopic) === parseAgentRole(incomingTopic)
       : true;
 
     // if Agent ID or Group specified, see if this matches, otherwise pass all AgentIdOrGroup as matches
@@ -236,12 +236,15 @@ const containsWildcards = (topicOrPart: string) => topicOrPart.includes("+");
 
 const buildInputPlugTopic = (
   plugName: string,
-  specifyID?: string,
-  specifyRole?: string
+  specifyRole?: string,
+  specifyID?: string
 ): string => {
-  const id = specifyID || "+";
   const role = specifyRole || "+";
-  return `${role}/${id}/${plugName}`;
+  if (specifyID) {
+    return `${role}/${plugName}/${specifyID}`;
+  } else {
+    return `${role}/${plugName}/#`;
+  }
 };
 
 const buildOutputPlugTopic = (
@@ -249,11 +252,14 @@ const buildOutputPlugTopic = (
   specifyRole: string,
   specifyID?: string
 ): string => {
-  const id = specifyID || "any";
   const role = specifyRole;
-  return `${role}/${id}/${plugName}`;
+  if (specifyID) {
+    return `${role}/${plugName}/${specifyID}`;
+  } else {
+    return `${role}/${plugName}`;
+  }
 };
 
-export const parsePlugName = (topic: string) => topic.split(`/`)[2];
-export const parseAgentIdOrGroup = (topic: string) => topic.split(`/`)[1];
-export const parseAgentType = (topic: string) => topic.split(`/`)[0];
+export const parsePlugName = (topic: string) => topic.split(`/`)[1];
+export const parseAgentIdOrGroup = (topic: string) => topic.split(`/`)[2];
+export const parseAgentRole = (topic: string) => topic.split(`/`)[0];

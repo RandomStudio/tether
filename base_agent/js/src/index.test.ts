@@ -1,20 +1,21 @@
 import { InputPlug, OutputPlug, TetherAgent } from ".";
 import { topicMatchesPlug } from "./Plug";
+import { describe, test, expect } from "@jest/globals";
 
 describe("building topic strings", () => {
-  test("Default Output Plug, no overrides", async () => {
+  test("Default Output Plug, no ID", async () => {
     const agent = await TetherAgent.create("tester");
     const output = new OutputPlug(agent, "somePlugName");
     expect(output.getDefinition().name).toEqual("somePlugName");
-    expect(output.getDefinition().topic).toEqual("tester/any/somePlugName");
+    expect(output.getDefinition().topic).toEqual("tester/somePlugName");
     agent.disconnect();
   });
 
-  test("Default Input Plug, no overrides", async () => {
+  test("Default Input Plug, no ID", async () => {
     const agent = await TetherAgent.create("tester");
     const input = await InputPlug.create(agent, "somePlugName");
     expect(input.getDefinition().name).toEqual("somePlugName");
-    expect(input.getDefinition().topic).toEqual("+/+/somePlugName");
+    expect(input.getDefinition().topic).toEqual("+/somePlugName/#");
     agent.disconnect();
   });
 
@@ -23,7 +24,7 @@ describe("building topic strings", () => {
     const output = new OutputPlug(agent, "somePlugName");
     expect(output.getDefinition().name).toEqual("somePlugName");
     expect(output.getDefinition().topic).toEqual(
-      "tester/specialGroup/somePlugName"
+      "tester/somePlugName/specialGroup"
     );
     agent.disconnect();
   });
@@ -37,7 +38,7 @@ describe("building topic strings", () => {
     });
     expect(output.getDefinition().name).toEqual("somePlugName");
     expect(output.getDefinition().topic).toEqual(
-      "tester/overrideOnPlugCreation/somePlugName"
+      "tester/somePlugName/overrideOnPlugCreation"
     );
     agent.disconnect();
   });
@@ -46,7 +47,7 @@ describe("building topic strings", () => {
     const agent = await TetherAgent.create("tester", { id: "specialGroup" });
     const input = await InputPlug.create(agent, "somePlugName");
     expect(input.getDefinition().name).toEqual("somePlugName");
-    expect(input.getDefinition().topic).toEqual("+/+/somePlugName");
+    expect(input.getDefinition().topic).toEqual("+/somePlugName/#");
     agent.disconnect();
   });
 
@@ -54,11 +55,11 @@ describe("building topic strings", () => {
     const agent = await TetherAgent.create("tester");
 
     const inputCustomID = await InputPlug.create(agent, "somePlugName", {
-      id: "stillSpecial",
+      id: "specialID",
     });
     expect(inputCustomID.getDefinition().name).toEqual("somePlugName");
     expect(inputCustomID.getDefinition().topic).toEqual(
-      "+/stillSpecial/somePlugName"
+      "+/somePlugName/specialID"
     );
 
     const inputCustomRole = await InputPlug.create(agent, "somePlugName", {
@@ -66,7 +67,7 @@ describe("building topic strings", () => {
     });
     expect(inputCustomRole.getDefinition().name).toEqual("somePlugName");
     expect(inputCustomRole.getDefinition().topic).toEqual(
-      "specialRole/+/somePlugName"
+      "specialRole/somePlugName/#"
     );
 
     const inputCustomBoth = await InputPlug.create(agent, "somePlugName", {
@@ -75,7 +76,7 @@ describe("building topic strings", () => {
     });
     expect(inputCustomBoth.getDefinition().name).toEqual("somePlugName");
     expect(inputCustomBoth.getDefinition().topic).toEqual(
-      "role2/id2/somePlugName"
+      "role2/somePlugName/id2"
     );
 
     agent.disconnect();

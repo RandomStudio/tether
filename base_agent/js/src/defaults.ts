@@ -1,7 +1,7 @@
 import { IClientOptions } from "async-mqtt";
-import { TetherConfig } from "./types";
+import { TetherAgentConfig } from "./types";
 
-const NODEJS: IClientOptions = {
+export const NODEJS: IClientOptions = {
   protocol: "tcp",
   host: "localhost",
   port: 1883,
@@ -10,7 +10,7 @@ const NODEJS: IClientOptions = {
   password: "sp_ceB0ss!",
 };
 
-const BROWSER: IClientOptions = {
+export const BROWSER: IClientOptions = {
   protocol: "ws",
   host: "localhost",
   port: 15675,
@@ -19,14 +19,8 @@ const BROWSER: IClientOptions = {
   password: "sp_ceB0ss!",
 };
 
-export const BROKER_DEFAULTS = {
-  nodeJS: NODEJS,
-  browser: BROWSER,
-};
-
-const defaults: TetherConfig = {
-  role: "unknown",
-  id: "any",
+const defaults: TetherAgentConfig = {
+  role: "unknownTetherAgent",
   brokerOptions: NODEJS,
   autoConnect: true,
 };

@@ -1,10 +1,12 @@
-# Tether
+![Tether Logo Vertical](./docs/tether-logo-horizontal.png)
+
+# Simply == Connect == Everything
 
 Instead of trying to find (or build) the One True Best Creative Coding Tool, we decided to find a way to make the tools we were already using (and the ones we didn't even know about yet) work together.
 
 By using Tether, we can approach digital art/media installations as **distributed systems**, applying a **publish / subscribe pattern** and **event-based programming** to coordinate the independent pieces of software and hardware that commonly comprise these systems.
 
-Specifically, Tether is a standardised way of using existing, well established technologies such as [MQTT](https://mqtt.org/) (for messaging) and [MessagePack](https://msgpack.org/index.html) (for serialised data).
+To summarise: Tether applies some light _standardisation_ of some existing, well established technologies such as [MQTT](https://mqtt.org/) (for messaging) and [MessagePack](https://msgpack.org/index.html) (for serialised data). By picking a standard, we can provide a set of libraries and tools to make this infrastructure simple to use.
 
 ---
 
@@ -54,7 +56,7 @@ If you'd like to use a graphical / desktop application to test out Tether, try:
 
 - [Tether Egui](https://github.com/RandomStudio/tether-egui)
 
-Tether Egui acts as both an Agent that publishes (by default, as "gui") but also subscribes to all topics (by default) and tries to decode the MessagePack contents. So you can use a single instance of Tether Egui to simulate an entire (very basic) Tether system, provided you are also running an MQTT Broker on your system.
+Tether Egui acts as both an Agent that can publish messages but also subscribes to all topics and tries to decode the MessagePack contents. So you can use a single instance of Tether Egui to simulate an entire (very basic) Tether system, provided you are also running an MQTT Broker on your system.
 
 ### CLI
 

@@ -2,14 +2,15 @@ import { IClientOptions } from "async-mqtt";
 
 export interface PlugDefinition {
   name: string;
+  id?: string;
   topic: string;
 }
 
 export type MessageCallback = (payload: Buffer, topic: string) => void;
 
-export interface TetherConfig {
+export interface TetherAgentConfig {
   role: string;
-  id: string;
+  id?: string;
   brokerOptions: IClientOptions;
   autoConnect: boolean;
 }
