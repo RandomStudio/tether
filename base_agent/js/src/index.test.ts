@@ -7,7 +7,7 @@ describe("building topic strings", () => {
     const agent = await TetherAgent.create("tester");
     const output = new OutputPlug(agent, "somePlugName");
     expect(output.getDefinition().name).toEqual("somePlugName");
-    expect(output.getDefinition().topic).toEqual("tester/somePlugName");
+    expect(output.getDefinition().topic).toEqual("tester/somePlugName/#");
     agent.disconnect();
   });
 
@@ -85,45 +85,54 @@ describe("building topic strings", () => {
 
 describe("matching topics to plugs", () => {
   test("if Plug specified full topic, i.e. no wildcards, then only exact matches", () => {
-    const plugDefinedTopic = "someType/someGroup/somePlugName";
+    const plugDefinedTopic = "someType/somePlugName/someID";
 
     expect(
-      topicMatchesPlug(plugDefinedTopic, "someType/someGroup/somePlugName")
+      topicMatchesPlug(plugDefinedTopic, "someType/somePlugName/someID")
     ).toBeTruthy();
 
     expect(
-      topicMatchesPlug(plugDefinedTopic, "other/otherGroup/somePlugName")
+      topicMatchesPlug(plugDefinedTopic, "other/somePlugName/otherGroup")
     ).toBeFalsy();
   });
 
   test("if ONLY Plug Name specified, match any with same PlugName", () => {
-    const plugDefinedTopic = "+/+/somePlugName";
+    const plugDefinedTopic = "+/somePlugName/#";
     expect(
-      topicMatchesPlug(plugDefinedTopic, "something/something/somePlugName")
+      topicMatchesPlug(plugDefinedTopic, "something/somePlugName")
+    ).toBeTruthy();
+    expect(
+      topicMatchesPlug(plugDefinedTopic, "something/somePlugName/something")
     ).toBeTruthy();
   });
 
   test("if ONLY Plug Name specified, match any with same PlugName", () => {
-    const plugDefinedTopic = "+/+/somePlugName";
+    const plugDefinedTopic = "+/somePlugName/#";
     expect(
-      topicMatchesPlug(plugDefinedTopic, "something/something/somePlugName")
+      topicMatchesPlug(plugDefinedTopic, "something/somePlugName/something")
     ).toBeTruthy();
     expect(
-      topicMatchesPlug(plugDefinedTopic, "something/something/somethingElse")
+      topicMatchesPlug(
+        plugDefinedTopic,
+        "something/someOtherPlugName.something"
+      )
     ).toBeFalsy();
   });
 
-  test("if AgentType and PlugName specified, but not GroupOrId, then match ONLY when these match", () => {
-    const plugDefinedTopic = "specificAgent/+/plugName";
+  test("if AgentRole and PlugName specified, but not GroupOrId, then match ONLY when these match", () => {
+    const plugDefinedTopic = "specificAgent/plugName/#";
 
     expect(
-      topicMatchesPlug(plugDefinedTopic, "specificAgent/anything/plugName")
+      topicMatchesPlug(plugDefinedTopic, "specificAgent/plugName")
     ).toBeTruthy();
     expect(
-      topicMatchesPlug(plugDefinedTopic, "specificAgent/somethingElse/plugName")
+      topicMatchesPlug(plugDefinedTopic, "specificAgent/plugName/anything")
     ).toBeTruthy();
     expect(
-      topicMatchesPlug(plugDefinedTopic, "differentAgent/anything/plugName")
+      topicMatchesPlug(plugDefinedTopic, "specificAgent/plugName/somethingElse")
+    ).toBeTruthy();
+    expect(
+      topicMatchesPlug(plugDefinedTopic, "differentAgent/plugName/anything")
     ).toBeFalsy();
   });
 
@@ -132,45 +141,54 @@ describe("matching topics to plugs", () => {
     expect(
       topicMatchesPlug(plugDefinedTopic, "something/something/something")
     ).toBeTruthy();
+    expect(
+      topicMatchesPlug(plugDefinedTopic, "not/event/tether/standard")
+    ).toBeTruthy();
   });
 
-  test("specific use case: agentType specified, no group/ID, plug name", () => {
-    const plugDefinedTopic = "LidarConsolidation/+/trackedPoints";
+  test("specific use case: agentRole specified, no group/ID, plug name", () => {
+    const plugDefinedTopic = "LidarConsolidation/trackedPoints/#";
 
     expect(
       topicMatchesPlug(
         plugDefinedTopic,
-        "LidarConsolidation/e933b82f-cb0d-4f91-a4a7-5625ce3ed20b/clusters"
+        "LidarConsolidation/clusters/e933b82f-cb0d-4f91-a4a7-5625ce3ed20b"
       )
     ).toBeFalsy();
     expect(
       topicMatchesPlug(
         plugDefinedTopic,
-        "LidarConsolidation/e933b82f-cb0d-4f91-a4a7-5625ce3ed20b/trackedPoints"
+        "LidarConsolidation/trackedPoints/e933b82f-cb0d-4f91-a4a7-5625ce3ed20b"
       )
     ).toBeTruthy();
     expect(
       topicMatchesPlug(
         plugDefinedTopic,
-        "SomethingElse/e933b82f-cb0d-4f91-a4a7-5625ce3ed20b/trackedPoints"
+        "SomethingElse/trackedPoints/e933b82f-cb0d-4f91-a4a7-5625ce3ed20b"
       )
     ).toBeFalsy();
   });
 
-  test("if GroupOrId and PlugName specified, but not AgentType, then match when these match", () => {
-    const plugDefinedTopic = "+/specificGroupOrId/plugName";
+  test("if GroupOrId and PlugName specified, but not AgentRole, then match when these match", () => {
+    const plugDefinedTopic = "+/plugName/specificGroupOrId";
 
     expect(
-      topicMatchesPlug(plugDefinedTopic, "someAgent/specificGroupOrId/plugName")
+      topicMatchesPlug(plugDefinedTopic, "someAgentRole/plugName")
+    ).toBeFalsy();
+    expect(
+      topicMatchesPlug(
+        plugDefinedTopic,
+        "someAgentRole/plugName/specificGroupOrId"
+      )
     ).toBeTruthy();
     expect(
       topicMatchesPlug(
         plugDefinedTopic,
-        "anotherAgent/specificGroupOrId/plugName"
+        "anotherAgent/plugName/specificGroupOrId"
       )
     ).toBeTruthy();
     expect(
-      topicMatchesPlug(plugDefinedTopic, "someAgent/wrongGroup/plugName")
+      topicMatchesPlug(plugDefinedTopic, "someAgent/plugName/wrongGroup")
     ).toBeFalsy();
   });
 

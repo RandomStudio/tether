@@ -232,7 +232,8 @@ export const topicMatchesPlug = (
   }
 };
 
-const containsWildcards = (topicOrPart: string) => topicOrPart.includes("+");
+const containsWildcards = (topicOrPart: string) =>
+  topicOrPart.includes("+") || topicOrPart.includes("#");
 
 const buildInputPlugTopic = (
   plugName: string,
@@ -256,7 +257,7 @@ const buildOutputPlugTopic = (
   if (specifyID) {
     return `${role}/${plugName}/${specifyID}`;
   } else {
-    return `${role}/${plugName}`;
+    return `${role}/${plugName}/#`;
   }
 };
 
