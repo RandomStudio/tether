@@ -257,7 +257,7 @@ const buildOutputPlugTopic = (
   if (specifyID) {
     return `${role}/${plugName}/${specifyID}`;
   } else {
-    return `${role}/${plugName}/#`;
+    return `${role}/${plugName}`;
   }
 };
 

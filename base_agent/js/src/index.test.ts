@@ -7,7 +7,7 @@ describe("building topic strings", () => {
     const agent = await TetherAgent.create("tester");
     const output = new OutputPlug(agent, "somePlugName");
     expect(output.getDefinition().name).toEqual("somePlugName");
-    expect(output.getDefinition().topic).toEqual("tester/somePlugName/#");
+    expect(output.getDefinition().topic).toEqual("tester/somePlugName");
     agent.disconnect();
   });
 
