@@ -111,6 +111,7 @@ export class TetherAgent {
   };
 
   public disconnect = async () => {
+    logger.warn("Tether Agent explicit disconnect requested");
     if (this.client) {
       await this.client.end();
       this.client = null;
@@ -131,10 +132,25 @@ export class TetherAgent {
 
   public getState = () => this.state;
 
-  public getIsConnected = () =>
-    this.client !== null &&
-    this.client.connected &&
-    this.state === State.CONNECTED;
+  public getIsConnected = () => {
+    const isConnected =
+      this.client !== null &&
+      this.client.connected === true &&
+      this.state === State.CONNECTED;
+
+    if (!isConnected) {
+      logger.error(
+        "Not connected! Client Null?",
+        typeof this.client,
+        "; client.connected?",
+        this.client?.connected,
+        "; state?",
+        this.state
+      );
+    }
+
+    return isConnected;
+  };
 
   public getConfig = () => this.config;
 }

@@ -32,6 +32,7 @@ const main = async () => {
 
   // Demonstrate Publishing
   const outputPlug = new OutputPlug(agent, "randomValue");
+  const fastOutputPlug = new OutputPlug(agent, "fastValues");
   const emptyOutputPlug = new OutputPlug(agent, "emptyMessage");
 
   setInterval(() => {
@@ -45,6 +46,12 @@ const main = async () => {
   setInterval(() => {
     emptyOutputPlug.publish();
   }, 3333);
+
+  let num = 0;
+  setInterval(() => {
+    num++;
+    fastOutputPlug.publish(Buffer.from(encode(num)));
+  }, 8);
 
   // Demonstrate Receiving
   const inputPlugOne = await InputPlug.create(agent, "randomValue");

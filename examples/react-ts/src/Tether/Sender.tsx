@@ -7,6 +7,7 @@ interface Props {
 
 export const Sender = (props: Props) => {
   useEffect(() => {
+    console.log("Sender useEffect");
     setPlug(new OutputPlug(props.agent, "sender"));
   }, [props.agent]);
 
@@ -56,7 +57,20 @@ export const Sender = (props: Props) => {
       </div>
       {plug && (
         <div>
-          <button onClick={() => plug.publish()}>Send (empty)</button>
+          <button
+            onClick={async () => {
+              try {
+                await plug.publish();
+              } catch (e) {
+                console.error("We got an error when trying to publish:", e);
+                console.log("agent connected?", props.agent.getIsConnected());
+                console.log("agent state?", props.agent.getState());
+                console.log("agent client?", props.agent.getClient());
+              }
+            }}
+          >
+            Send (empty)
+          </button>
         </div>
       )}
     </div>

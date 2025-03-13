@@ -139,7 +139,7 @@ export class OutputPlug extends Plug {
 
   publish = async (content?: Buffer | Uint8Array) => {
     if (!this.agent.getIsConnected()) {
-      logger.error(
+      throw Error(
         "trying to send without connection; not possible until connected"
       );
     } else {
