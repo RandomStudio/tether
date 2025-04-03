@@ -248,7 +248,6 @@ impl PlugOptionsBuilder {
                             &plug_options.plug_name,
                             plug_options.override_subscribe_role.as_deref(),
                             plug_options.override_subscribe_id.as_deref(),
-                            plug_options.override_subscribe_plug_name.as_deref(),
                         ))
                     }
                 };
@@ -256,7 +255,7 @@ impl PlugOptionsBuilder {
                     InputPlugDefinition::new(&plug_options.plug_name, tpt, plug_options.qos);
                 if let Some(client) = &tether_agent.client {
                     match client.subscribe(
-                        plug_definition.topic_str(),
+                        plug_definition.generated_topic(),
                         match plug_definition.qos() {
                             0 => rumqttc::QoS::AtMostOnce,
                             1 => rumqttc::QoS::AtLeastOnce,
@@ -265,7 +264,10 @@ impl PlugOptionsBuilder {
                         },
                     ) {
                         Ok(res) => {
-                            debug!("This topic was fine: \"{}\"", plug_definition.topic_str());
+                            debug!(
+                                "This topic was fine: \"{}\"",
+                                plug_definition.generated_topic()
+                            );
                             debug!("Server respond OK for subscribe: {res:?}");
                             Ok(PlugDefinition::InputPlug(plug_definition))
                         }
@@ -279,10 +281,10 @@ impl PlugOptionsBuilder {
                 let tpt: TetherOrCustomTopic = match plug_options.override_topic {
                     Some(custom) => TetherOrCustomTopic::Custom(custom),
                     None => TetherOrCustomTopic::Tether(ThreePartTopic::new_for_publish(
+                        tether_agent,
+                        &plug_options.plug_name,
                         plug_options.override_publish_role.as_deref(),
                         plug_options.override_publish_id.as_deref(),
-                        &plug_options.plug_name,
-                        tether_agent,
                     )),
                 };
 

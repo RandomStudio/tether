@@ -1,3 +1,5 @@
+use std::ops::Deref;
+
 use anyhow::anyhow;
 use log::{debug, error};
 use serde::{Deserialize, Serialize};
@@ -7,7 +9,7 @@ use crate::TetherAgent;
 #[derive(Serialize, Deserialize, Debug)]
 pub struct ThreePartTopic {
     role: String,
-    id: String,
+    id: Option<String>,
     plug_name: String,
     full_topic: String,
 }
@@ -30,58 +32,44 @@ impl TetherOrCustomTopic {
 impl ThreePartTopic {
     /// Publish topics fall back to the ID and/or role associated with the agent, if not explicitly provided
     pub fn new_for_publish(
-        role: Option<&str>,
-        id: Option<&str>,
-        plug_name: &str,
         agent: &TetherAgent,
+        plug_name: &str,
+        role_part_override: Option<&str>,
+        id_part_override: Option<&str>,
     ) -> ThreePartTopic {
-        let role = role.unwrap_or(agent.role());
-        let id = id.unwrap_or(agent.id());
-        let full_topic = build_topic(role, id, plug_name);
+        let role = role_part_override.unwrap_or(agent.role());
+        let full_topic = build_topic(role, plug_name, id_part_override);
         ThreePartTopic {
             role: role.into(),
-            id: id.into(),
+            id: id_part_override.map(|x| String::from(x)),
             plug_name: plug_name.into(),
             full_topic,
         }
     }
 
-    /// Subscribe topics fall back to wildcard `+` for role and/or id if not explicitly provided.
-    /// If `plug_name_part` is specified as `Some(String)` then the plug name part of the generated
-    /// topic is changed but the plug name itself is left alone.
+    /// Subscribe topics fall back to wildcard `+` for role if not explicitly provided.
     pub fn new_for_subscribe(
         plug_name: &str,
         role_part_override: Option<&str>,
         id_part_override: Option<&str>,
-        plug_name_part_override: Option<&str>,
     ) -> ThreePartTopic {
         let role = role_part_override.unwrap_or("+");
-        let id = id_part_override.unwrap_or("+");
-        let plug_name_part = match plug_name_part_override {
-            Some(s) => {
-                if !&s.eq("+") {
-                    error!("The only valid override for the Plug Name part is a wildcard (+)");
-                }
-                s
-            }
-            None => plug_name,
-        };
-        let full_topic = build_topic(role, id, plug_name_part);
+        let full_topic = build_topic(role, plug_name, id_part_override);
 
         ThreePartTopic {
             role: role.into(),
-            id: id.into(),
-            plug_name: plug_name_part.into(),
+            id: id_part_override.map(|x| String::from(x)),
+            plug_name: plug_name.into(),
             full_topic,
         }
     }
 
-    pub fn new(role: &str, id: &str, plug_name: &str) -> ThreePartTopic {
+    pub fn new(role: &str, plug_name: &str, id: Option<&str>) -> ThreePartTopic {
         ThreePartTopic {
             role: role.into(),
-            id: id.into(),
+            id: id.map(|x| String::from(x)),
             plug_name: plug_name.into(),
-            full_topic: build_topic(role, id, plug_name),
+            full_topic: build_topic(role, plug_name, id),
         }
     }
 
@@ -93,8 +81,8 @@ impl ThreePartTopic {
         &self.role
     }
 
-    pub fn id(&self) -> &str {
-        &self.id
+    pub fn id(&self) -> Option<&str> {
+        self.id.as_deref()
     }
 
     pub fn plug_name(&self) -> &str {
@@ -106,8 +94,8 @@ impl ThreePartTopic {
         self.update_full_topic();
     }
 
-    pub fn set_id(&mut self, id: &str) {
-        self.id = id.into();
+    pub fn set_id(&mut self, id: Option<&str>) {
+        self.id = id.map(|id| id.into());
         self.update_full_topic();
     }
 
@@ -117,7 +105,7 @@ impl ThreePartTopic {
     }
 
     fn update_full_topic(&mut self) {
-        self.full_topic = build_topic(&self.role, &self.id, &self.plug_name);
+        self.full_topic = build_topic(&self.role, &self.plug_name, self.id.as_deref());
     }
 }
 
@@ -128,9 +116,9 @@ impl TryFrom<&str> for ThreePartTopic {
     fn try_from(value: &str) -> Result<Self, Self::Error> {
         let parts = value.split('/').collect::<Vec<&str>>();
 
-        if parts.len() != 3 {
+        if parts.len() < 2 || parts.len() > 3 {
             return Err(anyhow!(
-                "Did not find exactly three parts in the topic {}",
+                "Did not find exactly 2 or 3 parts in the topic {}",
                 value
             ));
         } else {
@@ -138,15 +126,22 @@ impl TryFrom<&str> for ThreePartTopic {
         }
 
         let role = parts.first().expect("the role part should exist");
-        let id = parts.get(1).expect("the id part should exist");
-        let plug_name = parts.get(2).expect("the plug_name part should exist");
 
-        Ok(ThreePartTopic::new(role, id, plug_name))
+        let plug_name = parts.get(1).expect("the plug_name part should exist");
+
+        Ok(ThreePartTopic::new(
+            role,
+            plug_name,
+            parts.get(2).map(|s| s.deref()),
+        ))
     }
 }
 
-pub fn build_topic(role: &str, id: &str, plug_name: &str) -> String {
-    format!("{role}/{id}/{plug_name}")
+pub fn build_topic(role: &str, plug_name: &str, id: Option<&str>) -> String {
+    match id {
+        Some(id) => format!("{role}/{plug_name}/{id}"),
+        None => format!("{role}/{plug_name}/#"),
+    }
 }
 
 pub fn parse_plug_name(topic: &str) -> Option<&str> {
@@ -175,13 +170,28 @@ pub fn parse_agent_role(topic: &str) -> Option<&str> {
 
 #[cfg(test)]
 mod tests {
-    use crate::three_part_topic::{parse_agent_id, parse_agent_role, parse_plug_name};
+    use crate::{
+        three_part_topic::{parse_agent_id, parse_agent_role, parse_plug_name},
+        TetherAgentOptionsBuilder,
+    };
+
+    use super::ThreePartTopic;
 
     #[test]
     fn util_parsers() {
         assert_eq!(parse_agent_role("one/two/three"), Some("one"));
-        assert_eq!(parse_agent_id("one/two/three"), Some("two"));
+        assert_eq!(parse_agent_id("one/two/three"), Some("three"));
         assert_eq!(parse_plug_name("one/two/three"), Some("three"));
-        assert_eq!(parse_plug_name("just/two"), None);
+        assert_eq!(parse_plug_name("just/two"), Some("two"));
+    }
+
+    #[test]
+    fn build_full_topic() {
+        let agent = TetherAgentOptionsBuilder::new("testingRole")
+            .auto_connect(false)
+            .build()
+            .expect("failed to construct agent");
+        let publishing_plug_topic = ThreePartTopic::new_for_publish(&agent, "testPlug", None, None);
+        assert_eq!(&publishing_plug_topic.full_topic, "testingRole/testPlug/#");
     }
 }

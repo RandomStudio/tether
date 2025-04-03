@@ -7,7 +7,7 @@ import EventEmitter from "events";
 declare interface Plug {
   on(
     event: "message",
-    listener: (payload: Buffer, topic: string) => void
+    listener: (payload: Buffer, topic: string) => void,
   ): this;
   on(event: string, listener: Function): this;
 }
@@ -36,7 +36,7 @@ export class InputPlug extends Plug {
       id?: string;
       role?: string;
       subscribeOptions?: IClientSubscribeOptions;
-    }
+    },
   ) {
     const inputPlug = new InputPlug(agent, name, options || {});
 
@@ -58,7 +58,7 @@ export class InputPlug extends Plug {
       id?: string;
       role?: string;
       subscribeOptions?: IClientSubscribeOptions;
-    }
+    },
   ) {
     super(agent, {
       name: plugName,
@@ -79,7 +79,7 @@ export class InputPlug extends Plug {
       logger.debug(
         "Attempting subscribtion to topic",
         this.definition.topic,
-        `for Input Plug "${this.getDefinition().name}"...`
+        `for Input Plug "${this.getDefinition().name}"...`,
       );
       if (options === undefined) {
         await this.agent.getClient()?.subscribe(this.definition.topic);
@@ -93,7 +93,7 @@ export class InputPlug extends Plug {
     logger.debug(
       "subscribed to topic",
       this.definition.topic,
-      `for Input Plug "${this.getDefinition().name}"`
+      `for Input Plug "${this.getDefinition().name}"`,
     );
     this.agent.getClient()?.on("message", (topic, payload) => {
       if (topicMatchesPlug(this.definition.topic, topic)) {
@@ -113,7 +113,7 @@ export class OutputPlug extends Plug {
       overrideTopic?: string;
       id?: string;
       publishOptions?: IClientPublishOptions;
-    }
+    },
   ) {
     super(agent, {
       name,
@@ -122,7 +122,7 @@ export class OutputPlug extends Plug {
         buildOutputPlugTopic(
           name,
           agent.getConfig().role,
-          options?.id || agent.getConfig().id
+          options?.id || agent.getConfig().id,
         ),
     });
     this.publishOptions = options?.publishOptions || {
@@ -140,7 +140,7 @@ export class OutputPlug extends Plug {
   publish = async (content?: Buffer | Uint8Array) => {
     if (!this.agent.getIsConnected()) {
       throw Error(
-        "trying to send without connection; not possible until connected"
+        "trying to send without connection; not possible until connected",
       );
     } else {
       try {
@@ -148,7 +148,7 @@ export class OutputPlug extends Plug {
           "Sending on topic",
           this.definition.topic,
           "with options",
-          { ...this.publishOptions }
+          { ...this.publishOptions },
         );
         if (content === undefined) {
           this.agent
@@ -156,7 +156,7 @@ export class OutputPlug extends Plug {
             ?.publish(
               this.definition.topic,
               Buffer.from([]),
-              this.publishOptions
+              this.publishOptions,
             );
         } else if (content instanceof Uint8Array) {
           this.agent
@@ -164,7 +164,7 @@ export class OutputPlug extends Plug {
             ?.publish(
               this.definition.topic,
               Buffer.from(content),
-              this.publishOptions
+              this.publishOptions,
             );
         } else {
           this.agent
@@ -180,14 +180,14 @@ export class OutputPlug extends Plug {
 
 export const topicMatchesPlug = (
   plugTopic: string,
-  incomingTopic: string
+  incomingTopic: string,
 ): boolean => {
   if (plugTopic == "#") {
     return true;
   }
 
   if (!containsWildcards(plugTopic)) {
-    // No wildcards at all in full topic e.g. specified/alsoSpecified/plugName ...
+    // No wildcards at all in full topic e.g. specified/plugName/alsoSpecified ...
     return plugTopic === incomingTopic;
     // ... Then MATCH only if the defined topic and incoming topic match EXACTLY
   }
@@ -205,10 +205,10 @@ export const topicMatchesPlug = (
       return topicDefinedPlugName === incomingPlugName;
     }
 
-    // If either the AgentType or ID/Group was specified, check these as well...
+    // If either the Role or ID/Group was specified, check these as well...
 
-    // if AgentType specified, see if this matches, otherwise pass all AgentTypes as matches
-    // e.g. specified/+/plugName
+    // if Role specified, see if this matches, otherwise pass all AgentTypes as matches
+    // e.g. specified/plugName
     const agentTypeMatches = !containsWildcards(parseAgentRole(plugTopic))
       ? parseAgentRole(plugTopic) === parseAgentRole(incomingTopic)
       : true;
@@ -216,7 +216,7 @@ export const topicMatchesPlug = (
     // if Agent ID or Group specified, see if this matches, otherwise pass all AgentIdOrGroup as matches
     // e.g. +/specified/plugName
     const agentIdOrGroupMatches = !containsWildcards(
-      parseAgentIdOrGroup(plugTopic)
+      parseAgentIdOrGroup(plugTopic),
     )
       ? parseAgentIdOrGroup(plugTopic) === parseAgentIdOrGroup(incomingTopic)
       : true;
@@ -238,7 +238,7 @@ const containsWildcards = (topicOrPart: string) =>
 const buildInputPlugTopic = (
   plugName: string,
   specifyRole?: string,
-  specifyID?: string
+  specifyID?: string,
 ): string => {
   const role = specifyRole || "+";
   if (specifyID) {
@@ -251,7 +251,7 @@ const buildInputPlugTopic = (
 const buildOutputPlugTopic = (
   plugName: string,
   specifyRole: string,
-  specifyID?: string
+  specifyID?: string,
 ): string => {
   const role = specifyRole;
   if (specifyID) {

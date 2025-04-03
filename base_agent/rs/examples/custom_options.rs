@@ -36,7 +36,10 @@ fn main() {
 
     if let PlugDefinition::OutputPlug(p) = &output_plug {
         println!("output plug: {:?}", p);
-        assert_eq!(p.topic_str(), "pretendingToBeSomethingElse/any/anOutput");
+        assert_eq!(
+            p.generated_topic(),
+            "pretendingToBeSomethingElse/any/anOutput"
+        );
     }
 
     println!("wildcard input plug: {:?}", input_wildcard_plug);

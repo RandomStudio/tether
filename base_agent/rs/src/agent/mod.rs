@@ -291,37 +291,45 @@ impl TetherAgent {
         thread::spawn(move || {
             for event in connection.iter() {
                 match event {
-                    Ok(e) => match e {
-                        Event::Incoming(incoming) => match incoming {
-                            Packet::ConnAck(_) => {
-                                info!("(Connected) ConnAck received!");
-                                let mut is_c =
-                                    connection_state.lock().expect("failed to lock mutex");
-                                *is_c = true;
-                            }
-                            Packet::Publish(p) => {
-                                debug!("Incoming Publish packet (message received), {:?}", &p);
-                                let topic = p.topic;
-                                let payload: Vec<u8> = p.payload.into();
-                                if let Ok(t) = ThreePartTopic::try_from(topic.as_str()) {
-                                    message_tx
-                                        .send((TetherOrCustomTopic::Tether(t), payload))
-                                        .expect(
-                                        "failed to push message from thread; three-part-topic OK",
-                                    );
-                                } else {
-                                    warn!("Could not parse Three Part Topic from \"{}\"", &topic);
-                                    message_tx
+                    Ok(e) => {
+                        match e {
+                            Event::Incoming(incoming) => match incoming {
+                                Packet::ConnAck(_) => {
+                                    info!("(Connected) ConnAck received!");
+                                    let mut is_c =
+                                        connection_state.lock().expect("failed to lock mutex");
+                                    *is_c = true;
+                                }
+                                Packet::Publish(p) => {
+                                    debug!("Incoming Publish packet (message received), {:?}", &p);
+                                    let topic = p.topic;
+                                    let payload: Vec<u8> = p.payload.into();
+                                    match ThreePartTopic::try_from(topic.as_str()) {
+                                        Ok(t) => {
+                                            message_tx
+                                            .send((TetherOrCustomTopic::Tether(t), payload))
+                                            .expect(
+                                            "failed to push message from thread; three-part-topic OK",
+                                        );
+                                        }
+                                        Err(e) => {
+                                            warn!(
+                                                "Could not parse Three Part Topic from \"{}\": {}",
+                                                &topic, e
+                                            );
+                                            message_tx
                                         .send((TetherOrCustomTopic::Custom(topic), payload))
                                         .expect("failed to push message from thread; custom topic");
+                                        }
+                                    }
                                 }
+                                _ => debug!("Ignore all others for now, {:?}", incoming),
+                            },
+                            Event::Outgoing(outgoing) => {
+                                debug!("Ignore outgoing events, for now, {:?}", outgoing)
                             }
-                            _ => debug!("Ignore all others for now, {:?}", incoming),
-                        },
-                        Event::Outgoing(outgoing) => {
-                            debug!("Ignore outgoing events, for now, {:?}", outgoing)
                         }
-                    },
+                    }
                     Err(e) => {
                         error!("Connection Error: {:?}", e);
                         std::thread::sleep(Duration::from_secs(1));
@@ -380,7 +388,7 @@ impl TetherAgent {
                 panic!("You cannot publish using an Input Plug")
             }
             PlugDefinition::OutputPlug(output_plug_definition) => {
-                let topic = output_plug_definition.topic_str();
+                let topic = output_plug_definition.generated_topic();
                 let qos = match output_plug_definition.qos() {
                     0 => QoS::AtMostOnce,
                     1 => QoS::AtLeastOnce,
