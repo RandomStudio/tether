@@ -1,7 +1,7 @@
 const {
   TetherAgent,
-  InputPlug,
-  OutputPlug,
+  ChannelInput,
+  ChannelOutput,
   NODEJS,
   encode,
   decode,
@@ -31,37 +31,37 @@ const main = async () => {
   });
 
   // Demonstrate Publishing
-  const outputPlug = new OutputPlug(agent, "randomValue");
-  const fastOutputPlug = new OutputPlug(agent, "fastValues");
-  const emptyOutputPlug = new OutputPlug(agent, "emptyMessage");
+  const outputChannel = new ChannelOutput(agent, "randomValue");
+  const fastOutputChannel = new ChannelOutput(agent, "fastValues");
+  const emptyOutputChannel = new ChannelOutput(agent, "emptyMessage");
 
   setInterval(() => {
     const m = {
       timestamp: Date.now(),
       value: Math.random(),
     };
-    outputPlug.publish(Buffer.from(encode(m)));
+    outputChannel.publish(Buffer.from(encode(m)));
   }, 1000);
 
   setInterval(() => {
-    emptyOutputPlug.publish();
+    emptyOutputChannel.publish();
   }, 3333);
 
   let num = 0;
   setInterval(() => {
     num++;
-    fastOutputPlug.publish(Buffer.from(encode(num)));
+    fastOutputChannel.publish(Buffer.from(encode(num)));
   }, 8);
 
   // Demonstrate Receiving
-  const inputPlugOne = await InputPlug.create(agent, "randomValue");
-  inputPlugOne.on("message", (payload, topic) => {
+  const inputChannelOne = await ChannelInput.create(agent, "randomValue");
+  inputChannelOne.on("message", (payload, topic) => {
     console.log("received:", { payload, topic });
     const m = decode(payload);
-    console.log(">>>>>>>> received message on inputPlugOne:", { topic, m });
+    console.log(">>>>>>>> received message on inputChannelOne:", { topic, m });
   });
 
-  const inputEmptyMessages = await InputPlug.create(agent, "emptyMessage");
+  const inputEmptyMessages = await ChannelInput.create(agent, "emptyMessage");
   inputEmptyMessages.on("message", (payload, topic) => {
     console.log(">>>>>>>> received empty message:", { payload, topic });
   });
