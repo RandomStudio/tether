@@ -58,14 +58,13 @@ If you'd like to use a graphical / desktop application to test out Tether, try:
 
 - [Tether Egui](https://github.com/RandomStudio/tether-egui)
 
-Tether Egui acts as both an Agent that can publish messages but also subscribes to all topics and tries to decode the MessagePack contents. So you can use a single instance of Tether Egui to simulate an entire (very basic) Tether system, provided you are also running an MQTT Broker on your system.
+Tether Egui lets you create some Output Plugs to play with, and also provides utilities for exploring and monitoring all the messages in a Tether-based system.
 
 ### CLI
 
 Alternatively, command-line utilities are provided [here](./utilities/tether-utils) (with instructions for installing them)
 
-- `tether send`: by default, publishes messages as the Agent "tether-send"
-- `tether receive`: subscribes to messages on all topics (by default) and tries to decode the MessagePack payload of each one
+For example, the command `tether receive` will subscribe to messages on all topics (by default), decode and print out each one.
 
 You can use `tether send` in combination with `tether receive` to simulate a minimal Tether system.
 

@@ -1,6 +1,6 @@
 import { IClientOptions } from "async-mqtt";
 
-export interface PlugDefinition {
+export interface ChannelDefinition {
   name: string;
   id?: string;
   topic: string;

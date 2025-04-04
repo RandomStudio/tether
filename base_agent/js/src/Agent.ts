@@ -49,8 +49,8 @@ export class TetherAgent {
     const config: TetherAgentConfig = {
       role,
       id: options?.id,
-      brokerOptions: options?.brokerOptions || defaults.brokerOptions,
-      autoConnect: options?.autoConnect || defaults.autoConnect,
+      brokerOptions: options?.brokerOptions ?? defaults.brokerOptions,
+      autoConnect: options?.autoConnect ?? defaults.autoConnect,
     };
     const agent = new TetherAgent(
       config,

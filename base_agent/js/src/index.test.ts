@@ -1,85 +1,87 @@
-import { InputPlug, OutputPlug, TetherAgent } from ".";
-import { topicMatchesPlug } from "./Plug";
+import { ChannelInput, ChannelOutput, TetherAgent } from ".";
+import { topicMatchesChannel } from "./Channel";
 import { describe, test, expect } from "@jest/globals";
 
 describe("building topic strings", () => {
   test("Default Output Plug, no ID", async () => {
-    const agent = await TetherAgent.create("tester");
-    const output = new OutputPlug(agent, "somePlugName");
+    const agent = await TetherAgent.create("tester", { autoConnect: false });
+    const output = new ChannelOutput(agent, "somePlugName");
     expect(output.getDefinition().name).toEqual("somePlugName");
     expect(output.getDefinition().topic).toEqual("tester/somePlugName");
-    agent.disconnect();
   });
 
   test("Default Input Plug, no ID", async () => {
-    const agent = await TetherAgent.create("tester");
-    const input = await InputPlug.create(agent, "somePlugName");
+    const agent = await TetherAgent.create("tester", { autoConnect: false });
+    const input = await ChannelInput.create(agent, "somePlugName");
     expect(input.getDefinition().name).toEqual("somePlugName");
     expect(input.getDefinition().topic).toEqual("+/somePlugName/#");
-    agent.disconnect();
   });
 
   test("Agent with custom ID, Output Plug with defaults", async () => {
-    const agent = await TetherAgent.create("tester", { id: "specialGroup" });
-    const output = new OutputPlug(agent, "somePlugName");
+    const agent = await TetherAgent.create("tester", {
+      autoConnect: false,
+      id: "specialGroup",
+    });
+    const output = new ChannelOutput(agent, "somePlugName");
     expect(output.getDefinition().name).toEqual("somePlugName");
     expect(output.getDefinition().topic).toEqual(
-      "tester/somePlugName/specialGroup"
+      "tester/somePlugName/specialGroup",
     );
-    agent.disconnect();
   });
 
   test("Agent with custom ID, Output Plug with custom still overrides", async () => {
     const agent = await TetherAgent.create("tester", {
+      autoConnect: false,
       id: "originalSpecialGroup",
     });
-    const output = new OutputPlug(agent, "somePlugName", {
+    const output = new ChannelOutput(agent, "somePlugName", {
       id: "overrideOnPlugCreation",
     });
     expect(output.getDefinition().name).toEqual("somePlugName");
     expect(output.getDefinition().topic).toEqual(
-      "tester/somePlugName/overrideOnPlugCreation"
+      "tester/somePlugName/overrideOnPlugCreation",
     );
-    agent.disconnect();
   });
 
   test("Agent with custom ID, Input Plug with defaults; still generic", async () => {
-    const agent = await TetherAgent.create("tester", { id: "specialGroup" });
-    const input = await InputPlug.create(agent, "somePlugName");
+    const agent = await TetherAgent.create("tester", {
+      autoConnect: false,
+      id: "specialGroup",
+    });
+    const input = await ChannelInput.create(agent, "somePlugName");
     expect(input.getDefinition().name).toEqual("somePlugName");
     expect(input.getDefinition().topic).toEqual("+/somePlugName/#");
-    agent.disconnect();
   });
 
   test("Override ID and/or Role when creating Input", async () => {
-    const agent = await TetherAgent.create("tester");
+    const agent = await TetherAgent.create("tester", {
+      autoConnect: false,
+    });
 
-    const inputCustomID = await InputPlug.create(agent, "somePlugName", {
+    const inputCustomID = await ChannelInput.create(agent, "somePlugName", {
       id: "specialID",
     });
     expect(inputCustomID.getDefinition().name).toEqual("somePlugName");
     expect(inputCustomID.getDefinition().topic).toEqual(
-      "+/somePlugName/specialID"
+      "+/somePlugName/specialID",
     );
 
-    const inputCustomRole = await InputPlug.create(agent, "somePlugName", {
+    const inputCustomRole = await ChannelInput.create(agent, "somePlugName", {
       role: "specialRole",
     });
     expect(inputCustomRole.getDefinition().name).toEqual("somePlugName");
     expect(inputCustomRole.getDefinition().topic).toEqual(
-      "specialRole/somePlugName/#"
+      "specialRole/somePlugName/#",
     );
 
-    const inputCustomBoth = await InputPlug.create(agent, "somePlugName", {
+    const inputCustomBoth = await ChannelInput.create(agent, "somePlugName", {
       id: "id2",
       role: "role2",
     });
     expect(inputCustomBoth.getDefinition().name).toEqual("somePlugName");
     expect(inputCustomBoth.getDefinition().topic).toEqual(
-      "role2/somePlugName/id2"
+      "role2/somePlugName/id2",
     );
-
-    agent.disconnect();
   });
 });
 
@@ -88,34 +90,34 @@ describe("matching topics to plugs", () => {
     const plugDefinedTopic = "someType/somePlugName/someID";
 
     expect(
-      topicMatchesPlug(plugDefinedTopic, "someType/somePlugName/someID")
+      topicMatchesChannel(plugDefinedTopic, "someType/somePlugName/someID"),
     ).toBeTruthy();
 
     expect(
-      topicMatchesPlug(plugDefinedTopic, "other/somePlugName/otherGroup")
+      topicMatchesChannel(plugDefinedTopic, "other/somePlugName/otherGroup"),
     ).toBeFalsy();
   });
 
   test("if ONLY Plug Name specified, match any with same PlugName", () => {
     const plugDefinedTopic = "+/somePlugName/#";
     expect(
-      topicMatchesPlug(plugDefinedTopic, "something/somePlugName")
+      topicMatchesChannel(plugDefinedTopic, "something/somePlugName"),
     ).toBeTruthy();
     expect(
-      topicMatchesPlug(plugDefinedTopic, "something/somePlugName/something")
+      topicMatchesChannel(plugDefinedTopic, "something/somePlugName/something"),
     ).toBeTruthy();
   });
 
   test("if ONLY Plug Name specified, match any with same PlugName", () => {
     const plugDefinedTopic = "+/somePlugName/#";
     expect(
-      topicMatchesPlug(plugDefinedTopic, "something/somePlugName/something")
+      topicMatchesChannel(plugDefinedTopic, "something/somePlugName/something"),
     ).toBeTruthy();
     expect(
-      topicMatchesPlug(
+      topicMatchesChannel(
         plugDefinedTopic,
-        "something/someOtherPlugName.something"
-      )
+        "something/someOtherPlugName.something",
+      ),
     ).toBeFalsy();
   });
 
@@ -123,26 +125,29 @@ describe("matching topics to plugs", () => {
     const plugDefinedTopic = "specificAgent/plugName/#";
 
     expect(
-      topicMatchesPlug(plugDefinedTopic, "specificAgent/plugName")
+      topicMatchesChannel(plugDefinedTopic, "specificAgent/plugName"),
     ).toBeTruthy();
     expect(
-      topicMatchesPlug(plugDefinedTopic, "specificAgent/plugName/anything")
+      topicMatchesChannel(plugDefinedTopic, "specificAgent/plugName/anything"),
     ).toBeTruthy();
     expect(
-      topicMatchesPlug(plugDefinedTopic, "specificAgent/plugName/somethingElse")
+      topicMatchesChannel(
+        plugDefinedTopic,
+        "specificAgent/plugName/somethingElse",
+      ),
     ).toBeTruthy();
     expect(
-      topicMatchesPlug(plugDefinedTopic, "differentAgent/plugName/anything")
+      topicMatchesChannel(plugDefinedTopic, "differentAgent/plugName/anything"),
     ).toBeFalsy();
   });
 
   test("# wildcard should match any topic", () => {
     const plugDefinedTopic = "#";
     expect(
-      topicMatchesPlug(plugDefinedTopic, "something/something/something")
+      topicMatchesChannel(plugDefinedTopic, "something/something/something"),
     ).toBeTruthy();
     expect(
-      topicMatchesPlug(plugDefinedTopic, "not/event/tether/standard")
+      topicMatchesChannel(plugDefinedTopic, "not/event/tether/standard"),
     ).toBeTruthy();
   });
 
@@ -150,22 +155,22 @@ describe("matching topics to plugs", () => {
     const plugDefinedTopic = "LidarConsolidation/trackedPoints/#";
 
     expect(
-      topicMatchesPlug(
+      topicMatchesChannel(
         plugDefinedTopic,
-        "LidarConsolidation/clusters/e933b82f-cb0d-4f91-a4a7-5625ce3ed20b"
-      )
+        "LidarConsolidation/clusters/e933b82f-cb0d-4f91-a4a7-5625ce3ed20b",
+      ),
     ).toBeFalsy();
     expect(
-      topicMatchesPlug(
+      topicMatchesChannel(
         plugDefinedTopic,
-        "LidarConsolidation/trackedPoints/e933b82f-cb0d-4f91-a4a7-5625ce3ed20b"
-      )
+        "LidarConsolidation/trackedPoints/e933b82f-cb0d-4f91-a4a7-5625ce3ed20b",
+      ),
     ).toBeTruthy();
     expect(
-      topicMatchesPlug(
+      topicMatchesChannel(
         plugDefinedTopic,
-        "SomethingElse/trackedPoints/e933b82f-cb0d-4f91-a4a7-5625ce3ed20b"
-      )
+        "SomethingElse/trackedPoints/e933b82f-cb0d-4f91-a4a7-5625ce3ed20b",
+      ),
     ).toBeFalsy();
   });
 
@@ -173,22 +178,22 @@ describe("matching topics to plugs", () => {
     const plugDefinedTopic = "+/plugName/specificGroupOrId";
 
     expect(
-      topicMatchesPlug(plugDefinedTopic, "someAgentRole/plugName")
+      topicMatchesChannel(plugDefinedTopic, "someAgentRole/plugName"),
     ).toBeFalsy();
     expect(
-      topicMatchesPlug(
+      topicMatchesChannel(
         plugDefinedTopic,
-        "someAgentRole/plugName/specificGroupOrId"
-      )
+        "someAgentRole/plugName/specificGroupOrId",
+      ),
     ).toBeTruthy();
     expect(
-      topicMatchesPlug(
+      topicMatchesChannel(
         plugDefinedTopic,
-        "anotherAgent/plugName/specificGroupOrId"
-      )
+        "anotherAgent/plugName/specificGroupOrId",
+      ),
     ).toBeTruthy();
     expect(
-      topicMatchesPlug(plugDefinedTopic, "someAgent/plugName/wrongGroup")
+      topicMatchesChannel(plugDefinedTopic, "someAgent/plugName/wrongGroup"),
     ).toBeFalsy();
   });
 
@@ -196,7 +201,7 @@ describe("matching topics to plugs", () => {
     const plugDefinedTopic = "something/something/+";
     try {
       expect(
-        topicMatchesPlug(plugDefinedTopic, "anything/anything/anything")
+        topicMatchesChannel(plugDefinedTopic, "anything/anything/anything"),
       ).toThrow();
     } catch (e) {
       //
