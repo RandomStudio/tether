@@ -19,7 +19,7 @@ const DEFAULT_PASSWORD: &str = "sp_ceB0ss!";
 
 pub struct TetherAgent {
     role: String,
-    id: String,
+    id: Option<String>,
     host: String,
     port: u16,
     protocol: String,
@@ -140,7 +140,7 @@ impl TetherAgentOptionsBuilder {
 
         let mut agent = TetherAgent {
             role: self.role.clone(),
-            id: self.id.clone().unwrap_or("any".into()),
+            id: self.id,
             host,
             port,
             username,
@@ -180,15 +180,18 @@ impl TetherAgent {
         &self.role
     }
 
-    pub fn id(&self) -> &str {
-        &self.id
+    pub fn id(&self) -> Option<&str> {
+        self.id.as_deref()
     }
 
     /// Returns the Agent Role, ID (group), Broker URI
     pub fn description(&self) -> (String, String, String) {
         (
             String::from(&self.role),
-            String::from(&self.id),
+            match &self.id {
+                Some(id) => String::from(id),
+                None => String::from("any"),
+            },
             self.broker_uri(),
         )
     }
@@ -207,7 +210,7 @@ impl TetherAgent {
     }
 
     pub fn set_id(&mut self, id: &str) {
-        self.id = id.into();
+        self.id = Some(id.into());
     }
 
     /// Self must be mutable in order to create and assign new Client (with Connection)

@@ -287,23 +287,25 @@ impl PlugOptionsBuilder {
                         );
                         TetherOrCustomTopic::Custom(custom)
                     }
-                    None => TetherOrCustomTopic::Tether(ThreePartTopic::new_for_publish(
-                        tether_agent,
-                        &plug_options.plug_name,
-                        plug_options.override_publish_role.as_deref(),
-                        Some(&{
-                            match plug_options.override_publish_id {
-                                Some(id) => {
-                                    debug!("Publish ID was overriden at Plug options level. The Agent ID will be ignored.");
-                                    String::from(&id)
-                                }
-                                None => {
-                                    debug!("Publish ID was not overriden at Plug options level. The Agent ID will be used instead.");
-                                    String::from(tether_agent.id())
-                                }
+                    None => {
+                        let optional_id_part = match plug_options.override_publish_id {
+                            Some(id) => {
+                                debug!("Publish ID was overriden at Plug options level. The Agent ID will be ignored.");
+                                Some(id)
                             }
-                        }),
-                    )),
+                            None => {
+                                debug!("Publish ID was not overriden at Plug options level. The Agent ID will be used instead, if specified in Agent creation.");
+                                tether_agent.id().map(String::from)
+                            }
+                        };
+
+                        TetherOrCustomTopic::Tether(ThreePartTopic::new_for_publish(
+                            tether_agent,
+                            &plug_options.plug_name,
+                            plug_options.override_publish_role.as_deref(),
+                            optional_id_part.as_deref(),
+                        ))
+                    }
                 };
 
                 let plug_definition = OutputPlugDefinition::new(
@@ -524,7 +526,7 @@ mod tests {
         assert_eq!(output_custom_role.name(), "theOutputPlug");
         assert_eq!(
             output_custom_role.generated_topic(),
-            "customRole/theOutputPlug/#"
+            "customRole/theOutputPlug"
         );
 
         let output_custom_id = PlugOptionsBuilder::create_output("theOutputPlug")

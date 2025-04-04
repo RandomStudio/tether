@@ -209,6 +209,6 @@ mod tests {
             .build()
             .expect("failed to construct agent");
         let publishing_plug_topic = ThreePartTopic::new_for_publish(&agent, "testPlug", None, None);
-        assert_eq!(&publishing_plug_topic.full_topic, "testingRole/testPlug/#");
+        assert_eq!(&publishing_plug_topic.full_topic, "testingRole/testPlug");
     }
 }
