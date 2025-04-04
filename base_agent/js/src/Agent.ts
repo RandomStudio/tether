@@ -124,7 +124,7 @@ export class TetherAgent {
 
   /**
    * End users can get the underlying client if they like. This allows you to bypass
-   * the "plugs" altogether and subscribe or publish on topics directly.
+   * the "Channels" altogether and subscribe or publish on topics directly.
    *
    * @returns The AsyncMqttClient client instance, or null if not (yet) connected
    */
