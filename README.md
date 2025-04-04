@@ -8,6 +8,8 @@ By using Tether, we can approach digital art/media installations as **distribute
 
 To summarise: Tether applies some light _standardisation_ of some existing, well established technologies such as [MQTT](https://mqtt.org/) (for messaging) and [MessagePack](https://msgpack.org/index.html) (for serialised data). By picking a standard, we can provide a set of libraries and tools to make this infrastructure simple to use.
 
+Tether makes our software more reliable and easier to re-use.
+
 ---
 
 ## Table of Contents
