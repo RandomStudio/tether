@@ -1,7 +1,5 @@
-use std::ops::Deref;
-
 use anyhow::anyhow;
-use log::{debug, error};
+use log::*;
 use serde::{Deserialize, Serialize};
 
 use crate::TetherAgent;
@@ -38,10 +36,10 @@ impl ThreePartTopic {
         id_part_override: Option<&str>,
     ) -> ThreePartTopic {
         let role = role_part_override.unwrap_or(agent.role());
-        let full_topic = build_topic(role, plug_name, id_part_override);
+        let full_topic = build_publish_topic(role, plug_name, id_part_override);
         ThreePartTopic {
             role: role.into(),
-            id: id_part_override.map(|x| String::from(x)),
+            id: id_part_override.map(String::from),
             plug_name: plug_name.into(),
             full_topic,
         }
@@ -54,22 +52,33 @@ impl ThreePartTopic {
         id_part_override: Option<&str>,
     ) -> ThreePartTopic {
         let role = role_part_override.unwrap_or("+");
-        let full_topic = build_topic(role, plug_name, id_part_override);
+        let full_topic = build_subscribe_topic(role, plug_name, id_part_override);
 
         ThreePartTopic {
             role: role.into(),
-            id: id_part_override.map(|x| String::from(x)),
+            id: id_part_override.map(String::from),
             plug_name: plug_name.into(),
             full_topic,
         }
     }
 
-    pub fn new(role: &str, plug_name: &str, id: Option<&str>) -> ThreePartTopic {
+    /// Directly constructs a Three Part Topic with explicitly provided role, plug_name, and id.
+    pub fn new_three(role: &str, plug_name: &str, id: &str) -> ThreePartTopic {
         ThreePartTopic {
             role: role.into(),
-            id: id.map(|x| String::from(x)),
+            id: Some(id.into()),
             plug_name: plug_name.into(),
-            full_topic: build_topic(role, plug_name, id),
+            full_topic: build_subscribe_topic(role, plug_name, Some(id)),
+        }
+    }
+
+    /// Directly constructs a Three Part Topic with explicitly provided role, plug_name, and id.
+    pub fn new_two(role: &str, plug_name: &str) -> ThreePartTopic {
+        ThreePartTopic {
+            role: role.into(),
+            id: None,
+            plug_name: plug_name.into(),
+            full_topic: format!("{role}/{plug_name}"),
         }
     }
 
@@ -105,7 +114,7 @@ impl ThreePartTopic {
     }
 
     fn update_full_topic(&mut self) {
-        self.full_topic = build_topic(&self.role, &self.plug_name, self.id.as_deref());
+        self.full_topic = build_subscribe_topic(&self.role, &self.plug_name, self.id.as_deref());
     }
 }
 
@@ -129,43 +138,51 @@ impl TryFrom<&str> for ThreePartTopic {
 
         let plug_name = parts.get(1).expect("the plug_name part should exist");
 
-        Ok(ThreePartTopic::new(
-            role,
-            plug_name,
-            parts.get(2).map(|s| s.deref()),
-        ))
+        match parts.get(2) {
+            Some(id_part) => {
+                if *id_part == "#" {
+                    debug!("This must be a topic used for subscribing");
+                    Ok(ThreePartTopic::new_for_subscribe(
+                        plug_name,
+                        Some(role),
+                        Some("#"),
+                    ))
+                } else {
+                    Ok(ThreePartTopic::new_three(role, plug_name, *id_part))
+                }
+            }
+            None => Ok(ThreePartTopic::new_two(role, plug_name)),
+        }
     }
 }
 
-pub fn build_topic(role: &str, plug_name: &str, id: Option<&str>) -> String {
+pub fn build_subscribe_topic(role: &str, plug_name: &str, id: Option<&str>) -> String {
     match id {
         Some(id) => format!("{role}/{plug_name}/{id}"),
         None => format!("{role}/{plug_name}/#"),
     }
 }
 
+pub fn build_publish_topic(role: &str, plug_name: &str, id: Option<&str>) -> String {
+    match id {
+        Some(id) => format!("{role}/{plug_name}/{id}"),
+        None => format!("{role}/{plug_name}"),
+    }
+}
+
 pub fn parse_plug_name(topic: &str) -> Option<&str> {
     let parts: Vec<&str> = topic.split('/').collect();
-    match parts.get(2) {
-        Some(s) => Some(*s),
-        None => None,
-    }
+    parts.get(1).copied()
 }
 
 pub fn parse_agent_id(topic: &str) -> Option<&str> {
     let parts: Vec<&str> = topic.split('/').collect();
-    match parts.get(1) {
-        Some(s) => Some(*s),
-        None => None,
-    }
+    parts.get(2).copied()
 }
 
 pub fn parse_agent_role(topic: &str) -> Option<&str> {
     let parts: Vec<&str> = topic.split('/').collect();
-    match parts.first() {
-        Some(s) => Some(*s),
-        None => None,
-    }
+    parts.first().copied()
 }
 
 #[cfg(test)]
@@ -181,7 +198,7 @@ mod tests {
     fn util_parsers() {
         assert_eq!(parse_agent_role("one/two/three"), Some("one"));
         assert_eq!(parse_agent_id("one/two/three"), Some("three"));
-        assert_eq!(parse_plug_name("one/two/three"), Some("three"));
+        assert_eq!(parse_plug_name("one/two/three"), Some("two"));
         assert_eq!(parse_plug_name("just/two"), Some("two"));
     }
 

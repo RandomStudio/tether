@@ -5,7 +5,9 @@ use super::three_part_topic::TetherOrCustomTopic;
 
 pub trait PlugDefinitionCommon<'a> {
     fn name(&'a self) -> &'a str;
+    /// Return the generated topic string actually used by the plug
     fn generated_topic(&'a self) -> &'a str;
+    /// Return the custom or Tether Two/Three Part topic
     fn topic(&'a self) -> &'a TetherOrCustomTopic;
     fn qos(&'a self) -> i32;
 }
@@ -70,15 +72,20 @@ impl InputPlugDefinition {
         match incoming_topic {
             TetherOrCustomTopic::Tether(incoming_three_parts) => match &self.topic {
                 TetherOrCustomTopic::Tether(my_tpt) => {
-                    true
-                    // let matches_role =
-                    //     my_tpt.role() == "+" || my_tpt.role().eq(incoming_three_parts.role());
-                    // let matches_id =
-                    //     my_tpt.id() == "+" || my_tpt.id().eq(incoming_three_parts.id());
-                    // let matches_plug_name = my_tpt.plug_name() == "+"
-                    //     || my_tpt.plug_name().eq(incoming_three_parts.plug_name());
-                    // debug!("Test match for plug named \"{}\" with def {:?} against {:?} => matches_role? {}, matches_id? {}, matches_plug_name? {}", &self.name, &self.topic, &incoming_three_parts, matches_role, matches_id, matches_plug_name);
-                    // matches_role && matches_id && matches_plug_name
+                    let matches_role =
+                        my_tpt.role() == "+" || my_tpt.role().eq(incoming_three_parts.role());
+                    let matches_plug_name = my_tpt.plug_name() == "+"
+                        || my_tpt.plug_name().eq(incoming_three_parts.plug_name());
+                    let matches_id = match my_tpt.id() {
+                        Some(specified_id) => match incoming_three_parts.id() {
+                            Some(incoming_id) => specified_id == incoming_id,
+                            None => false,
+                        },
+                        None => true,
+                    };
+
+                    debug!("Test match for plug named \"{}\" with def {:?} against {:?} => matches_role? {}, matches_id? {}, matches_plug_name? {}", &self.name, &self.topic, &incoming_three_parts, matches_role, matches_id, matches_plug_name);
+                    matches_role && matches_id && matches_plug_name
                 }
                 TetherOrCustomTopic::Custom(my_custom_topic) => {
                     debug!(
@@ -176,7 +183,7 @@ impl PlugDefinition {
         }
     }
 
-    pub fn topic(&self) -> &str {
+    pub fn generated_topic(&self) -> &str {
         match self {
             PlugDefinition::InputPlug(p) => p.generated_topic(),
             PlugDefinition::OutputPlug(p) => p.generated_topic(),
@@ -212,18 +219,21 @@ mod tests {
 
         assert_eq!(&plug_def.name, "testPlug");
         assert_eq!(plug_def.generated_topic(), "+/testPlug/#");
-        assert_eq!(parse_plug_name("+/testPlug"), Some("testPlug"));
-        assert_eq!(parse_plug_name("+/testPlug/something"), Some("testPlug"));
+        assert_eq!(parse_plug_name("someRole/testPlug"), Some("testPlug"));
+        assert_eq!(
+            parse_plug_name("someRole/testPlug/something"),
+            Some("testPlug")
+        );
         assert!(
-            plug_def.matches(&TetherOrCustomTopic::Tether(ThreePartTopic::new(
-                "dummy", "testPlug", None
+            plug_def.matches(&TetherOrCustomTopic::Tether(ThreePartTopic::new_three(
+                "dummy", "testPlug", "#"
             )))
         );
         assert!(
-            !plug_def.matches(&TetherOrCustomTopic::Tether(ThreePartTopic::new(
+            !plug_def.matches(&TetherOrCustomTopic::Tether(ThreePartTopic::new_three(
                 "dummy",
                 "anotherPlug",
-                None
+                "#"
             )))
         );
         // assert!(!plug_def.matches(&TetherOrCustomTopic::Custom("dummy/any/anotherPlug".into())));
@@ -244,31 +254,31 @@ mod tests {
         assert_eq!(&plug_def.name, "customPlug");
         assert_eq!(plug_def.generated_topic(), "customRole/customPlug/#");
         assert!(
-            plug_def.matches(&TetherOrCustomTopic::Tether(ThreePartTopic::new(
+            plug_def.matches(&TetherOrCustomTopic::Tether(ThreePartTopic::new_three(
                 "customRole",
                 "customPlug",
-                None
+                "#"
             )))
         );
         assert!(
-            plug_def.matches(&TetherOrCustomTopic::Tether(ThreePartTopic::new(
+            plug_def.matches(&TetherOrCustomTopic::Tether(ThreePartTopic::new_three(
                 "customRole",
                 "customPlug",
-                Some("andAnythingElse")
+                "andAnythingElse"
             )))
         );
         assert!(
-            !plug_def.matches(&TetherOrCustomTopic::Tether(ThreePartTopic::new(
+            !plug_def.matches(&TetherOrCustomTopic::Tether(ThreePartTopic::new_three(
                 "customRole",
                 "notMyPlug",
-                None
+                "#"
             )))
         ); // wrong incoming Plug Name
         assert!(
-            !plug_def.matches(&TetherOrCustomTopic::Tether(ThreePartTopic::new(
+            !plug_def.matches(&TetherOrCustomTopic::Tether(ThreePartTopic::new_three(
                 "someOtherRole",
                 "customPlug",
-                None
+                "#"
             )))
         ); // wrong incoming Role
     }
@@ -288,31 +298,31 @@ mod tests {
         assert_eq!(&plug_def.name, "customPlug");
         assert_eq!(plug_def.generated_topic(), "+/customPlug/specificID");
         assert!(
-            plug_def.matches(&TetherOrCustomTopic::Tether(ThreePartTopic::new(
+            plug_def.matches(&TetherOrCustomTopic::Tether(ThreePartTopic::new_three(
                 "anyRole",
                 "customPlug",
-                Some("specificID"),
+                "specificID",
             )))
         );
         assert!(
-            plug_def.matches(&TetherOrCustomTopic::Tether(ThreePartTopic::new(
+            plug_def.matches(&TetherOrCustomTopic::Tether(ThreePartTopic::new_three(
                 "anotherRole",
                 "customPlug",
-                Some("specificID"),
+                "specificID",
             )))
         ); // wrong incoming Role
         assert!(
-            !plug_def.matches(&TetherOrCustomTopic::Tether(ThreePartTopic::new(
+            !plug_def.matches(&TetherOrCustomTopic::Tether(ThreePartTopic::new_three(
                 "anyRole",
                 "notMyPlug",
-                Some("specificID"),
+                "specificID",
             )))
         ); // wrong incoming Plug Name
         assert!(
-            !plug_def.matches(&TetherOrCustomTopic::Tether(ThreePartTopic::new(
+            !plug_def.matches(&TetherOrCustomTopic::Tether(ThreePartTopic::new_three(
                 "anyRole",
                 "customPlug",
-                Some("anotherID"),
+                "anotherID",
             )))
         ); // wrong incoming ID
     }
@@ -332,13 +342,13 @@ mod tests {
         assert_eq!(&plug_def.name, "customPlug");
         assert_eq!(
             plug_def.generated_topic(),
-            "specificRole/specificID/customPlug"
+            "specificRole/customPlug/specificID"
         );
         assert!(
-            plug_def.matches(&TetherOrCustomTopic::Tether(ThreePartTopic::new(
+            plug_def.matches(&TetherOrCustomTopic::Tether(ThreePartTopic::new_three(
                 "specificRole",
                 "customPlug",
-                Some("specificID"),
+                "specificID",
             )))
         );
         assert!(!plug_def.matches(&TetherOrCustomTopic::Custom(
@@ -382,8 +392,8 @@ mod tests {
 
         // Standard TPT will match
         assert!(
-            plug_def.matches(&TetherOrCustomTopic::Tether(ThreePartTopic::new(
-                "any", "plugName", None
+            plug_def.matches(&TetherOrCustomTopic::Tether(ThreePartTopic::new_three(
+                "any", "plugName", "#"
             )))
         );
 

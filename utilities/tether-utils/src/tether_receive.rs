@@ -36,7 +36,7 @@ pub fn receive(
         .build(tether_agent)
         .expect("failed to create input plug");
 
-    info!("Subscribed to topic \"{}\" ...", input.topic());
+    info!("Subscribed to topic \"{}\" ...", input.generated_topic());
 
     loop {
         let mut did_work = false;
@@ -146,7 +146,7 @@ mod tests {
             .expect("build failed");
 
         assert_eq!(receive_plug.name(), "custom");
-        assert_eq!(receive_plug.topic(), "#");
+        assert_eq!(receive_plug.generated_topic(), "#");
     }
 
     #[test]
@@ -167,7 +167,7 @@ mod tests {
             .expect("build failed");
 
         assert_eq!(receive_plug.name(), "custom");
-        assert_eq!(receive_plug.topic(), "some/special/plug");
+        assert_eq!(receive_plug.generated_topic(), "some/special/plug");
     }
 
     #[test]
@@ -188,7 +188,7 @@ mod tests {
             .expect("build failed");
 
         assert_eq!(receive_plug.name(), "something");
-        assert_eq!(receive_plug.topic(), "+/+/something");
+        assert_eq!(receive_plug.generated_topic(), "+/+/something");
     }
 
     #[test]
@@ -209,7 +209,7 @@ mod tests {
             .expect("build failed");
 
         assert_eq!(receive_plug.name(), "any");
-        assert_eq!(receive_plug.topic(), "something/+/+");
+        assert_eq!(receive_plug.generated_topic(), "something/+/+");
     }
 
     #[test]
@@ -230,7 +230,7 @@ mod tests {
             .expect("build failed");
 
         assert_eq!(receive_plug.name(), "any");
-        assert_eq!(receive_plug.topic(), "+/something/+");
+        assert_eq!(receive_plug.generated_topic(), "+/something/+");
     }
 
     #[test]
@@ -251,7 +251,7 @@ mod tests {
             .expect("build failed");
 
         assert_eq!(receive_plug.name(), "any");
-        assert_eq!(receive_plug.topic(), "x/y/+");
+        assert_eq!(receive_plug.generated_topic(), "x/y/+");
     }
 
     #[test]
@@ -272,7 +272,7 @@ mod tests {
             .expect("build failed");
 
         assert_eq!(receive_plug.name(), "z");
-        assert_eq!(receive_plug.topic(), "x/+/z");
+        assert_eq!(receive_plug.generated_topic(), "x/+/z");
     }
 
     #[test]
@@ -293,7 +293,7 @@ mod tests {
             .expect("build failed");
 
         assert_eq!(receive_plug.name(), "z");
-        assert_eq!(receive_plug.topic(), "x/y/z");
+        assert_eq!(receive_plug.generated_topic(), "x/y/z");
     }
 
     #[test]
@@ -314,6 +314,6 @@ mod tests {
             .expect("build failed");
 
         assert_eq!(receive_plug.name(), "any");
-        assert_eq!(receive_plug.topic(), "+/+/+");
+        assert_eq!(receive_plug.generated_topic(), "+/+/+");
     }
 }

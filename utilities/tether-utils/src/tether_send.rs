@@ -53,7 +53,7 @@ pub fn send(options: &SendOptions, tether_agent: &mut TetherAgent) -> anyhow::Re
         .build(tether_agent)
         .expect("failed to create output plug");
 
-    info!("Sending on topic \"{}\" ...", output.topic());
+    info!("Sending on topic \"{}\" ...", output.generated_topic());
 
     if options.use_dummy_data {
         let payload = DummyData {

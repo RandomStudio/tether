@@ -31,6 +31,7 @@ pub struct TetherAgent {
     message_sender: mpsc::Sender<(TetherOrCustomTopic, Vec<u8>)>,
     message_receiver: mpsc::Receiver<(TetherOrCustomTopic, Vec<u8>)>,
     is_connected: Arc<Mutex<bool>>,
+    auto_connect_enabled: bool,
 }
 
 #[derive(Clone)]
@@ -151,6 +152,7 @@ impl TetherAgentOptionsBuilder {
             message_receiver,
             mqtt_client_id: self.mqtt_client_id,
             is_connected: Arc::new(Mutex::new(false)),
+            auto_connect_enabled: self.auto_connect,
         };
 
         if self.auto_connect {
@@ -168,6 +170,10 @@ impl TetherAgentOptionsBuilder {
 impl TetherAgent {
     pub fn is_connected(&self) -> bool {
         self.client.is_some()
+    }
+
+    pub fn auto_connect_enabled(&self) -> bool {
+        self.auto_connect_enabled
     }
 
     pub fn role(&self) -> &str {

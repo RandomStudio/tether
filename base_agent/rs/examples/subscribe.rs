@@ -32,12 +32,20 @@ fn main() {
     let input_one = PlugOptionsBuilder::create_input("one")
         .build(&mut tether_agent)
         .expect("failed to create input");
-    info!("input one {} = {}", input_one.name(), input_one.topic());
+    info!(
+        "input one {} = {}",
+        input_one.name(),
+        input_one.generated_topic()
+    );
     let input_two = PlugOptionsBuilder::create_input("two")
         .role(Some("specific"))
         .build(&mut tether_agent)
         .expect("failed to create input");
-    info!("input two {} = {}", input_two.name(), input_two.topic());
+    info!(
+        "input two {} = {}",
+        input_two.name(),
+        input_two.generated_topic()
+    );
     let input_empty = PlugOptionsBuilder::create_input("nothing")
         .build(&mut tether_agent)
         .expect("failed to create input");
@@ -56,7 +64,7 @@ fn main() {
     debug!(
         "input everything {} = {}",
         input_everything.name(),
-        input_everything.topic()
+        input_everything.generated_topic()
     );
 
     info!("Checking messages every 1s, 10x...");
