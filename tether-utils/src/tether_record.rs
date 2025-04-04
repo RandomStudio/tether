@@ -7,7 +7,7 @@ use std::{
 
 use clap::Args;
 use log::{debug, info, warn};
-use tether_agent::{PlugOptionsBuilder, TetherAgent};
+use tether_agent::{ChannelOptionsBuilder, TetherAgent};
 
 use crate::tether_playback::{SimulationMessage, SimulationRow};
 
@@ -94,7 +94,7 @@ impl TetherRecordUtil {
     pub fn start_recording(&self, tether_agent: &mut TetherAgent) {
         info!("Tether Record Utility: start recording");
 
-        let _input = PlugOptionsBuilder::create_input("all")
+        let _input = ChannelOptionsBuilder::create_input("all")
             .topic(Some(self.options.topic.clone()).as_deref()) // TODO: should be possible to build TPT
             .build(tether_agent)
             .expect("failed to create input plug");

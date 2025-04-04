@@ -1,7 +1,7 @@
 use clap::Args;
 use log::{debug, error, info, warn};
 use serde::Serialize;
-use tether_agent::{PlugOptionsBuilder, TetherAgent};
+use tether_agent::{ChannelOptionsBuilder, TetherAgent};
 
 #[derive(Args)]
 pub struct SendOptions {
@@ -46,7 +46,7 @@ pub fn send(options: &SendOptions, tether_agent: &mut TetherAgent) -> anyhow::Re
 
     let plug_name = options.plug_name.clone().unwrap_or("testMessages".into());
 
-    let output = PlugOptionsBuilder::create_output(&plug_name)
+    let output = ChannelOptionsBuilder::create_output(&plug_name)
         .role(options.plug_role.as_deref())
         .id(options.plug_id.as_deref())
         .topic(options.plug_topic.as_deref())

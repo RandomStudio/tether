@@ -8,9 +8,10 @@ use std::sync::{Arc, Mutex};
 use std::{sync::mpsc, thread, time::Duration};
 use uuid::Uuid;
 
+use crate::ChannelDefinition;
 use crate::{
-    three_part_topic::{TetherOrCustomTopic, ThreePartTopic},
-    PlugDefinition, PlugDefinitionCommon,
+    tether_compliant_topic::{TetherCompliantTopic, TetherOrCustomTopic},
+    ChannelDefinitionCommon,
 };
 
 const TIMEOUT_SECONDS: u64 = 3;
@@ -66,7 +67,7 @@ impl TetherAgentOptionsBuilder {
         }
     }
 
-    /// Optionally sets the **Tether ID**, as used in auto-generating topics such as `myRole/myID/myPlug` _not_ the MQTT Client ID.
+    /// Optionally sets the **Tether ID**, as used in auto-generating topics such as `myRole/myID/myChannel` _not_ the MQTT Client ID.
     /// Provide Some(value) to override or None to use the default `any` (when publishing) or `+` when subscribing.
     pub fn id(mut self, id: Option<&str>) -> Self {
         self.id = id.map(|x| x.into());
@@ -313,7 +314,7 @@ impl TetherAgent {
                                     debug!("Incoming Publish packet (message received), {:?}", &p);
                                     let topic = p.topic;
                                     let payload: Vec<u8> = p.payload.into();
-                                    match ThreePartTopic::try_from(topic.as_str()) {
+                                    match TetherCompliantTopic::try_from(topic.as_str()) {
                                         Ok(t) => {
                                             message_tx
                                             .send((TetherOrCustomTopic::Tether(t), payload))
@@ -385,20 +386,20 @@ impl TetherAgent {
         }
     }
 
-    /// Given a plug definition and a raw (u8 buffer) payload, generate a message
-    /// on an appropriate topic and with the QOS specified in the Plug Definition
+    /// Given a channel definition and a raw (u8 buffer) payload, generate a message
+    /// on an appropriate topic and with the QOS specified in the Channel Definition
     pub fn publish(
         &self,
-        plug_definition: &PlugDefinition,
+        channel_definition: &ChannelDefinition,
         payload: Option<&[u8]>,
     ) -> anyhow::Result<()> {
-        match plug_definition {
-            PlugDefinition::InputPlug(_) => {
-                panic!("You cannot publish using an Input Plug")
+        match channel_definition {
+            ChannelDefinition::ChannelInput(_) => {
+                panic!("You cannot publish using a Channel Input")
             }
-            PlugDefinition::OutputPlug(output_plug_definition) => {
-                let topic = output_plug_definition.generated_topic();
-                let qos = match output_plug_definition.qos() {
+            ChannelDefinition::ChannelOutput(output_channel_definition) => {
+                let topic = output_channel_definition.generated_topic();
+                let qos = match output_channel_definition.qos() {
                     0 => QoS::AtMostOnce,
                     1 => QoS::AtLeastOnce,
                     2 => QoS::ExactlyOnce,
@@ -410,7 +411,7 @@ impl TetherAgent {
                         .publish(
                             topic,
                             qos,
-                            output_plug_definition.retain(),
+                            output_channel_definition.retain(),
                             payload.unwrap_or_default(),
                         )
                         .map_err(anyhow::Error::msg);
@@ -426,11 +427,11 @@ impl TetherAgent {
     /// Similar to `publish` but serializes the data automatically before sending
     pub fn encode_and_publish<T: Serialize>(
         &self,
-        plug_definition: &PlugDefinition,
+        channel_definition: &ChannelDefinition,
         data: T,
     ) -> anyhow::Result<()> {
         match to_vec_named(&data) {
-            Ok(payload) => self.publish(plug_definition, Some(&payload)),
+            Ok(payload) => self.publish(channel_definition, Some(&payload)),
             Err(e) => {
                 error!("Failed to encode: {e:?}");
                 Err(e.into())

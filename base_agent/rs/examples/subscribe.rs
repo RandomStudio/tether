@@ -4,7 +4,7 @@ use env_logger::{Builder, Env};
 use log::{debug, info, warn};
 use rmp_serde::from_slice;
 use serde::Deserialize;
-use tether_agent::{PlugOptionsBuilder, TetherAgentOptionsBuilder};
+use tether_agent::{ChannelOptionsBuilder, TetherAgentOptionsBuilder};
 
 #[derive(Deserialize, Debug)]
 struct CustomMessage {
@@ -29,7 +29,7 @@ fn main() {
         .build()
         .expect("failed to init Tether agent");
 
-    let input_one = PlugOptionsBuilder::create_input("one")
+    let input_one = ChannelOptionsBuilder::create_input("one")
         .build(&mut tether_agent)
         .expect("failed to create input");
     info!(
@@ -37,7 +37,7 @@ fn main() {
         input_one.name(),
         input_one.generated_topic()
     );
-    let input_two = PlugOptionsBuilder::create_input("two")
+    let input_two = ChannelOptionsBuilder::create_input("two")
         .role(Some("specific"))
         .build(&mut tether_agent)
         .expect("failed to create input");
@@ -46,16 +46,16 @@ fn main() {
         input_two.name(),
         input_two.generated_topic()
     );
-    let input_empty = PlugOptionsBuilder::create_input("nothing")
+    let input_empty = ChannelOptionsBuilder::create_input("nothing")
         .build(&mut tether_agent)
         .expect("failed to create input");
 
-    let input_everything = PlugOptionsBuilder::create_input("everything")
+    let input_everything = ChannelOptionsBuilder::create_input("everything")
         .topic(Some("#"))
         .build(&mut tether_agent)
         .expect("failed to create input");
 
-    let input_specify_id = PlugOptionsBuilder::create_input("groupMessages")
+    let input_specify_id = ChannelOptionsBuilder::create_input("groupMessages")
         .id(Some("someGroup"))
         .name(None)
         .build(&mut tether_agent)

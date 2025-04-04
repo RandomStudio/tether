@@ -3,7 +3,7 @@ use std::{thread, time::Duration};
 use env_logger::{Builder, Env};
 use log::{debug, info};
 use serde::Serialize;
-use tether_agent::{PlugOptionsBuilder, TetherAgentOptionsBuilder};
+use tether_agent::{ChannelOptionsBuilder, TetherAgentOptionsBuilder};
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -25,21 +25,21 @@ fn main() {
     let (role, id, _) = tether_agent.description();
     info!("Created agent OK: {}, {}", role, id);
 
-    let empty_message_output = PlugOptionsBuilder::create_output("nothing")
+    let empty_message_output = ChannelOptionsBuilder::create_output("nothing")
         .build(&mut tether_agent)
         .expect("failed to create output");
-    let boolean_message_output = PlugOptionsBuilder::create_output("one")
+    let boolean_message_output = ChannelOptionsBuilder::create_output("one")
         .build(&mut tether_agent)
         .expect("failed to create output");
-    let custom_output = PlugOptionsBuilder::create_output("two")
+    let custom_output = ChannelOptionsBuilder::create_output("two")
         .topic(Some("custom/custom/two"))
         .build(&mut tether_agent)
         .expect("failed to create output");
-    let grouped_output_1 = PlugOptionsBuilder::create_output("one")
+    let grouped_output_1 = ChannelOptionsBuilder::create_output("one")
         .id(Some("groupMessages"))
         .build(&mut tether_agent)
         .expect("failed to create output");
-    let grouped_output_2 = PlugOptionsBuilder::create_output("two")
+    let grouped_output_2 = ChannelOptionsBuilder::create_output("two")
         .id(Some("groupMessages"))
         .build(&mut tether_agent)
         .expect("failed to create output");

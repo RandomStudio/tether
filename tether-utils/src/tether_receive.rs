@@ -1,6 +1,6 @@
 use clap::Args;
 use log::{debug, error, info, warn};
-use tether_agent::{three_part_topic::TetherOrCustomTopic, PlugOptionsBuilder, TetherAgent};
+use tether_agent::{three_part_topic::TetherOrCustomTopic, ChannelOptionsBuilder, TetherAgent};
 
 #[derive(Args, Default)]
 pub struct ReceiveOptions {
@@ -72,7 +72,7 @@ pub fn receive(
     }
 }
 
-fn build_receiver_plug(options: &ReceiveOptions) -> PlugOptionsBuilder {
+fn build_receiver_plug(options: &ReceiveOptions) -> ChannelOptionsBuilder {
     if options.subscribe_id.is_some()
         || options.subscribe_role.is_some()
         || options.subscribe_plug_name.is_some()
@@ -81,7 +81,7 @@ fn build_receiver_plug(options: &ReceiveOptions) -> PlugOptionsBuilder {
             "TPT Overrides apply: {:?}, {:?}, {:?}",
             &options.subscribe_id, &options.subscribe_role, &options.subscribe_plug_name
         );
-        PlugOptionsBuilder::create_input(match &options.subscribe_plug_name {
+        ChannelOptionsBuilder::create_input(match &options.subscribe_plug_name {
             Some(provided_name) => {
                 if provided_name.as_str() == "+" {
                     "any"
@@ -120,7 +120,7 @@ fn build_receiver_plug(options: &ReceiveOptions) -> PlugOptionsBuilder {
             "Using custom override topic \"{:?}\"",
             &options.subscribe_topic
         );
-        PlugOptionsBuilder::create_input("custom")
+        ChannelOptionsBuilder::create_input("custom")
             .topic(Some(options.subscribe_topic.as_deref().unwrap_or("#")))
     }
 }

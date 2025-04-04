@@ -1,6 +1,6 @@
 pub mod agent;
-pub mod plugs;
+pub mod channels;
 
 pub use agent::*;
-pub use plugs::*;
+pub use channels::*;
 pub use rumqttc as mqtt;
