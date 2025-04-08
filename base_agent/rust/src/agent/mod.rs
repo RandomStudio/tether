@@ -424,8 +424,8 @@ impl TetherAgent {
         }
     }
 
-    /// Similar to `publish` but serializes the data automatically before sending
-    pub fn encode_and_publish<T: Serialize>(
+    /// Similar to `send` but serializes the data automatically before sending
+    pub fn encode_and_send<T: Serialize>(
         &self,
         channel_definition: &ChannelDefinition,
         data: T,

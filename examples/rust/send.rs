@@ -60,7 +60,7 @@ fn main() {
             name: "hello".into(),
         };
         tether_agent
-            .encode_and_publish(&custom_output, custom_message)
+            .encode_and_send(&custom_output, custom_message)
             .unwrap();
 
         info!("#{i}: Sending grouped messages...");

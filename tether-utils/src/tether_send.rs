@@ -63,7 +63,7 @@ pub fn send(options: &SendOptions, tether_agent: &mut TetherAgent) -> anyhow::Re
             a_string: "hello world".into(),
         };
         info!("Sending dummy data {:?}", payload);
-        return match tether_agent.encode_and_publish(&channel, &payload) {
+        return match tether_agent.encode_and_send(&channel, &payload) {
             Ok(_) => {
                 info!("Sent dummy data message OK");
                 Ok(())

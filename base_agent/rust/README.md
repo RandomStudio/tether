@@ -1,21 +1,22 @@
 # Tether Agent for Rust
 
-## Examples
+## Create and Connect
 
-Build an agent using defaults, and connect it automatically:
+Build a Tether Agent using defaults, and connect it automatically:
 
 ```
- let agent = TetherAgentOptionsBuilder::new("RustDemoAgent")
+ let mut agent = TetherAgentOptionsBuilder::new("RustDemoAgent")
         .build()
         .expect("failed to connect Tether");
 ```
 
-Create an Output Plug, passing in a ref to the Tether Agent you created:
+## Send Messages
+Create a Channel Sender, passing in a ref to the Tether Agent you created:
 
 ```
-    let custom_output = PlugOptionsBuilder::create_output("customValues")
-        .build(&agent)
-        .expect("failed to create output");
+    let sender_definition = PlugOptionsBuilder::create_sender("customValues")
+        .build(&mut agent)
+        .expect("failed to create sender");
 
 ```
 
@@ -34,50 +35,28 @@ struct CustomStruct {
             bar: 0.42,
         };
         agent
-            .encode_and_publish(&custom_output, custom_message)
+            .encode_and_publish(&sender_definition, custom_message)
             .unwrap();
 ```
 
-Or create an Input Plug:
+Or encode first and use `agent.send`
 
+## Receive Messages
+Create a Channel Receiver:
 ```
-    let input_one = PlugOptionsBuilder::create_input("customValues")
-        .build(&agent)
-        .expect("failed to create input");
+    let receiver_defintion = PlugOptionsBuilder::create_input("customValues")
+        .build(&mut agent)
+        .expect("failed to create receiver");
 ```
 
 And check for messages synchronously:
 
 ```
-if let Some((plug_name, message)) = agent.check_messages() {
-            if &input_one.name == plug_name.as_str() {
-               // Always check against the plug name(s) you're looking for!
+if let Some((topic, payload)) = agent.check_messages() {
+  // Always check against the Channel this message "belongs" to!
+  if receiver_defintion.matches(&topic) {
+      // Decode the message payload, if applicable
+      let decoded = rmp_serde::from_slice::<CustomStruct>::(&payload);
+      ...
+  }
 ```
-
-## Approach
-
-This "Base Agent" implementation assumes that the client (your application) will retain ownership of any Input and Output Plugs, as well as the instance of the TetherAgent struct.
-
-This means that the TetherAgent retains no "memory" of any Input or Output Plugs that you have created.
-Therefore, you must keep your own individual variables which reference the Plugs you have created, or store them in a `Vec<&PlugDefinition>` as necessary.
-
-## Publishing
-
-The following functions can be called on the `TetherAgent` instance:
-
-- `publish`: expects an already-encoded Vector slice of u8 (i.e. a buffer)
-- `encode_and_publish`: can automatically encode any data type or struct to a valid message as long as the `data` implements the Serde `Serialize` trait
-
-In both cases, you provide a pointer to the `PlugDefinition` so that the Agent can publish on the appropriate topic with the correct QOS for the plug.
-
-## Subscribing
-
-The `create_input_plug` function has a side effect: the client subscription.
-
-For now, checking messages is done synchronously. The same function should be called as often as possible (e.g. once per frame or on a timed thread, etc.) on the `TetherAgent` instance:
-
-- `check_messages`
-
-Note that in the case of subscribing (Input Plugs) you do not need to pass the plug definition. This means that **you** need to check any returned messages against the plug name(s) you want to match against for your Input Plug(s).
-
-This is why `check_messages` returns Some(String, Message) where the String is the plug name - this will be parsed automatically from the message topic.
