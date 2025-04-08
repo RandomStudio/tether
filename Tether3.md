@@ -22,8 +22,10 @@ Unused "utilities" and the "explorer" will be removed.
 
 ## Proposed Terminology Changes
 - Rename "ThreePartTopic" to "TetherCompliantTopic" (TCT).
-- Use "Channel" instead of "Plug". This was an old proposal from the beginning of the project, and arguably makes much more sense since it clearly defines the intention to filter everything by the "type" of message expected to be sent or received at either end.
-- Instead of "InputPlug" and "OutputPlug", the word order will be reversed to "ChannelInput" and "ChannelOutput". This reflects the idea that a "Channel" is a single thing, but may have multiple "ChannelInputs" and "ChannelOutputs" at either end.
+- Use "Channel" instead of "Plug". This was an old proposal from the beginning of the project, and arguably makes much more sense since it clearly defines the intention to filter everything by the "type" of message expected to be sent or received.
+- Instead of "InputPlug" and "OutputPlug", the word order will be reversed to "ChannelReceiver" and "ChannelSender". This reflects the idea that a "Channel" is a single thing, but may have multiple "ChannelReceivers" and "ChannelSenders" at either end.
+- Instead of "publishing", we can simply talk about "sending", i.e. `channel.send()` rather than `plug.publish()`
 
 ## New examples
 TouchDesigner and ESP32 examples should include both publishing and subscribing examples.
+An example of integration from P5JS would be a good idea. Optionally, Cables.GL as well.

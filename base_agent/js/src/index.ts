@@ -1,6 +1,6 @@
 import { IClientOptions } from "async-mqtt";
 import { BROWSER, NODEJS } from "./defaults";
-import { ChannelInput, ChannelOutput } from "./Channel";
+import { ChannelReceiver, ChannelSender } from "./Channel";
 import logger from "loglevel";
 import { encode, decode } from "@msgpack/msgpack";
 import { TetherAgent } from "./Agent";
@@ -12,4 +12,4 @@ export {
 
 logger.setLevel("info");
 export { logger, BROWSER, NODEJS, encode, decode };
-export { TetherAgent, ChannelInput, ChannelOutput, IClientOptions };
+export { TetherAgent, ChannelReceiver, ChannelSender, IClientOptions };
