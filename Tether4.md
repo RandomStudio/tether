@@ -28,6 +28,8 @@ Unused "utilities" and the "explorer" will be removed.
 - The term "receiving" will be preferred, but "subscribe" can still be used when actually relevant (especially internally)
 
 ## New examples
+Check that the React example works and is up to date!
+Svelte example, please!
 TouchDesigner (Python) and ESP32 (C++) examples should include both sending and receiving examples.
 An example of integration from P5JS would be a good idea. Optionally, Cables.GL as well.
 

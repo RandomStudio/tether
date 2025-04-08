@@ -32,7 +32,7 @@ const main = async () => {
 
   console.log("Agent instance", agent.getConfig(), agent.getIsConnected());
 
-  // Demonstrate Publishing
+  // Demonstrate Sending
   const channelSender = new ChannelSender(agent, "randomValue");
   const fastChannelSender = new ChannelSender(agent, "fastValues");
   const emptyChannelSender = new ChannelSender(agent, "emptyMessage");
