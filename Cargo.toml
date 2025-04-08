@@ -1,6 +1,6 @@
 [workspace]
 
-members = ["base_agent/rs", "tether-utils"]
+members = ["base_agent/rust", "tether-utils"]
 resolver = "2"
 
 # The profile that 'dist' will build with
