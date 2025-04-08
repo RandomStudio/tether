@@ -2,11 +2,11 @@ use std::fmt;
 
 use super::{parse_agent_id, parse_agent_role, parse_plug_name};
 
-/// Role, IDs, OutputPlugs
+/// Role, IDs, Channels
 pub struct AgentTree {
     pub role: String,
     pub ids: Vec<String>,
-    pub output_plugs: Vec<String>,
+    pub channels: Vec<String>,
 }
 
 impl AgentTree {
@@ -34,7 +34,7 @@ impl AgentTree {
                 acc
             });
 
-        let output_plugs = topics_this_agent
+        let channels = topics_this_agent
             .clone()
             .fold(Vec::new(), |mut acc, topic| {
                 if let Some(p) = parse_plug_name(&topic) {
@@ -46,7 +46,7 @@ impl AgentTree {
         AgentTree {
             role: role.into(),
             ids: ids.to_vec(),
-            output_plugs: output_plugs.to_vec(),
+            channels: channels.to_vec(),
         }
     }
 }
@@ -56,14 +56,14 @@ impl fmt::Display for AgentTree {
         let Self {
             role,
             ids,
-            output_plugs,
+            channels,
         } = self;
         let ids_list = ids
             .iter()
             .fold(String::from(""), |acc, x| format!("{}\n    - {}", acc, x));
-        let output_plugs_list = output_plugs.iter().fold(String::from(""), |acc, x| {
+        let channels_list = channels.iter().fold(String::from(""), |acc, x| {
             format!("{}\n        - {}", acc, x)
         });
-        write!(f, "\n{}\n {}\n {}\n", role, ids_list, output_plugs_list)
+        write!(f, "\n{}\n {}\n {}\n", role, ids_list, channels_list)
     }
 }

@@ -90,12 +90,14 @@ fn main() {
         });
 
     match &cli.command {
-        Commands::Receive(options) => {
-            tether_receive::receive(options, &mut tether_agent, |_plug_name, topic, decoded| {
+        Commands::Receive(options) => tether_receive::receive(
+            options,
+            &mut tether_agent,
+            |_channel_name, topic, decoded| {
                 let contents = decoded.unwrap_or("(empty/invalid message)".into());
                 info!("Received on topic \"{}\" :: \n{}\n", topic, contents);
-            })
-        }
+            },
+        ),
         Commands::Send(options) => {
             tether_send::send(options, &mut tether_agent)
                 .unwrap_or_else(|e| error!("Failed to send: {}", e));

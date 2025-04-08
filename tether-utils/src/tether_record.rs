@@ -94,10 +94,12 @@ impl TetherRecordUtil {
     pub fn start_recording(&self, tether_agent: &mut TetherAgent) {
         info!("Tether Record Utility: start recording");
 
-        let _input = ChannelOptionsBuilder::create_input("all")
+        // The channel definition is never actually used, since we do no matching from topics to channel!
+        // But we must set it up so that subscription happens.
+        let _channel_def = ChannelOptionsBuilder::create_receiver("all")
             .topic(Some(self.options.topic.clone()).as_deref()) // TODO: should be possible to build TPT
             .build(tether_agent)
-            .expect("failed to create input plug");
+            .expect("failed to create Channel Receiver");
 
         let file_path = match &self.options.file_override_path {
             Some(override_path) => String::from(override_path),

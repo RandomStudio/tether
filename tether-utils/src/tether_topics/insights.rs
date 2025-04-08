@@ -1,5 +1,7 @@
 use circular_buffer::CircularBuffer;
-use tether_agent::{three_part_topic::TetherOrCustomTopic, ChannelOptionsBuilder, TetherAgent};
+use tether_agent::{
+    tether_compliant_topic::TetherOrCustomTopic, ChannelOptionsBuilder, TetherAgent,
+};
 
 use crate::tether_topics::{agent_tree::AgentTree, sampler::Sampler};
 use std::{
@@ -43,7 +45,7 @@ impl Insights {
         if !tether_agent.is_connected() {
             panic!("Insights utility needs already-connected Tether Agent");
         }
-        let _input_plug = ChannelOptionsBuilder::create_input("monitor")
+        let _channel = ChannelOptionsBuilder::create_receiver("monitor")
             .topic(Some(options.topic.clone()).as_deref())
             .build(tether_agent)
             .expect("failed to connect Tether");

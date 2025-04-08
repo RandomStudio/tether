@@ -44,16 +44,16 @@ struct DummyData {
 pub fn send(options: &SendOptions, tether_agent: &mut TetherAgent) -> anyhow::Result<()> {
     info!("Tether Send Utility");
 
-    let plug_name = options.plug_name.clone().unwrap_or("testMessages".into());
+    let channel_name = options.plug_name.clone().unwrap_or("testMessages".into());
 
-    let output = ChannelOptionsBuilder::create_output(&plug_name)
+    let channel = ChannelOptionsBuilder::create_sender(&channel_name)
         .role(options.plug_role.as_deref())
         .id(options.plug_id.as_deref())
         .topic(options.plug_topic.as_deref())
         .build(tether_agent)
-        .expect("failed to create output plug");
+        .expect("failed to create Channel Sender");
 
-    info!("Sending on topic \"{}\" ...", output.generated_topic());
+    info!("Sending on topic \"{}\" ...", channel.generated_topic());
 
     if options.use_dummy_data {
         let payload = DummyData {
@@ -63,7 +63,7 @@ pub fn send(options: &SendOptions, tether_agent: &mut TetherAgent) -> anyhow::Re
             a_string: "hello world".into(),
         };
         info!("Sending dummy data {:?}", payload);
-        return match tether_agent.encode_and_publish(&output, &payload) {
+        return match tether_agent.encode_and_publish(&channel, &payload) {
             Ok(_) => {
                 info!("Sent dummy data message OK");
                 Ok(())
@@ -83,7 +83,7 @@ pub fn send(options: &SendOptions, tether_agent: &mut TetherAgent) -> anyhow::Re
                     let payload =
                         rmp_serde::to_vec_named(&encoded).expect("failed to encode msgpack");
                     tether_agent
-                        .publish(&output, Some(&payload))
+                        .send(&channel, Some(&payload))
                         .expect("failed to publish");
                     info!("Sent message OK");
                     Ok(())
@@ -96,7 +96,7 @@ pub fn send(options: &SendOptions, tether_agent: &mut TetherAgent) -> anyhow::Re
         }
         None => {
             warn!("Sending empty message");
-            match tether_agent.publish(&output, None) {
+            match tether_agent.send(&channel, None) {
                 Ok(_) => {
                     info!("Sent empty message OK");
                     Ok(())
