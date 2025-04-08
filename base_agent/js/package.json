@@ -1,6 +1,6 @@
 {
   "name": "tether-agent",
-  "version": "3.2.1",
+  "version": "4.0.0",
   "description": "",
   "main": "dist/index.js",
   "scripts": {
@@ -8,7 +8,7 @@
     "build": "npm run test && npx tsc",
     "prepare": "npm run build"
   },
-  "author": "",
+  "author": "Random Studio",
   "license": "ISC",
   "repository": "https://github.com/RandomStudio/tether",
   "dependencies": {

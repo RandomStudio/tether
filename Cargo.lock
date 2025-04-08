@@ -1528,7 +1528,7 @@ dependencies = [
 
 [[package]]
 name = "tether-agent"
-version = "0.14.2"
+version = "3.0.0"
 dependencies = [
  "anyhow",
  "env_logger",
