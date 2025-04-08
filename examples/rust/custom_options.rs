@@ -14,17 +14,17 @@ fn main() {
         .build()
         .expect("failed to create Tether Agent");
 
-    let output_plug = ChannelOptionsBuilder::create_output("anOutput")
+    let sender_channel = ChannelOptionsBuilder::create_sender("anOutput")
         .role(Some("pretendingToBeSomethingElse"))
         .qos(Some(2))
         .retain(Some(true))
         .build(&mut tether_agent)
-        .expect("failed to create output plug");
-    let input_wildcard_plug = ChannelOptionsBuilder::create_input("everything")
+        .expect("failed to create sender channel");
+    let input_wildcard_channel = ChannelOptionsBuilder::create_receiver("everything")
         .topic(Some("#"))
         .build(&mut tether_agent);
 
-    let input_customid_plug = ChannelOptionsBuilder::create_input("someData")
+    let input_customid_channel = ChannelOptionsBuilder::create_receiver("someData")
         .role(None) // i.e., just use default
         .id(Some("specificIDonly"))
         .build(&mut tether_agent);
@@ -34,21 +34,21 @@ fn main() {
     assert_eq!(role, "example");
     assert_eq!(id, "any"); // because we set None
 
-    if let ChannelDefinition::ChannelOutput(p) = &output_plug {
-        println!("output plug: {:?}", p);
+    if let ChannelDefinition::ChannelSender(p) = &sender_channel {
+        println!("sender channel: {:?}", p);
         assert_eq!(
             p.generated_topic(),
             "pretendingToBeSomethingElse/any/anOutput"
         );
     }
 
-    println!("wildcard input plug: {:?}", input_wildcard_plug);
-    println!("speific ID input plug: {:?}", input_customid_plug);
+    println!("wildcard input channel: {:?}", input_wildcard_channel);
+    println!("speific ID input channel: {:?}", input_customid_channel);
 
     let payload =
         rmp_serde::to_vec::<String>(&String::from("boo")).expect("failed to serialise payload");
     tether_agent
-        .publish(&output_plug, Some(&payload))
+        .send(&sender_channel, Some(&payload))
         .expect("failed to publish");
 
     std::thread::sleep(Duration::from_millis(4000));

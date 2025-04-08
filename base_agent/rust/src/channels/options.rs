@@ -7,10 +7,10 @@ use crate::{
 };
 
 use super::{
-    tether_compliant_topic::TetherOrCustomTopic, ChannelInputDefinition, ChannelOutputDefinition,
+    tether_compliant_topic::TetherOrCustomTopic, ChannelReceiverDefinition, ChannelSenderDefinition,
 };
 
-pub struct ChannelInputOptions {
+pub struct ChannelReceiverOptions {
     channel_name: String,
     qos: Option<i32>,
     override_subscribe_role: Option<String>,
@@ -19,7 +19,7 @@ pub struct ChannelInputOptions {
     override_topic: Option<String>,
 }
 
-pub struct ChannelOutputOptions {
+pub struct ChannelSenderOptions {
     channel_name: String,
     qos: Option<i32>,
     override_publish_role: Option<String>,
@@ -28,18 +28,18 @@ pub struct ChannelOutputOptions {
     retain: Option<bool>,
 }
 
-/// This is the definition of a Channel Input or Output.
+/// This is the definition of a Channel Receiver or Sender.
 ///
 /// You typically don't use an instance of this directly; call `.build()` at the
 /// end of the chain to get a usable **ChannelDefinition**
 pub enum ChannelOptionsBuilder {
-    ChannelInput(ChannelInputOptions),
-    ChannelOutput(ChannelOutputOptions),
+    ChannelReceiver(ChannelReceiverOptions),
+    ChannelSender(ChannelSenderOptions),
 }
 
 impl ChannelOptionsBuilder {
-    pub fn create_input(name: &str) -> ChannelOptionsBuilder {
-        ChannelOptionsBuilder::ChannelInput(ChannelInputOptions {
+    pub fn create_receiver(name: &str) -> ChannelOptionsBuilder {
+        ChannelOptionsBuilder::ChannelReceiver(ChannelReceiverOptions {
             channel_name: String::from(name),
             override_subscribe_id: None,
             override_subscribe_role: None,
@@ -49,8 +49,8 @@ impl ChannelOptionsBuilder {
         })
     }
 
-    pub fn create_output(name: &str) -> ChannelOptionsBuilder {
-        ChannelOptionsBuilder::ChannelOutput(ChannelOutputOptions {
+    pub fn create_sender(name: &str) -> ChannelOptionsBuilder {
+        ChannelOptionsBuilder::ChannelSender(ChannelSenderOptions {
             channel_name: String::from(name),
             override_publish_id: None,
             override_publish_role: None,
@@ -62,31 +62,31 @@ impl ChannelOptionsBuilder {
 
     pub fn qos(mut self, qos: Option<i32>) -> Self {
         match &mut self {
-            ChannelOptionsBuilder::ChannelInput(s) => s.qos = qos,
-            ChannelOptionsBuilder::ChannelOutput(s) => s.qos = qos,
+            ChannelOptionsBuilder::ChannelReceiver(s) => s.qos = qos,
+            ChannelOptionsBuilder::ChannelSender(s) => s.qos = qos,
         };
         self
     }
 
     /**
     Override the "role" part of the topic that gets generated for this Channel.
-    - For Channel Inputs, this means you want to be specific about the Role part
+    - For Channel Receivers, this means you want to be specific about the Role part
       of the topic, instead of using the default wildcard `+` at this location
-    - For Channel Outputs, this means you want to override the Role part instead
+    - For Channel Senders, this means you want to override the Role part instead
       of using your Agent's "own" Role with which you created the Tether Agent
 
     If you override the entire topic using `.topic` this will be ignored.
     */
     pub fn role(mut self, role: Option<&str>) -> Self {
         match &mut self {
-            ChannelOptionsBuilder::ChannelInput(s) => {
+            ChannelOptionsBuilder::ChannelReceiver(s) => {
                 if s.override_topic.is_some() {
                     error!("Override topic was also provided; this will take precedence");
                 } else {
                     s.override_subscribe_role = role.map(|s| s.into());
                 }
             }
-            ChannelOptionsBuilder::ChannelOutput(s) => {
+            ChannelOptionsBuilder::ChannelSender(s) => {
                 if s.override_topic.is_some() {
                     error!("Override topic was also provided; this will take precedence");
                 } else {
@@ -99,9 +99,9 @@ impl ChannelOptionsBuilder {
 
     /**
     Override the "id" part of the topic that gets generated for this Channel.
-    - For Channel Inputs, this means you want to be specific about the ID part
+    - For Channel Receivers, this means you want to be specific about the ID part
       of the topic, instead of using the default wildcard `+` at this location
-    - For Channel Outputs, this means you want to override the ID part instead
+    - For Channel Senders, this means you want to override the ID part instead
       of using your Agent's "own" ID which you specified (or left blank, i.e. "any")
       when creating the Tether Agent
 
@@ -109,14 +109,14 @@ impl ChannelOptionsBuilder {
     */
     pub fn id(mut self, id: Option<&str>) -> Self {
         match &mut self {
-            ChannelOptionsBuilder::ChannelInput(s) => {
+            ChannelOptionsBuilder::ChannelReceiver(s) => {
                 if s.override_topic.is_some() {
                     error!("Override topic was also provided; this will take precedence");
                 } else {
                     s.override_subscribe_id = id.map(|s| s.into());
                 }
             }
-            ChannelOptionsBuilder::ChannelOutput(s) => {
+            ChannelOptionsBuilder::ChannelSender(s) => {
                 if s.override_topic.is_some() {
                     error!("Override topic was also provided; this will take precedence");
                 } else {
@@ -129,35 +129,35 @@ impl ChannelOptionsBuilder {
 
     /// Override the "name" part of the topic that gets generated for this Channel.
     /// This is mainly to facilitate wildcard subscriptions such as
-    /// `someRole/someID/+` instead of `someRole/someID/originalChannelName`.
+    /// `someRole/+` instead of `someRole/originalChannelName`.
     ///
-    /// In the case of Input Topics, a wildcard `+` can be used to substitute
+    /// In the case of Receiver Topics, a wildcard `+` can be used to substitute
     /// the last part of the topic as in `role/id/+`
     ///
-    /// Channel Outputs will ignore (with an error) any attempt to change the name after
+    /// Channel Senders will ignore (with an error) any attempt to change the name after
     /// instantiation.
     pub fn name(mut self, override_channel_name: Option<&str>) -> Self {
         match &mut self {
-            ChannelOptionsBuilder::ChannelInput(opt) => {
+            ChannelOptionsBuilder::ChannelReceiver(opt) => {
                 if opt.override_topic.is_some() {
                     error!("Override topic was also provided; this will take precedence");
                 }
                 if override_channel_name.is_some() {
                     opt.override_subscribe_channel_name = override_channel_name.map(|s| s.into());
                 } else {
-                    debug!("Override Channel name set to None; will use original name \"{}\" given in ::create_input constructor", opt.channel_name);
+                    debug!("Override Channel name set to None; will use original name \"{}\" given in ::create_receiver constructor", opt.channel_name);
                 }
             }
-            ChannelOptionsBuilder::ChannelOutput(_) => {
+            ChannelOptionsBuilder::ChannelSender(_) => {
                 error!(
-                    "Channel Outputs cannot change their name part after ::create_output constructor"
+                    "Channel Senders cannot change their name part after ::create_sender constructor"
                 );
             }
         };
         self
     }
 
-    /// Call this if you would like your Channel Input to match **any channel**.
+    /// Call this if you would like your Channel Receiver to match **any channel**.
     /// This is equivalent to `.name(Some("+"))` but is provided for convenience
     /// since it does not require you to remember the wildcard string.
     ///
@@ -165,15 +165,15 @@ impl ChannelOptionsBuilder {
     /// subscription match by Role and/or ID. So, for example, if you are
     /// interested in **all messages** from an Agent with the role `"brain"`,
     /// it is valid to create a channel with `.role("brain").any_channel()` and this
-    /// will subscribe to `"brain/+/+"` as expected.
+    /// will subscribe to `"brain/+/#"` as expected.
     pub fn any_channel(mut self) -> Self {
         match &mut self {
-            ChannelOptionsBuilder::ChannelInput(opt) => {
+            ChannelOptionsBuilder::ChannelReceiver(opt) => {
                 opt.override_subscribe_channel_name = Some("+".into());
             }
-            ChannelOptionsBuilder::ChannelOutput(_) => {
+            ChannelOptionsBuilder::ChannelSender(_) => {
                 error!(
-                    "Channel Outputs cannot change their name part after ::create_output constructor"
+                    "Channel Senders cannot change their name part after ::create_sender constructor"
                 );
             }
         }
@@ -182,7 +182,7 @@ impl ChannelOptionsBuilder {
 
     /// Override the final topic to use for publishing or subscribing. The provided topic **will** be checked
     /// against the Tether Compliant Topic (TCT) convention, but the function **will not** reject topic strings - just
-    /// produce a warning. It's therefore valid to use a wildcard such as "#", for Inputs (subscribing).
+    /// produce a warning. It's therefore valid to use a wildcard such as "#", for Receivers (subscribing).
     ///
     /// Any customisations specified using `.role(...)` or `.id(...)` will be ignored if this function is called
     /// after these.
@@ -202,14 +202,14 @@ impl ChannelOptionsBuilder {
                     );
                 }
                 match &mut self {
-                    ChannelOptionsBuilder::ChannelInput(s) => s.override_topic = Some(t.into()),
-                    ChannelOptionsBuilder::ChannelOutput(s) => s.override_topic = Some(t.into()),
+                    ChannelOptionsBuilder::ChannelReceiver(s) => s.override_topic = Some(t.into()),
+                    ChannelOptionsBuilder::ChannelSender(s) => s.override_topic = Some(t.into()),
                 };
             }
             None => {
                 match &mut self {
-                    ChannelOptionsBuilder::ChannelInput(s) => s.override_topic = None,
-                    ChannelOptionsBuilder::ChannelOutput(s) => s.override_topic = None,
+                    ChannelOptionsBuilder::ChannelReceiver(s) => s.override_topic = None,
+                    ChannelOptionsBuilder::ChannelSender(s) => s.override_topic = None,
                 };
             }
         }
@@ -218,10 +218,10 @@ impl ChannelOptionsBuilder {
 
     pub fn retain(mut self, should_retain: Option<bool>) -> Self {
         match &mut self {
-            Self::ChannelInput(_) => {
-                error!("Cannot set retain flag on Input / subscription");
+            Self::ChannelReceiver(_) => {
+                error!("Cannot set retain flag on Receiver / subscription");
             }
-            Self::ChannelOutput(s) => {
+            Self::ChannelSender(s) => {
                 s.retain = should_retain;
             }
         }
@@ -232,7 +232,7 @@ impl ChannelOptionsBuilder {
     /// provided) and return a valid ChannelDefinition that you can actually use.
     pub fn build(self, tether_agent: &mut TetherAgent) -> anyhow::Result<ChannelDefinition> {
         match self {
-            Self::ChannelInput(channel_options) => {
+            Self::ChannelReceiver(channel_options) => {
                 let tpt: TetherOrCustomTopic = match channel_options.override_topic {
                     Some(custom) => TetherOrCustomTopic::Custom(custom),
                     None => {
@@ -247,7 +247,7 @@ impl ChannelOptionsBuilder {
                         ))
                     }
                 };
-                let channel_definition = ChannelInputDefinition::new(
+                let channel_definition = ChannelReceiverDefinition::new(
                     &channel_options.channel_name,
                     tpt,
                     channel_options.qos,
@@ -256,7 +256,7 @@ impl ChannelOptionsBuilder {
                 // This is really only useful for testing purposes.
                 if !tether_agent.auto_connect_enabled() {
                     warn!("Auto-connect is disabled, skipping subscription");
-                    return Ok(ChannelDefinition::ChannelInput(channel_definition));
+                    return Ok(ChannelDefinition::ChannelReceiver(channel_definition));
                 }
 
                 if let Some(client) = &tether_agent.client {
@@ -275,7 +275,7 @@ impl ChannelOptionsBuilder {
                                 channel_definition.generated_topic()
                             );
                             debug!("Server respond OK for subscribe: {res:?}");
-                            Ok(ChannelDefinition::ChannelInput(channel_definition))
+                            Ok(ChannelDefinition::ChannelReceiver(channel_definition))
                         }
                         Err(_e) => Err(anyhow!("ClientError")),
                     }
@@ -283,7 +283,7 @@ impl ChannelOptionsBuilder {
                     Err(anyhow!("Client not available for subscription"))
                 }
             }
-            Self::ChannelOutput(channel_options) => {
+            Self::ChannelSender(channel_options) => {
                 let tpt: TetherOrCustomTopic = match channel_options.override_topic {
                     Some(custom) => {
                         warn!(
@@ -313,13 +313,13 @@ impl ChannelOptionsBuilder {
                     }
                 };
 
-                let channel_definition = ChannelOutputDefinition::new(
+                let channel_definition = ChannelSenderDefinition::new(
                     &channel_options.channel_name,
                     tpt,
                     channel_options.qos,
                     channel_options.retain,
                 );
-                Ok(ChannelDefinition::ChannelOutput(channel_definition))
+                Ok(ChannelDefinition::ChannelSender(channel_definition))
             }
         }
     }
@@ -337,103 +337,106 @@ mod tests {
     // }
 
     #[test]
-    fn default_input_channel() {
+    fn default_receiver_channel() {
         // verbose_logging();
         let mut tether_agent = TetherAgentOptionsBuilder::new("tester")
             .auto_connect(false)
             .build()
             .expect("sorry, these tests require working localhost Broker");
-        let input = ChannelOptionsBuilder::create_input("one")
+        let receiver = ChannelOptionsBuilder::create_receiver("one")
             .build(&mut tether_agent)
             .unwrap();
-        assert_eq!(input.name(), "one");
-        assert_eq!(input.generated_topic(), "+/one/#");
+        assert_eq!(receiver.name(), "one");
+        assert_eq!(receiver.generated_topic(), "+/one/#");
     }
 
     #[test]
     /// This is a fairly trivial example, but contrast with the test
-    /// `output_channel_default_but_agent_id_custom`: although a custom ID was set for the
-    /// Agent, this does not affect the Topic for a Channel Input created without any
+    /// `sender_channel_default_but_agent_id_custom`: although a custom ID was set for the
+    /// Agent, this does not affect the Topic for a Channel Receiver created without any
     /// explicit overrides.
-    fn default_channel_input_with_agent_custom_id() {
+    fn default_channel_receiver_with_agent_custom_id() {
         // verbose_logging();
         let mut tether_agent = TetherAgentOptionsBuilder::new("tester")
             .auto_connect(false)
             .id(Some("verySpecialGroup"))
             .build()
             .expect("sorry, these tests require working localhost Broker");
-        let input = ChannelOptionsBuilder::create_input("one")
+        let receiver = ChannelOptionsBuilder::create_receiver("one")
             .build(&mut tether_agent)
             .unwrap();
-        assert_eq!(input.name(), "one");
-        assert_eq!(input.generated_topic(), "+/one/#");
+        assert_eq!(receiver.name(), "one");
+        assert_eq!(receiver.generated_topic(), "+/one/#");
     }
 
     #[test]
-    fn default_channel_output() {
+    fn default_channel_sender() {
         let mut tether_agent = TetherAgentOptionsBuilder::new("tester")
             .auto_connect(false)
             .build()
             .expect("sorry, these tests require working localhost Broker");
-        let output = ChannelOptionsBuilder::create_output("two")
+        let channel = ChannelOptionsBuilder::create_sender("two")
             .build(&mut tether_agent)
             .unwrap();
-        assert_eq!(output.name(), "two");
-        assert_eq!(output.generated_topic(), "tester/two");
+        assert_eq!(channel.name(), "two");
+        assert_eq!(channel.generated_topic(), "tester/two");
     }
 
     #[test]
-    /// This is identical to the case in which a Channel Output is created with defaults (no overrides),
+    /// This is identical to the case in which a Channel Sender is created with defaults (no overrides),
     /// BUT the Agent had a custom ID set, which means that the final topic includes this custom
     /// ID/Group value.
-    fn output_channel_default_but_agent_id_custom() {
+    fn sender_channel_default_but_agent_id_custom() {
         let mut tether_agent = TetherAgentOptionsBuilder::new("tester")
             .auto_connect(false)
             .id(Some("specialCustomGrouping"))
             .build()
             .expect("sorry, these tests require working localhost Broker");
-        let output = ChannelOptionsBuilder::create_output("somethingStandard")
+        let channel = ChannelOptionsBuilder::create_sender("somethingStandard")
             .build(&mut tether_agent)
             .unwrap();
-        assert_eq!(output.name(), "somethingStandard");
+        assert_eq!(channel.name(), "somethingStandard");
         assert_eq!(
-            output.generated_topic(),
+            channel.generated_topic(),
             "tester/somethingStandard/specialCustomGrouping"
         );
     }
 
     #[test]
-    fn input_id_andor_role() {
+    fn receiver_id_andor_role() {
         let mut tether_agent = TetherAgentOptionsBuilder::new("tester")
             .auto_connect(false)
             .build()
             .expect("sorry, these tests require working localhost Broker");
 
-        let input_role_only = ChannelOptionsBuilder::create_input("theChannel")
+        let receive_role_only = ChannelOptionsBuilder::create_receiver("theChannel")
             .role(Some("specificRole"))
             .build(&mut tether_agent)
             .unwrap();
-        assert_eq!(input_role_only.name(), "theChannel");
+        assert_eq!(receive_role_only.name(), "theChannel");
         assert_eq!(
-            input_role_only.generated_topic(),
+            receive_role_only.generated_topic(),
             "specificRole/theChannel/#"
         );
 
-        let input_id_only = ChannelOptionsBuilder::create_input("theChannel")
+        let receiver_id_only = ChannelOptionsBuilder::create_receiver("theChannel")
             .id(Some("specificID"))
             .build(&mut tether_agent)
             .unwrap();
-        assert_eq!(input_id_only.name(), "theChannel");
-        assert_eq!(input_id_only.generated_topic(), "+/theChannel/specificID");
+        assert_eq!(receiver_id_only.name(), "theChannel");
+        assert_eq!(
+            receiver_id_only.generated_topic(),
+            "+/theChannel/specificID"
+        );
 
-        let input_both = ChannelOptionsBuilder::create_input("theChannel")
+        let receiver_both_custom = ChannelOptionsBuilder::create_receiver("theChannel")
             .id(Some("specificID"))
             .role(Some("specificRole"))
             .build(&mut tether_agent)
             .unwrap();
-        assert_eq!(input_both.name(), "theChannel");
+        assert_eq!(receiver_both_custom.name(), "theChannel");
         assert_eq!(
-            input_both.generated_topic(),
+            receiver_both_custom.generated_topic(),
             "specificRole/theChannel/specificID"
         );
     }
@@ -442,147 +445,177 @@ mod tests {
     /// If the end-user implicitly specifies the chanel name part (does not set it to Some(_)
     /// or None) then the ID and/or Role parts will change but the Channel Name part will
     /// remain the "original" / default
-    /// Contrast with input_specific_id_andor_role_no_chanel_name below.
-    fn input_specific_id_andor_role_with_channel_name() {
+    /// Contrast with receiver_specific_id_andor_role_no_chanel_name below.
+    fn receiver_specific_id_andor_role_with_channel_name() {
         let mut tether_agent = TetherAgentOptionsBuilder::new("tester")
             .auto_connect(false)
             .build()
             .expect("sorry, these tests require working localhost Broker");
 
-        let input_role_only = ChannelOptionsBuilder::create_input("theChannel")
+        let receiver_role_only = ChannelOptionsBuilder::create_receiver("theChannel")
             .role(Some("specificRole"))
             .build(&mut tether_agent)
             .unwrap();
-        assert_eq!(input_role_only.name(), "theChannel");
+        assert_eq!(receiver_role_only.name(), "theChannel");
         assert_eq!(
-            input_role_only.generated_topic(),
+            receiver_role_only.generated_topic(),
             "specificRole/theChannel/#"
         );
 
-        let input_id_only = ChannelOptionsBuilder::create_input("theChannel")
+        let receiver_id_only = ChannelOptionsBuilder::create_receiver("theChannel")
             .id(Some("specificID"))
             .build(&mut tether_agent)
             .unwrap();
-        assert_eq!(input_id_only.name(), "theChannel");
-        assert_eq!(input_id_only.generated_topic(), "+/theChannel/specificID");
+        assert_eq!(receiver_id_only.name(), "theChannel");
+        assert_eq!(
+            receiver_id_only.generated_topic(),
+            "+/theChannel/specificID"
+        );
 
-        let input_both = ChannelOptionsBuilder::create_input("theChannel")
+        let receiver_both = ChannelOptionsBuilder::create_receiver("theChannel")
             .id(Some("specificID"))
             .role(Some("specificRole"))
             .build(&mut tether_agent)
             .unwrap();
-        assert_eq!(input_both.name(), "theChannel");
+        assert_eq!(receiver_both.name(), "theChannel");
         assert_eq!(
-            input_both.generated_topic(),
+            receiver_both.generated_topic(),
             "specificRole/theChannel/specificID"
         );
     }
 
     #[test]
-    /// Unlike input_specific_id_andor_role_with_channel_name, this tests the situation where
+    /// Unlike receiver_specific_id_andor_role_with_channel_name, this tests the situation where
     /// the end-user (possibly) specifies the ID and/or Role, but also explicitly
     /// sets the Channel Name to Some("+"), ie. "use a wildcard at this
     /// position instead" - and NOT the original channel name.
-    fn input_specific_id_andor_role_no_channel_name() {
+    fn receiver_specific_id_andor_role_no_channel_name() {
         let mut tether_agent = TetherAgentOptionsBuilder::new("tester")
             .auto_connect(false)
             .build()
             .expect("sorry, these tests require working localhost Broker");
 
-        let input_only_chanel_name_none = ChannelOptionsBuilder::create_input("theChannel")
+        let receiver_only_chanel_name_none = ChannelOptionsBuilder::create_receiver("theChannel")
             .name(Some("+"))
             .build(&mut tether_agent)
             .unwrap();
-        assert_eq!(input_only_chanel_name_none.name(), "theChannel");
-        assert_eq!(input_only_chanel_name_none.generated_topic(), "+/+/#");
+        assert_eq!(receiver_only_chanel_name_none.name(), "theChannel");
+        assert_eq!(receiver_only_chanel_name_none.generated_topic(), "+/+/#");
 
-        let input_role_only = ChannelOptionsBuilder::create_input("theChannel")
+        let receiver_role_only = ChannelOptionsBuilder::create_receiver("theChannel")
             .name(Some("+"))
             .role(Some("specificRole"))
             .build(&mut tether_agent)
             .unwrap();
-        assert_eq!(input_role_only.name(), "theChannel");
-        assert_eq!(input_role_only.generated_topic(), "specificRole/+/#");
+        assert_eq!(receiver_role_only.name(), "theChannel");
+        assert_eq!(receiver_role_only.generated_topic(), "specificRole/+/#");
 
-        let input_id_only = ChannelOptionsBuilder::create_input("theChannel")
+        let receiver_id_only = ChannelOptionsBuilder::create_receiver("theChannel")
             // .name(Some("+"))
             .any_channel() // equivalent to Some("+")
             .id(Some("specificID"))
             .build(&mut tether_agent)
             .unwrap();
-        assert_eq!(input_id_only.name(), "theChannel");
-        assert_eq!(input_id_only.generated_topic(), "+/+/specificID");
+        assert_eq!(receiver_id_only.name(), "theChannel");
+        assert_eq!(receiver_id_only.generated_topic(), "+/+/specificID");
 
-        let input_both = ChannelOptionsBuilder::create_input("theChannel")
+        let receiver_both = ChannelOptionsBuilder::create_receiver("theChannel")
             .name(Some("+"))
             .id(Some("specificID"))
             .role(Some("specificRole"))
             .build(&mut tether_agent)
             .unwrap();
-        assert_eq!(input_both.name(), "theChannel");
-        assert_eq!(input_both.generated_topic(), "specificRole/+/specificID");
+        assert_eq!(receiver_both.name(), "theChannel");
+        assert_eq!(receiver_both.generated_topic(), "specificRole/+/specificID");
     }
 
     #[test]
-    fn output_custom() {
+    fn any_name_but_specify_role() {
+        // Some fairly niche cases here
+
         let mut tether_agent = TetherAgentOptionsBuilder::new("tester")
             .auto_connect(false)
             .build()
             .expect("sorry, these tests require working localhost Broker");
 
-        let output_custom_role = ChannelOptionsBuilder::create_output("theChannelOutput")
-            .role(Some("customRole"))
+        let receiver_any_channel = ChannelOptionsBuilder::create_receiver("aTest")
+            .any_channel()
             .build(&mut tether_agent)
             .unwrap();
-        assert_eq!(output_custom_role.name(), "theChannelOutput");
-        assert_eq!(
-            output_custom_role.generated_topic(),
-            "customRole/theChannelOutput"
-        );
 
-        let output_custom_id = ChannelOptionsBuilder::create_output("theChannelOutput")
-            .id(Some("customID"))
-            .build(&mut tether_agent)
-            .unwrap();
-        assert_eq!(output_custom_id.name(), "theChannelOutput");
-        assert_eq!(
-            output_custom_id.generated_topic(),
-            "tester/theChannelOutput/customID"
-        );
+        assert_eq!(receiver_any_channel.name(), "aTest");
+        assert_eq!(receiver_any_channel.generated_topic(), "+/+/#");
 
-        let output_custom_both = ChannelOptionsBuilder::create_output("theChannelOutput")
-            .role(Some("customRole"))
-            .id(Some("customID"))
+        let receiver_specify_role = ChannelOptionsBuilder::create_receiver("aTest")
+            .any_channel()
+            .role(Some("brain"))
             .build(&mut tether_agent)
             .unwrap();
-        assert_eq!(output_custom_both.name(), "theChannelOutput");
-        assert_eq!(
-            output_custom_both.generated_topic(),
-            "customRole/theChannelOutput/customID"
-        );
+
+        assert_eq!(receiver_specify_role.name(), "aTest");
+        assert_eq!(receiver_specify_role.generated_topic(), "brain/+/#");
     }
 
     #[test]
-    fn input_manual_topics() {
+    fn sender_custom() {
         let mut tether_agent = TetherAgentOptionsBuilder::new("tester")
             .auto_connect(false)
             .build()
             .expect("sorry, these tests require working localhost Broker");
 
-        let input_all = ChannelOptionsBuilder::create_input("everything")
+        let sender_custom_role = ChannelOptionsBuilder::create_sender("theChannelSender")
+            .role(Some("customRole"))
+            .build(&mut tether_agent)
+            .unwrap();
+        assert_eq!(sender_custom_role.name(), "theChannelSender");
+        assert_eq!(
+            sender_custom_role.generated_topic(),
+            "customRole/theChannelSender"
+        );
+
+        let sender_custom_id = ChannelOptionsBuilder::create_sender("theChannelSender")
+            .id(Some("customID"))
+            .build(&mut tether_agent)
+            .unwrap();
+        assert_eq!(sender_custom_id.name(), "theChannelSender");
+        assert_eq!(
+            sender_custom_id.generated_topic(),
+            "tester/theChannelSender/customID"
+        );
+
+        let sender_custom_both = ChannelOptionsBuilder::create_sender("theChannelSender")
+            .role(Some("customRole"))
+            .id(Some("customID"))
+            .build(&mut tether_agent)
+            .unwrap();
+        assert_eq!(sender_custom_both.name(), "theChannelSender");
+        assert_eq!(
+            sender_custom_both.generated_topic(),
+            "customRole/theChannelSender/customID"
+        );
+    }
+
+    #[test]
+    fn receiver_manual_topics() {
+        let mut tether_agent = TetherAgentOptionsBuilder::new("tester")
+            .auto_connect(false)
+            .build()
+            .expect("sorry, these tests require working localhost Broker");
+
+        let receiver_all = ChannelOptionsBuilder::create_receiver("everything")
             .topic(Some("#"))
             .build(&mut tether_agent)
             .unwrap();
-        assert_eq!(input_all.name(), "everything");
-        assert_eq!(input_all.generated_topic(), "#");
+        assert_eq!(receiver_all.name(), "everything");
+        assert_eq!(receiver_all.generated_topic(), "#");
 
-        let input_nontether = ChannelOptionsBuilder::create_input("weird")
+        let receiver_nontether = ChannelOptionsBuilder::create_receiver("weird")
             .topic(Some("foo/bar/baz/one/two/three"))
             .build(&mut tether_agent)
             .unwrap();
-        assert_eq!(input_nontether.name(), "weird");
+        assert_eq!(receiver_nontether.name(), "weird");
         assert_eq!(
-            input_nontether.generated_topic(),
+            receiver_nontether.generated_topic(),
             "foo/bar/baz/one/two/three"
         );
     }

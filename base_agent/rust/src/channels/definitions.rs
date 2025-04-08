@@ -13,13 +13,13 @@ pub trait ChannelDefinitionCommon<'a> {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct ChannelInputDefinition {
+pub struct ChannelReceiverDefinition {
     name: String,
     topic: TetherOrCustomTopic,
     qos: i32,
 }
 
-impl ChannelDefinitionCommon<'_> for ChannelInputDefinition {
+impl ChannelDefinitionCommon<'_> for ChannelReceiverDefinition {
     fn name(&self) -> &str {
         &self.name
     }
@@ -52,23 +52,27 @@ impl ChannelDefinitionCommon<'_> for ChannelInputDefinition {
     }
 }
 
-impl ChannelInputDefinition {
-    pub fn new(name: &str, topic: TetherOrCustomTopic, qos: Option<i32>) -> ChannelInputDefinition {
-        ChannelInputDefinition {
+impl ChannelReceiverDefinition {
+    pub fn new(
+        name: &str,
+        topic: TetherOrCustomTopic,
+        qos: Option<i32>,
+    ) -> ChannelReceiverDefinition {
+        ChannelReceiverDefinition {
             name: String::from(name),
             topic,
             qos: qos.unwrap_or(1),
         }
     }
 
-    /// Use the topic of an incoming message to check against the definition of an Channel Input.
+    /// Use the topic of an incoming message to check against the definition of an Channel Receiver.
     ///
     /// Due to the use of wildcard subscriptions, multiple topic strings might match a given
-    /// Channel Input definition. e.g. `someRole/channelMessages` and `anotherRole/channelMessages` and `someRole/channelMessages/specificID`
-    /// should ALL match on an Chanel Input named `channelMessages` unless more specific Role and/or ID
-    /// parts were specified in the Channel Input Definition.
+    /// Channel Receiver definition. e.g. `someRole/channelMessages` and `anotherRole/channelMessages` and `someRole/channelMessages/specificID`
+    /// should ALL match on an Channel Receiver named `channelMessages` unless more specific Role and/or ID
+    /// parts were specified in the Channel Receiver Definition.
     ///
-    /// In the case where an Channel Input was defined with a completely manually-specified topic string,
+    /// In the case where an Channel Receiver was defined with a completely manually-specified topic string,
     /// this function returns a warning and marks ANY incoming message as a valid match; the end-user
     /// developer is expected to match against topic strings themselves.
     pub fn matches(&self, incoming_topic: &TetherOrCustomTopic) -> bool {
@@ -126,14 +130,14 @@ impl ChannelInputDefinition {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct ChannelOutputDefinition {
+pub struct ChannelSenderDefinition {
     name: String,
     topic: TetherOrCustomTopic,
     qos: i32,
     retain: bool,
 }
 
-impl ChannelDefinitionCommon<'_> for ChannelOutputDefinition {
+impl ChannelDefinitionCommon<'_> for ChannelSenderDefinition {
     fn name(&'_ self) -> &'_ str {
         &self.name
     }
@@ -154,14 +158,14 @@ impl ChannelDefinitionCommon<'_> for ChannelOutputDefinition {
     }
 }
 
-impl ChannelOutputDefinition {
+impl ChannelSenderDefinition {
     pub fn new(
         name: &str,
         topic: TetherOrCustomTopic,
         qos: Option<i32>,
         retain: Option<bool>,
-    ) -> ChannelOutputDefinition {
-        ChannelOutputDefinition {
+    ) -> ChannelSenderDefinition {
+        ChannelSenderDefinition {
             name: String::from(name),
             topic,
             qos: qos.unwrap_or(1),
@@ -176,30 +180,30 @@ impl ChannelOutputDefinition {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub enum ChannelDefinition {
-    ChannelInput(ChannelInputDefinition),
-    ChannelOutput(ChannelOutputDefinition),
+    ChannelReceiver(ChannelReceiverDefinition),
+    ChannelSender(ChannelSenderDefinition),
 }
 
 impl ChannelDefinition {
     pub fn name(&self) -> &str {
         match self {
-            ChannelDefinition::ChannelInput(p) => p.name(),
-            ChannelDefinition::ChannelOutput(p) => p.name(),
+            ChannelDefinition::ChannelReceiver(p) => p.name(),
+            ChannelDefinition::ChannelSender(p) => p.name(),
         }
     }
 
     pub fn generated_topic(&self) -> &str {
         match self {
-            ChannelDefinition::ChannelInput(p) => p.generated_topic(),
-            ChannelDefinition::ChannelOutput(p) => p.generated_topic(),
+            ChannelDefinition::ChannelReceiver(p) => p.generated_topic(),
+            ChannelDefinition::ChannelSender(p) => p.generated_topic(),
         }
     }
 
     pub fn matches(&self, topic: &TetherOrCustomTopic) -> bool {
         match self {
-            ChannelDefinition::ChannelInput(p) => p.matches(topic),
-            ChannelDefinition::ChannelOutput(_) => {
-                error!("We don't check matches for Chanel Outputs");
+            ChannelDefinition::ChannelReceiver(p) => p.matches(topic),
+            ChannelDefinition::ChannelSender(_) => {
+                error!("We don't check matches for Channel Senders");
                 false
             }
         }
@@ -211,12 +215,12 @@ mod tests {
 
     use crate::{
         tether_compliant_topic::{parse_channel_name, TetherCompliantTopic, TetherOrCustomTopic},
-        ChannelDefinitionCommon, ChannelInputDefinition,
+        ChannelDefinitionCommon, ChannelReceiverDefinition,
     };
 
     #[test]
-    fn input_match_tpt() {
-        let channel_def = ChannelInputDefinition::new(
+    fn receiver_match_tpt() {
+        let channel_def = ChannelReceiverDefinition::new(
             "testChannel",
             TetherOrCustomTopic::Tether(TetherCompliantTopic::new_for_subscribe(
                 "testChannel",
@@ -245,8 +249,8 @@ mod tests {
     }
 
     #[test]
-    fn input_match_tpt_custom_role() {
-        let channel_def = ChannelInputDefinition::new(
+    fn receiver_match_tpt_custom_role() {
+        let channel_def = ChannelReceiverDefinition::new(
             "customChanel",
             TetherOrCustomTopic::Tether(TetherCompliantTopic::new_for_subscribe(
                 "customChanel",
@@ -273,8 +277,8 @@ mod tests {
     }
 
     #[test]
-    fn input_match_custom_id() {
-        let channel_def = ChannelInputDefinition::new(
+    fn receiver_match_custom_id() {
+        let channel_def = ChannelReceiverDefinition::new(
             "customChanel",
             TetherOrCustomTopic::Tether(TetherCompliantTopic::new_for_subscribe(
                 "customChanel",
@@ -301,8 +305,8 @@ mod tests {
     }
 
     #[test]
-    fn input_match_both() {
-        let channel_def = ChannelInputDefinition::new(
+    fn receiver_match_both() {
+        let channel_def = ChannelReceiverDefinition::new(
             "customChanel",
             TetherOrCustomTopic::Tether(TetherCompliantTopic::new_for_subscribe(
                 "customChanel",
@@ -332,8 +336,8 @@ mod tests {
     }
 
     #[test]
-    fn input_match_custom_topic() {
-        let channel_def = ChannelInputDefinition::new(
+    fn receiver_match_custom_topic() {
+        let channel_def = ChannelReceiverDefinition::new(
             "customChanel",
             TetherOrCustomTopic::Custom("one/two/three/four/five".into()), // not a standard Tether Three Part Topic
             None,
@@ -350,8 +354,8 @@ mod tests {
     }
 
     #[test]
-    fn input_match_wildcard() {
-        let channel_def = ChannelInputDefinition::new(
+    fn receiver_match_wildcard() {
+        let channel_def = ChannelReceiverDefinition::new(
             "everything",
             TetherOrCustomTopic::Custom("#".into()), // fully legal, but not a standard Three Part Topic
             None,

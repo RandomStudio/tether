@@ -386,20 +386,20 @@ impl TetherAgent {
         }
     }
 
-    /// Given a channel definition and a raw (u8 buffer) payload, generate a message
-    /// on an appropriate topic and with the QOS specified in the Channel Definition
-    pub fn publish(
+    /// Given a channel definition and a raw (u8 buffer) payload, publish a message
+    /// using an appropriate topic and with the QOS specified in the Channel Definition
+    pub fn send(
         &self,
         channel_definition: &ChannelDefinition,
         payload: Option<&[u8]>,
     ) -> anyhow::Result<()> {
         match channel_definition {
-            ChannelDefinition::ChannelInput(_) => {
-                panic!("You cannot publish using a Channel Input")
+            ChannelDefinition::ChannelReceiver(_) => {
+                panic!("You cannot publish using a Channel Receiver")
             }
-            ChannelDefinition::ChannelOutput(output_channel_definition) => {
-                let topic = output_channel_definition.generated_topic();
-                let qos = match output_channel_definition.qos() {
+            ChannelDefinition::ChannelSender(channel_sender_definition) => {
+                let topic = channel_sender_definition.generated_topic();
+                let qos = match channel_sender_definition.qos() {
                     0 => QoS::AtMostOnce,
                     1 => QoS::AtLeastOnce,
                     2 => QoS::ExactlyOnce,
@@ -411,7 +411,7 @@ impl TetherAgent {
                         .publish(
                             topic,
                             qos,
-                            output_channel_definition.retain(),
+                            channel_sender_definition.retain(),
                             payload.unwrap_or_default(),
                         )
                         .map_err(anyhow::Error::msg);
@@ -431,7 +431,7 @@ impl TetherAgent {
         data: T,
     ) -> anyhow::Result<()> {
         match to_vec_named(&data) {
-            Ok(payload) => self.publish(channel_definition, Some(&payload)),
+            Ok(payload) => self.send(channel_definition, Some(&payload)),
             Err(e) => {
                 error!("Failed to encode: {e:?}");
                 Err(e.into())
