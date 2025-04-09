@@ -18,10 +18,14 @@ fn demo_receive() {
 
     let options = ReceiveOptions::default();
 
-    receive(&options, &mut tether_agent, |_plug_name, topic, decoded| {
-        let contents = decoded.unwrap_or("(empty/invalid message)".into());
-        println!("RECEIVE: \"{}\" :: {}", topic, contents);
-    })
+    receive(
+        &options,
+        &mut tether_agent,
+        |_channel_name, topic, decoded| {
+            let contents = decoded.unwrap_or("(empty/invalid message)".into());
+            println!("RECEIVE: \"{}\" :: {}", topic, contents);
+        },
+    )
 }
 
 fn demo_send() {
@@ -32,10 +36,10 @@ fn demo_send() {
     let mut count = 0;
 
     let options = SendOptions {
-        plug_name: Some("dummyData".into()),
-        plug_topic: None,
-        plug_id: None,
-        plug_role: None,
+        channel_name: Some("dummyData".into()),
+        channel_topic: None,
+        channel_id: None,
+        channel_role: None,
         message_payload_json: None,
         use_dummy_data: true,
     };

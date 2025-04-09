@@ -8,7 +8,7 @@ With the CLI tool, users are provided a single binary with subcommands as follow
 
 - [receive](#receive): Subscribe to all/some messages and attempt to decode them
 - [send](#send): Publish a single message with optional custom payload
-- [topics](#topics): Subscribe to all/some messages and parse the topic parts such as Agent Role, Agent ID and Plug Name
+- [topics](#topics): Subscribe to all/some messages and parse the topic parts such as Agent Role, Agent ID and Channel Name
 - [record](#record): Record messages to disk. Useful for simulation, in combination with `playback` below
 - [playback](#playback): Playback messages with their original topics and timing, to simulate one or more Agents
 
@@ -40,7 +40,7 @@ There are always **two parts** to the CLI command
 Here's an example of using the `receive` subcommand but specifying some non-default details for the MQTT Broker, and a non-default topic:
 
 ```
-tether --host 10.0.0.1 --username myUserName --password myPaSsWorD! receive --topic +/+/someSpecificPlug
+tether --host 10.0.0.1 --username myUserName --password myPaSsWorD! receive --topic something/something
 ```
 
 ___
@@ -77,7 +77,7 @@ tether send --message \{\"hello\":\"world\"\,\"arr\":\[1,2,3\]\}
 ___
 ### `tether topics`
 
-Super useful for seeing which Agents are online, and how message topics are being parsed according to Agent Role, Agent ID and Plug Name. Now also provides live rate calculations (messages per second) and activity graph as below:
+Super useful for seeing which Agents are online, and how message topics are being parsed according to Agent Role, Channel Name and (optional) Agent ID. Now also provides live rate calculations (messages per second) and activity graph as below:
 
 ![topics CLI screenshot](./docs/topics-screenshot.png)
 

@@ -6,21 +6,21 @@ use tether_agent::{ChannelOptionsBuilder, TetherAgent};
 #[derive(Args)]
 pub struct SendOptions {
     /// Overide the auto-generated topic with your own, to use with every published message
-    #[arg(long = "plug.name")]
-    pub plug_name: Option<String>,
+    #[arg(long = "channel.name")]
+    pub channel_name: Option<String>,
 
     /// Overide Tether Agent role with your own, to use with every published message
-    #[arg(long = "plug.role")]
-    pub plug_role: Option<String>,
+    #[arg(long = "channel.role")]
+    pub channel_role: Option<String>,
 
     /// Overide Tether Agent ID with your own, to use with every published message
-    #[arg(long = "plug.id")]
-    pub plug_id: Option<String>,
+    #[arg(long = "channel.id")]
+    pub channel_id: Option<String>,
 
     /// Overide the entire topic string (ignoring any defaults or customisations applied elsewhere),
     /// to use with every published message
     #[arg(long = "topic")]
-    pub plug_topic: Option<String>,
+    pub channel_topic: Option<String>,
 
     /// Provide a custom message as an escaped JSON string which will be converted
     /// into MessagePack; by default the payload will be empty.
@@ -44,12 +44,15 @@ struct DummyData {
 pub fn send(options: &SendOptions, tether_agent: &mut TetherAgent) -> anyhow::Result<()> {
     info!("Tether Send Utility");
 
-    let channel_name = options.plug_name.clone().unwrap_or("testMessages".into());
+    let channel_name = options
+        .channel_name
+        .clone()
+        .unwrap_or("testMessages".into());
 
     let channel = ChannelOptionsBuilder::create_sender(&channel_name)
-        .role(options.plug_role.as_deref())
-        .id(options.plug_id.as_deref())
-        .topic(options.plug_topic.as_deref())
+        .role(options.channel_role.as_deref())
+        .id(options.channel_id.as_deref())
+        .topic(options.channel_topic.as_deref())
         .build(tether_agent)
         .expect("failed to create Channel Sender");
 

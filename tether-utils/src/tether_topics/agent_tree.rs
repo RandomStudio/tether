@@ -1,6 +1,6 @@
 use std::fmt;
 
-use super::{parse_agent_id, parse_agent_role, parse_plug_name};
+use super::{parse_agent_id, parse_agent_role, parse_channel_name};
 
 /// Role, IDs, Channels
 pub struct AgentTree {
@@ -37,7 +37,7 @@ impl AgentTree {
         let channels = topics_this_agent
             .clone()
             .fold(Vec::new(), |mut acc, topic| {
-                if let Some(p) = parse_plug_name(&topic) {
+                if let Some(p) = parse_channel_name(&topic) {
                     acc.push(String::from(p));
                 }
                 acc

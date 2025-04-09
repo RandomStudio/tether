@@ -9,7 +9,7 @@ use std::{
     time::{Duration, SystemTime},
 };
 
-use super::{parse_agent_id, parse_agent_role, parse_plug_name, TopicOptions};
+use super::{parse_agent_id, parse_agent_role, parse_channel_name, TopicOptions};
 pub const MONITOR_LOG_LENGTH: usize = 256;
 
 /// Topic, Payload as JSON
@@ -19,7 +19,7 @@ pub struct Insights {
     topics: Vec<String>,
     roles: Vec<String>,
     ids: Vec<String>,
-    plugs: Vec<String>,
+    channels: Vec<String>,
     trees: Vec<AgentTree>,
     message_count: u128,
     log_start: Option<SystemTime>,
@@ -32,11 +32,19 @@ impl fmt::Display for Insights {
         let topics = format!("x{} Topics: {:?} \n\n", self.topics().len(), self.topics());
         let roles = format!("x{} Roles: {:?} \n", self.roles().len(), self.roles());
         let ids = format!("x{} IDs: {:?} \n", self.ids().len(), self.ids());
-        let plugs = format!("x{} Plugs: {:?} \n", self.plugs().len(), self.plugs());
+        let channels = format!(
+            "x{} Channels: {:?} \n",
+            self.channels().len(),
+            self.channels()
+        );
 
         let trees_formatted = self.trees.iter().map(|x| x.to_string()).collect::<String>();
 
-        write!(f, "{}{}{}{}{}", topics, roles, ids, plugs, trees_formatted)
+        write!(
+            f,
+            "{}{}{}{}{}",
+            topics, roles, ids, channels, trees_formatted
+        )
     }
 }
 
@@ -54,7 +62,7 @@ impl Insights {
             topics: Vec::new(),
             roles: Vec::new(),
             ids: Vec::new(),
-            plugs: Vec::new(),
+            channels: Vec::new(),
             trees: Vec::new(),
             message_log: CircularBuffer::new(),
             message_count: 0,
@@ -110,8 +118,8 @@ impl Insights {
             did_change = true;
         }
         if add_if_unique(
-            parse_plug_name(&full_topic_string).unwrap_or("unknown"),
-            &mut self.plugs,
+            parse_channel_name(&full_topic_string).unwrap_or("unknown"),
+            &mut self.channels,
         ) {
             did_change = true;
         }
@@ -137,8 +145,8 @@ impl Insights {
     pub fn ids(&self) -> &[String] {
         &self.ids
     }
-    pub fn plugs(&self) -> &[String] {
-        &self.plugs
+    pub fn channels(&self) -> &[String] {
+        &self.channels
     }
     pub fn trees(&self) -> &[AgentTree] {
         &self.trees

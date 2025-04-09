@@ -29,7 +29,7 @@ impl Default for TopicOptions {
     }
 }
 
-pub fn parse_plug_name(topic: &str) -> Option<&str> {
+pub fn parse_channel_name(topic: &str) -> Option<&str> {
     let parts: Vec<&str> = topic.split('/').collect();
     match parts.get(2) {
         Some(s) => Some(*s),
