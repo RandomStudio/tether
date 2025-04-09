@@ -11,7 +11,7 @@
       "cargo": {
           "args": [
             "test", "--no-run", "--lib",
-            "--manifest-path", "${workspaceFolder}/base_agent/rs/Cargo.toml"
+            "--manifest-path", "${workspaceFolder}/lib/rust/Cargo.toml"
           ], // Cargo command line to build the debug target
           // "args": ["build", "--bin=foo"] is another possibility
           // "filter": { // Filter applied to compilation artifacts (optional)
@@ -25,11 +25,10 @@
     "type": "lldb",
     "request": "launch",
     "name": "Debug Tether Utils",
-    // "cwd": "${workspaceFolder}/utilities/tether-utils",
     "cargo": {
       "args": [
         "build",
-        "--manifest-path", "${workspaceFolder}/utilities/tether-utils/Cargo.toml"
+        "--manifest-path", "${workspaceFolder}/tether-utils/Cargo.toml"
       ]
     },
     "args": ["receive", "--plug.role=custom"]
@@ -47,7 +46,7 @@
     "name": "Debug NodeJS Base Agent Tests",
     "type": "node",
             "request": "launch",
-            "runtimeExecutable": "${workspaceRoot}/base_agent/js/node_modules/.bin/jest",
+            "runtimeExecutable": "${workspaceRoot}/lib/js/node_modules/.bin/jest",
             "args": [
                 "${fileBasenameNoExtension}",
                 "--runInBand",
@@ -55,7 +54,7 @@
                 "--coverage=false",
                 "--no-cache"
             ],
-            "cwd": "${workspaceRoot}/base_agent/js",
+            "cwd": "${workspaceRoot}/lib/js",
             "console": "integratedTerminal",
             "internalConsoleOptions": "neverOpen",
             "sourceMaps": true,

@@ -21,7 +21,7 @@ export const Tether = (props: Props) => {
     };
 
     console.log("Connecting...");
-    TetherAgent.create("browserDemo", { brokerOptions })
+    TetherAgent.create("browserDemo", { brokerOptions, loglevel: "debug" })
       .then((agent) => {
         setAgent(agent);
         console.info("Tether connect OK");

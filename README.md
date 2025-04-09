@@ -73,7 +73,7 @@ Tether Egui lets you create some UI "widgets" for numbers, colours, strings and 
 
 ### CLI
 
-Alternatively, command-line utilities are provided [here](./utilities/tether-utils) (with instructions for installing them)
+Alternatively, command-line utilities are provided [here](./tether-utils) (with instructions for installing them)
 
 For example, the command `tether receive` will subscribe to messages on all topics (by default), decode and print out each one.
 
@@ -370,11 +370,11 @@ Unlike JSON, you can even provide "bare" data instead of nested objects. For exa
 
 ## Structure of this repository
 
-- `base_agent`: Not a requirement (you can simply follow Tether Conventions) but providing convenience in the following programming languages:
-  - `js`: Base agent in Javascript, suitable for both NodeJS and browser environments. [JS Base Agent README](./base_agent/js/README.md)
-  - `cpp`: Base agent in C++11, using CMake for build/install automation. [C++ Base Agent README](./base_agent/cpp/README.md)
+- `lib`: Not a requirement (you can simply follow Tether Conventions) but providing convenience in the following programming languages:
+  - `js`: Base agent in Javascript, suitable for both NodeJS and browser environments. [JS Base Agent README](./lib/js/README.md)
+  - `cpp`: Base agent in C++11, using CMake for build/install automation. [C++ Base Agent README](./lib/cpp/README.md)
   - `python`: Base agent in Python, tested with Python v3.9
-  - `rs`: Base agent in Rust. This is a crate also [published on crates.io](https://crates.io/crates/tether-agent). You can also find the auto-generated [docs](docs.rs/tether-agent/0.5.2) via docs.rs. Examples, as per Rust conventions, are included in the examples subfolder; or go to the [README](./base_agent/rs/README.md)
+  - `rust`: Base agent in Rust. This is a crate also [published on crates.io](https://crates.io/crates/tether-agent). You can also find the auto-generated [docs](docs.rs/tether-agent/0.5.2) via docs.rs. Examples, as per Rust conventions, are included in the examples subfolder; or go to the [README](./lib/rust/README.md)
 - `explorer`: A proof-of-concept of a browser-based ("web application") agent which uses _both_ the JS base agent and pure-MQTT-client approaches to demonstrate input and output being passed via the browser
 - `examples`
   - `nodejs`: A demo agent that uses the same JS base agent as the "explorer". It publishes messages on two separate topics every 3 seconds, and also decodes any messages it receives on the "browserData" Input Plug.

@@ -18,7 +18,7 @@ const main = async () => {
   const agent = await TetherAgent.create("brain");
 
   const sender = new ChannelSender(agent, "randomValues");
-  sender.encodeAndSend({
+  sender.send({
     value: Math.random(),
     timestamp: Date.now(),
     something: "one",
@@ -58,7 +58,7 @@ const main = async () => {
   // });
 
   // This will work fine, though
-  typedSender.encodeAndSend(Math.random());
+  typedSender.send(Math.random());
 
   setTimeout(() => {
     agent.disconnect();

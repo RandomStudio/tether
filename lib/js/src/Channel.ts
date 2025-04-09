@@ -114,8 +114,11 @@ export class ChannelReceiver<T> extends Channel {
     this.agent.getClient()?.on("message", (topic, payload) => {
       if (topicMatchesChannel(this.definition.topic, topic)) {
         // this.emit("message", payload, topic);
+        logger.debug("Received", payload);
         this.callbacks.forEach((cb) => {
-          cb.call(this, decode(payload) as T, topic);
+          const decoded =
+            payload.length === 0 ? payload : (decode(payload) as T);
+          cb.call(this, decoded as T, topic);
         });
       }
     });
@@ -156,7 +159,8 @@ export class ChannelSender<T> extends Channel {
     }
   }
 
-  send = async (content?: Uint8Array) => {
+  /** Do NOT encode the content (assume it's already encoded), and then publish */
+  sendRaw = async (content?: Uint8Array) => {
     if (!this.agent.getIsConnected()) {
       throw Error(
         "trying to send without connection; not possible until connected"
@@ -192,7 +196,8 @@ export class ChannelSender<T> extends Channel {
     }
   };
 
-  encodeAndSend = async (content: T) => {
+  /** Automatically encode the content as MsgPack, and publish using the ChannelSender topic */
+  send = async (content?: T) => {
     if (!this.agent.getIsConnected()) {
       throw Error(
         "trying to send without connection; not possible until connected"
@@ -200,7 +205,7 @@ export class ChannelSender<T> extends Channel {
     }
     try {
       const buffer = encode(content);
-      this.send(buffer);
+      this.sendRaw(buffer);
     } catch (e) {
       throw Error(`Error encoding content: ${e}`);
     }

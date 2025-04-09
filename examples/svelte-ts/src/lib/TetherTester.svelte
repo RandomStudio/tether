@@ -29,11 +29,11 @@
 
     sender = new ChannelSender(agent, "randomNumbers");
 
-    const receiver = await ChannelReceiver.create(agent, "everything", {
+    const receiver = await ChannelReceiver.create<number>(agent, "everything", {
       overrideTopic: "#",
     });
     receiver.on("message", (payload, topic) => {
-      const contents = decode(payload) as any;
+      const contents = payload;
       messagesReceived = [
         ...messagesReceived,
         {

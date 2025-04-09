@@ -1,4 +1,4 @@
-use ::anyhow::anyhow;
+use anyhow::anyhow;
 use log::{debug, error, info, trace, warn};
 use rmp_serde::to_vec_named;
 use rumqttc::tokio_rustls::rustls::ClientConfig;
@@ -386,9 +386,11 @@ impl TetherAgent {
         }
     }
 
-    /// Given a channel definition and a raw (u8 buffer) payload, publish a message
+    /// Unlike .send, this function does NOT serialize the data before publishing.
+    ///
+    /// Given a channel definition and a raw (u8 buffer) payload, publishes a message
     /// using an appropriate topic and with the QOS specified in the Channel Definition
-    pub fn send(
+    pub fn send_raw(
         &self,
         channel_definition: &ChannelDefinition,
         payload: Option<&[u8]>,
@@ -424,19 +426,26 @@ impl TetherAgent {
         }
     }
 
-    /// Similar to `send` but serializes the data automatically before sending
-    pub fn encode_and_send<T: Serialize>(
+    /// Serializes the data automatically before publishing.
+    ///
+    /// Given a channel definition and serializeable data payload, publishes a message
+    /// using an appropriate topic and with the QOS specified in the Channel Definition
+    pub fn send<T: Serialize>(
         &self,
         channel_definition: &ChannelDefinition,
         data: T,
     ) -> anyhow::Result<()> {
         match to_vec_named(&data) {
-            Ok(payload) => self.send(channel_definition, Some(&payload)),
+            Ok(payload) => self.send_raw(channel_definition, Some(&payload)),
             Err(e) => {
                 error!("Failed to encode: {e:?}");
                 Err(e.into())
             }
         }
+    }
+
+    pub fn send_empty(&self, channel_definition: &ChannelDefinition) -> anyhow::Result<()> {
+        self.send_raw(channel_definition, None)
     }
 
     pub fn publish_raw(

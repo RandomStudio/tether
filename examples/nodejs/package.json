@@ -11,7 +11,7 @@
   "dependencies": {
     "parse-strings-in-object": "^1.4.0",
     "rc": "^1.2.8",
-    "tether-agent": "../../base_agent/js"
+    "tether-agent": "../../lib/js"
   },
   "devDependencies": {
     "prettier": "^2.2.1"

@@ -13,7 +13,7 @@ export const Sender = (props: Props) => {
 
   const [useCustomTopic, setUseCustomTopic] = useState(false);
   const [customTopic, setTCustomTopic] = useState("");
-  const [channel, setChannel] = useState<ChannelSender | null>(null);
+  const [channel, setChannel] = useState<ChannelSender<unknown> | null>(null);
 
   return (
     <div>

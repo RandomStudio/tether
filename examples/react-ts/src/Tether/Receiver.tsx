@@ -6,7 +6,7 @@ interface Props {
 }
 
 export const Receiver = (props: Props) => {
-  const [channel, setChannel] = useState<ChannelReceiver | null>(null);
+  const [channel, setChannel] = useState<ChannelReceiver<unknown> | null>(null);
   const [lastMessage, setLastMessage] = useState("");
 
   useEffect(() => {
@@ -16,7 +16,7 @@ export const Receiver = (props: Props) => {
       .then((channel) => {
         setChannel(channel);
         channel.on("message", (payload, topic) => {
-          console.log("Received message on", topic);
+          console.log("Received message on", topic, ":", payload);
           const timestamp = Date.now();
           setLastMessage(JSON.stringify({ topic, payload, timestamp }));
         });

@@ -19,7 +19,7 @@ fn main() {
 
     debug!("Debugging is enabled; could be verbose");
 
-    let mut tether_agent = TetherAgentOptionsBuilder::new("RustDemo")
+    let mut tether_agent = TetherAgentOptionsBuilder::new("rustExample")
         .build()
         .expect("failed to connect Tether");
     let (role, id, _) = tether_agent.description();
@@ -46,12 +46,12 @@ fn main() {
 
     for i in 1..=10 {
         info!("#{i}: Sending empty message...");
-        tether_agent.send(&empty_message_output, None).unwrap();
+        tether_agent.send_raw(&empty_message_output, None).unwrap();
 
-        let bool = i % 2 == 0;
+        let just_a_boolean = i % 2 == 0;
         info!("#{i}: Sending boolean message...");
         tether_agent
-            .send(&boolean_message_output, Some(&[bool.into()]))
+            .send(&boolean_message_output, just_a_boolean)
             .unwrap();
 
         info!("#{i}: Sending custom struct message...");
@@ -59,13 +59,11 @@ fn main() {
             id: i,
             name: "hello".into(),
         };
-        tether_agent
-            .encode_and_send(&custom_output, custom_message)
-            .unwrap();
+        tether_agent.send(&custom_output, custom_message).unwrap();
 
         info!("#{i}: Sending grouped messages...");
-        tether_agent.send(&grouped_output_1, None).unwrap();
-        tether_agent.send(&grouped_output_2, None).unwrap();
+        tether_agent.send_empty(&grouped_output_1).unwrap();
+        tether_agent.send_empty(&grouped_output_2).unwrap();
 
         thread::sleep(Duration::from_millis(1000))
     }

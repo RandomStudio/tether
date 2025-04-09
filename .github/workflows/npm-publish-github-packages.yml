@@ -18,9 +18,9 @@ jobs:
           node-version: 16
       - name: install
         run: npm install
-        working-directory: base_agent/js
+        working-directory: lib/js
       - run: npm run build
-        working-directory: base_agent/js
+        working-directory: lib/js
 
   publish-gpr:
     needs: build
@@ -35,8 +35,8 @@ jobs:
           node-version: 16
           registry-url: https://npm.pkg.github.com/
       - run: npm i
-        working-directory: base_agent/js
+        working-directory: lib/js
       - run: npm publish
-        working-directory: base_agent/js
+        working-directory: lib/js
         env:
           NODE_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}

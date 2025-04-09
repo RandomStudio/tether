@@ -42,7 +42,7 @@ const main = async () => {
       timestamp: Date.now(),
       value: Math.random(),
     };
-    channelSender.send(Buffer.from(encode(m)));
+    channelSender.encodeAndSend(m);
   }, 1000);
 
   setInterval(() => {
@@ -59,7 +59,7 @@ const main = async () => {
   const inputChannelOne = await ChannelReceiver.create(agent, "randomValue");
   inputChannelOne.on("message", (payload, topic) => {
     console.log("received:", { payload, topic });
-    const m = decode(payload);
+    const m = payload;
     console.log(">>>>>>>> received message on inputChannelOne:", { topic, m });
   });
 

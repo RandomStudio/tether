@@ -30,7 +30,7 @@ Useful guides for CMake structure
 Be sure to do
 `git submodule update --init --recursive` so that all submodules are on the correct branch, etc.
 
-Then from `base_agent/cpp`:
+Then from `lib/cpp`:
 
 - `mkdir build`
 - `cd build`
