@@ -1,13 +1,12 @@
 import { IClientPublishOptions, IClientSubscribeOptions } from "async-mqtt";
-import { TetherAgent, logger } from ".";
+import { TetherAgent, encode, logger } from ".";
 import { ChannelDefinition } from "./types";
-import { Buffer } from "buffer";
 import EventEmitter from "events";
 
 declare interface Channel {
   on(
     event: "message",
-    listener: (payload: Buffer, topic: string) => void,
+    listener: (payload: Buffer, topic: string) => void
   ): this;
   on(event: string, listener: Function): this;
 }
@@ -36,7 +35,7 @@ export class ChannelReceiver extends Channel {
       id?: string;
       role?: string;
       subscribeOptions?: IClientSubscribeOptions;
-    },
+    }
   ) {
     const instance = new ChannelReceiver(agent, channelName, options || {});
 
@@ -58,7 +57,7 @@ export class ChannelReceiver extends Channel {
       id?: string;
       role?: string;
       subscribeOptions?: IClientSubscribeOptions;
-    },
+    }
   ) {
     super(agent, {
       name: channelName,
@@ -67,13 +66,13 @@ export class ChannelReceiver extends Channel {
         buildInputTopic(
           channelName,
           options.role,
-          options.id ?? agent.getConfig().id,
+          options.id ?? agent.getConfig().id
         ),
     });
     if (agent.getConfig().autoConnect === true && !agent.getIsConnected()) {
       throw Error(
         "trying to create an Input before client is connected; autoConnect? " +
-          agent.getConfig().autoConnect,
+          agent.getConfig().autoConnect
       );
     }
   }
@@ -86,7 +85,7 @@ export class ChannelReceiver extends Channel {
       logger.debug(
         "Attempting subscribtion to topic",
         this.definition.topic,
-        `for Channel Input "${this.getDefinition().name}"...`,
+        `for Channel Input "${this.getDefinition().name}"...`
       );
       if (options === undefined) {
         await this.agent.getClient()?.subscribe(this.definition.topic);
@@ -100,7 +99,7 @@ export class ChannelReceiver extends Channel {
     logger.debug(
       "subscribed to topic",
       this.definition.topic,
-      `for Channel Input "${this.getDefinition().name}"`,
+      `for Channel Input "${this.getDefinition().name}"`
     );
     this.agent.getClient()?.on("message", (topic, payload) => {
       if (topicMatchesChannel(this.definition.topic, topic)) {
@@ -110,7 +109,7 @@ export class ChannelReceiver extends Channel {
   };
 }
 
-export class ChannelSender extends Channel {
+export class ChannelSender<T> extends Channel {
   private publishOptions: IClientPublishOptions;
 
   constructor(
@@ -120,7 +119,7 @@ export class ChannelSender extends Channel {
       overrideTopic?: string;
       id?: string;
       publishOptions?: IClientPublishOptions;
-    },
+    }
   ) {
     super(agent, {
       name: channelName,
@@ -129,7 +128,7 @@ export class ChannelSender extends Channel {
         buildOutputTopic(
           channelName,
           agent.getConfig().role,
-          options?.id || agent.getConfig().id,
+          options?.id || agent.getConfig().id
         ),
     });
     this.publishOptions = options?.publishOptions || {
@@ -144,50 +143,60 @@ export class ChannelSender extends Channel {
     }
   }
 
-  send = async (content?: Buffer | Uint8Array) => {
+  send = async (content?: Uint8Array) => {
     if (!this.agent.getIsConnected()) {
       throw Error(
-        "trying to send without connection; not possible until connected",
+        "trying to send without connection; not possible until connected"
       );
-    } else {
-      try {
-        logger.debug(
-          "Sending on topic",
-          this.definition.topic,
-          "with options",
-          { ...this.publishOptions },
-        );
-        if (content === undefined) {
-          this.agent
-            .getClient()
-            ?.publish(
-              this.definition.topic,
-              Buffer.from([]),
-              this.publishOptions,
-            );
-        } else if (content instanceof Uint8Array) {
-          this.agent
-            .getClient()
-            ?.publish(
-              this.definition.topic,
-              Buffer.from(content),
-              this.publishOptions,
-            );
-        } else {
-          this.agent
-            .getClient()
-            ?.publish(this.definition.topic, content, this.publishOptions);
-        }
-      } catch (e) {
-        logger.error("Error publishing message:", e);
+    }
+    try {
+      logger.debug("Sending on topic", this.definition.topic, "with options", {
+        ...this.publishOptions,
+      });
+      if (content === undefined) {
+        this.agent
+          .getClient()
+          ?.publish(
+            this.definition.topic,
+            Buffer.from([]),
+            this.publishOptions
+          );
+      } else if (content instanceof Uint8Array) {
+        this.agent
+          .getClient()
+          ?.publish(
+            this.definition.topic,
+            Buffer.from(content),
+            this.publishOptions
+          );
+      } else {
+        this.agent
+          .getClient()
+          ?.publish(this.definition.topic, content, this.publishOptions);
       }
+    } catch (e) {
+      logger.error("Error publishing message:", e);
+    }
+  };
+
+  encodeAndSend = async (content: T) => {
+    if (!this.agent.getIsConnected()) {
+      throw Error(
+        "trying to send without connection; not possible until connected"
+      );
+    }
+    try {
+      const buffer = encode(content);
+      this.send(buffer);
+    } catch (e) {
+      throw Error(`Error encoding content: ${e}`);
     }
   };
 }
 
 export const topicMatchesChannel = (
   channelGeneratedTopic: string,
-  incomingTopic: string,
+  incomingTopic: string
 ): boolean => {
   if (channelGeneratedTopic == "#") {
     return true;
@@ -217,7 +226,7 @@ export const topicMatchesChannel = (
   // if Role specified, see if this matches, otherwise pass all AgentTypes as matches
   // e.g. specified/channelName
   const agentTypeMatches = !containsWildcards(
-    parseAgentRole(channelGeneratedTopic),
+    parseAgentRole(channelGeneratedTopic)
   )
     ? parseAgentRole(channelGeneratedTopic) === parseAgentRole(incomingTopic)
     : true;
@@ -225,7 +234,7 @@ export const topicMatchesChannel = (
   // if Agent ID or Group specified, see if this matches, otherwise pass all AgentIdOrGroup as matches
   // e.g. +/channelName/specifiedID
   const agentIdOrGroupMatches = !containsWildcards(
-    parseAgentIdOrGroup(channelGeneratedTopic),
+    parseAgentIdOrGroup(channelGeneratedTopic)
   )
     ? parseAgentIdOrGroup(channelGeneratedTopic) ===
       parseAgentIdOrGroup(incomingTopic)
@@ -250,7 +259,7 @@ const containsWildcards = (topicOrPart: string) =>
 const buildInputTopic = (
   channelName: string,
   specifyRole?: string,
-  specifyID?: string,
+  specifyID?: string
 ): string => {
   const role = specifyRole || "+";
   if (specifyID) {
@@ -263,7 +272,7 @@ const buildInputTopic = (
 const buildOutputTopic = (
   channelName: string,
   specifyRole: string,
-  specifyID?: string,
+  specifyID?: string
 ): string => {
   const role = specifyRole;
   if (specifyID) {
