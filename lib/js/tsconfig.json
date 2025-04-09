@@ -1,5 +1,5 @@
 {
-  "extends": "@tsconfig/node18",
+  "extends": "@tsconfig/node22",
   "compilerOptions": {
     "module": "commonjs",
     "esModuleInterop": true,

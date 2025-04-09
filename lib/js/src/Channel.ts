@@ -2,6 +2,7 @@ import { IClientPublishOptions, IClientSubscribeOptions } from "async-mqtt";
 import { TetherAgent, encode, logger } from ".";
 import { ChannelDefinition } from "./types";
 import EventEmitter from "events";
+import { Buffer } from "buffer";
 
 declare interface Channel {
   on(

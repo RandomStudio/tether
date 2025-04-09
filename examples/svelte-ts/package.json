@@ -18,6 +18,6 @@
     "vite": "^6.2.0"
   },
   "dependencies": {
-    "tether-agent": "../../base_agent/js"
+    "tether-agent": "../../lib/js"
   }
 }

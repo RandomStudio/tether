@@ -11,12 +11,12 @@ Tether is about providing tools and processes that help us spend more time on th
 ## Architecture
 By using Tether, we can approach digital art/media installations as **distributed systems**, applying a **publish / subscribe pattern** and **event-based programming** to coordinate the independent pieces of software and hardware that commonly comprise these systems.
 
-This facilitates a wide variety of system architectures in practice. Tether makes it easy to build very simple systems with one-way communcation: one application talking to another. It's also possible to implement very rigidly-structured systems comprising strict request/response sequences. Or any wild topology you can come up with (multiple producers, multiple consumers, etc.).
+This facilitates a wide variety of system architectures in practice. Tether makes it easy to build very simple systems with one-way communcation: one application talking to another. It's also possible to implement very rigidly-structured systems comprising strict request/response sequences. Or any topology you can come up with (multiple producers, multiple consumers, etc.).
 
 ## Freedom, but with sensible defaults
 Tether applies some light _standardisation_ of some existing, well established technologies such as [MQTT](https://mqtt.org/) (for messaging) and [MessagePack](https://msgpack.org/index.html) (for serialised data). By picking a standard, we can provide a set of libraries and tools to make this infrastructure simple to use.
 
-Tether makes our software more reliable and easier to re-use.
+Tether makes our software more reliable and easier to re-use between projects.
 
 ---
 
@@ -58,7 +58,7 @@ The most basic Tether system comprises:
 
 1. An MQTT broker (see [brokers/README](brokers/README.md) for instructions on setting one up)
 2. At least one Tether Agent capable of _sending_ messages encoded in MessagePack format
-3. At least one Tether Agent capable of _receiving_ messages, decoding in MessagePack format
+3. At least one Tether Agent capable of _receiving_ messages, decoding from MessagePack format
 
 ### GUI
 
@@ -106,7 +106,7 @@ Generally, every piece of software in a Tether system is an Agent. An Agent shou
 
 Agents can be written in various programming languages and they could be running on the same host device or multiple devices (PCs, microcontrollers). They could be in the same room or scattered across the world. But they all communicate to each other in the same standardised way.
 
-In the Tether Base Agents (libraries for various languages), we abstract the underlying connection to the MQTT Broker within the concept of an Agent. This means we can provide some sensible defaults so you don't have to worry about setting IP addresses, ports, protocols (TCP vs WebSocket), or paths. You can often just name the Agent and the connection is made automatically!
+In the Tether `lib` (libraries for various languages), we abstract the underlying connection to the MQTT Broker under the concept of an Agent. This means we can provide some sensible defaults so you don't have to worry about setting IP addresses, ports, protocols (TCP vs WebSocket), or paths. You can often just name the Agent and the connection is made automatically!
 
 It's really important to **name** Agents properly. If the Agent is made to control lights, name it "lightingController"; if it's meant to detect presence, name it "presenceDetector". This helps you (and future you, and other developers) understand where all these messages come from!
 

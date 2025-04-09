@@ -7,7 +7,7 @@
     encode,
     ChannelReceiver,
     decode,
-  } from "../../../../lib/js/dist";
+  } from "tether-agent";
 
   interface CustomMessage {
     timestamp: number;
@@ -16,7 +16,7 @@
   }
 
   let connected = $state(false);
-  let sender: ChannelSender | null = $state(null);
+  let sender: ChannelSender<number> | null = $state(null);
 
   let agent: TetherAgent;
 
@@ -65,7 +65,8 @@
           onclick={async () => {
             if (sender) {
               const randomNumber = Math.round(Math.random() * 10000);
-              await sender.send(encode(randomNumber));
+              // await sender.send(encode(randomNumber));
+              await sender.encodeAndSend(randomNumber);
             } else {
               throw Error("ChannelSender does not exist");
             }
