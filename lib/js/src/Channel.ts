@@ -1,23 +1,21 @@
 import { IClientPublishOptions, IClientSubscribeOptions } from "async-mqtt";
-import { TetherAgent, encode, logger } from ".";
+import { TetherAgent, decode, encode, logger } from ".";
 import { ChannelDefinition } from "./types";
-import EventEmitter from "events";
 import { Buffer } from "buffer";
 
-declare interface Channel {
-  on(
-    event: "message",
-    listener: (payload: Buffer, topic: string) => void
-  ): this;
-  on(event: string, listener: Function): this;
-}
+// declare interface ChannelReceiver<T> {
+//   on(
+//     event: "message",
+//     listener: (payload: Buffer, topic: string) => void
+//   ): this;
+//   on(event: string, listener: Function): this;
+// }
 
-class Channel extends EventEmitter {
+class Channel {
   protected definition: ChannelDefinition;
   protected agent: TetherAgent;
 
   constructor(agent: TetherAgent, definition: ChannelDefinition) {
-    super(); // For EventEmitter
     this.agent = agent;
 
     logger.debug("Channel super definition:", JSON.stringify(definition));
@@ -27,8 +25,11 @@ class Channel extends EventEmitter {
   public getDefinition = () => this.definition;
 }
 
-export class ChannelReceiver extends Channel {
-  public static async create(
+type ReceiverCallback<T> = (payload: T, topic: string) => void;
+export class ChannelReceiver<T> extends Channel {
+  private callbacks: ReceiverCallback<T>[];
+
+  public static async create<T>(
     agent: TetherAgent,
     channelName: string,
     options?: {
@@ -38,7 +39,7 @@ export class ChannelReceiver extends Channel {
       subscribeOptions?: IClientSubscribeOptions;
     }
   ) {
-    const instance = new ChannelReceiver(agent, channelName, options || {});
+    const instance = new ChannelReceiver<T>(agent, channelName, options || {});
 
     try {
       await instance.subscribe(options?.subscribeOptions || { qos: 1 });
@@ -70,12 +71,20 @@ export class ChannelReceiver extends Channel {
           options.id ?? agent.getConfig().id
         ),
     });
+    this.callbacks = [];
     if (agent.getConfig().autoConnect === true && !agent.getIsConnected()) {
       throw Error(
         "trying to create an Input before client is connected; autoConnect? " +
           agent.getConfig().autoConnect
       );
     }
+  }
+
+  public on(event: string, cb: ReceiverCallback<T>) {
+    if (event !== "message") {
+      throw Error(`only "message" events can be registered`);
+    }
+    this.callbacks.push(cb);
   }
 
   private subscribe = async (options?: IClientSubscribeOptions) => {
@@ -104,7 +113,10 @@ export class ChannelReceiver extends Channel {
     );
     this.agent.getClient()?.on("message", (topic, payload) => {
       if (topicMatchesChannel(this.definition.topic, topic)) {
-        this.emit("message", payload, topic);
+        // this.emit("message", payload, topic);
+        this.callbacks.forEach((cb) => {
+          cb.call(this, decode(payload) as T, topic);
+        });
       }
     });
   };

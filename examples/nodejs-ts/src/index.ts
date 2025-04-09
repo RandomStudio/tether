@@ -2,7 +2,7 @@ import defaults from "./defaults";
 import parse from "parse-strings-in-object";
 import rc from "rc";
 import { getLogger } from "log4js";
-import { ChannelSender, TetherAgent } from "tether-agent";
+import { ChannelReceiver, ChannelSender, TetherAgent } from "tether-agent";
 
 const appName = defaults.appName;
 
@@ -24,6 +24,28 @@ const main = async () => {
     something: "one",
   });
 
+  const genericReceiver = await ChannelReceiver.create(
+    agent,
+    "randomValuesStrictlyTyped"
+  );
+  genericReceiver.on("message", (payload, topic) => {
+    logger.info(
+      "Our generic receiver got:",
+      payload,
+      typeof payload,
+      "on topic",
+      topic
+    );
+  });
+
+  const typedReceiver = await ChannelReceiver.create<number>(
+    agent,
+    "randomValuesStrictlyTyped"
+  );
+  typedReceiver.on("message", (payload) => {
+    logger.info("Our typed receiver got", payload, typeof payload);
+  });
+
   const typedSender = new ChannelSender<number>(
     agent,
     "randomValuesStrictlyTyped"
@@ -37,6 +59,10 @@ const main = async () => {
 
   // This will work fine, though
   typedSender.encodeAndSend(Math.random());
+
+  setTimeout(() => {
+    agent.disconnect();
+  }, 2000);
 };
 
 // ================================================
