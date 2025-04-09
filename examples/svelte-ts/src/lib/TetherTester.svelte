@@ -7,7 +7,7 @@
     encode,
     ChannelReceiver,
     decode,
-  } from "tether-agent";
+  } from "../../../../lib/js/dist";
 
   interface CustomMessage {
     timestamp: number;

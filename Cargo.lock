@@ -1560,7 +1560,7 @@ dependencies = [
 
 [[package]]
 name = "tether-utils"
-version = "1.0.0"
+version = "1.0.0-alpha"
 dependencies = [
  "anyhow",
  "circular-buffer",
