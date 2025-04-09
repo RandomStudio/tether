@@ -26,6 +26,7 @@ Unused "utilities" and the "explorer" will be removed.
 - Instead of "InputPlug" and "OutputPlug", the word order will be reversed to "ChannelReceiver" and "ChannelSender". This reflects the idea that a "Channel" is a single thing, but may have multiple "ChannelReceivers" and "ChannelSenders" at either end.
 - Instead of "publishing", we can simply talk about "sending", i.e. `channel.send()` rather than `plug.publish()`
 - The term "receiving" will be preferred, but "subscribe" can still be used when actually relevant (especially internally)
+- The folder "base_agent" will be renamed to "lib". There is no class inheritance thing happening in the library, anyway.
 
 ## New examples
 Check that the React example works and is up to date!
