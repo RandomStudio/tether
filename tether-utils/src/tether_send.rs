@@ -66,7 +66,7 @@ pub fn send(options: &SendOptions, tether_agent: &mut TetherAgent) -> anyhow::Re
             a_string: "hello world".into(),
         };
         info!("Sending dummy data {:?}", payload);
-        return match tether_agent.encode_and_send(&channel, &payload) {
+        return match tether_agent.send(&channel, &payload) {
             Ok(_) => {
                 info!("Sent dummy data message OK");
                 Ok(())
@@ -83,10 +83,8 @@ pub fn send(options: &SendOptions, tether_agent: &mut TetherAgent) -> anyhow::Re
             );
             match serde_json::from_str::<serde_json::Value>(custom_message) {
                 Ok(encoded) => {
-                    let payload =
-                        rmp_serde::to_vec_named(&encoded).expect("failed to encode msgpack");
                     tether_agent
-                        .send(&channel, Some(&payload))
+                        .send(&channel, &encoded)
                         .expect("failed to publish");
                     info!("Sent message OK");
                     Ok(())
@@ -99,7 +97,7 @@ pub fn send(options: &SendOptions, tether_agent: &mut TetherAgent) -> anyhow::Re
         }
         None => {
             warn!("Sending empty message");
-            match tether_agent.send(&channel, None) {
+            match tether_agent.send_empty(&channel) {
                 Ok(_) => {
                     info!("Sent empty message OK");
                     Ok(())
