@@ -7,11 +7,11 @@ The default will be TWO part topics, with THREE part topics optional.
 The "ID" part was always optional; now this is put last and does NOT need to be included if unused. No need for inserting a word such as "any" into the topic.
 
 
-For Output Plugs (publishing), the topic will be constructed as follows:
+For Output Plugs (publishing) NOW CHANNEL SENDERS, the topic will be constructed as follows:
 - agentRole/chanelName
 - agentRole/chanelName/optionalID
 
-For Input Plugs (subscribing), the topic will be constructed as follows:
+For Input Plugs (subscribing) NOW CHANNEL RECEIVERS, the topic will be constructed as follows:
 - agentRole/chanelName/# (matches "no ID" part and "ID part included")
 - agentRole/chanelName/optionalID (will only match when ID part is matched)
 
