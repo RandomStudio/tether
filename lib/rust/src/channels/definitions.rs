@@ -69,10 +69,10 @@ impl ChannelReceiverDefinition {
     ///
     /// Due to the use of wildcard subscriptions, multiple topic strings might match a given
     /// Channel Receiver definition. e.g. `someRole/channelMessages` and `anotherRole/channelMessages` and `someRole/channelMessages/specificID`
-    /// should ALL match on an Channel Receiver named `channelMessages` unless more specific Role and/or ID
+    /// should ALL match on a Channel Receiver named `channelMessages` unless more specific Role and/or ID
     /// parts were specified in the Channel Receiver Definition.
     ///
-    /// In the case where an Channel Receiver was defined with a completely manually-specified topic string,
+    /// In the case where a Channel Receiver was defined with a completely manually-specified topic string,
     /// this function returns a warning and marks ANY incoming message as a valid match; the end-user
     /// developer is expected to match against topic strings themselves.
     pub fn matches(&self, incoming_topic: &TetherOrCustomTopic) -> bool {
