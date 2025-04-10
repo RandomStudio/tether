@@ -1,59 +1,55 @@
-const {
-  TetherAgent,
-  ChannelReceiver,
-  ChannelSender,
-  NODEJS,
-  encode,
-  decode,
-} = require("tether-agent");
-const parse = require("parse-strings-in-object");
-const rc = require("rc");
-
-const config = parse(
-  rc("NodeJSDummy", {
-    loglevel: "debug",
-    host: "localhost",
-    port: 1883,
-    protocol: "tcp",
-  })
-);
-console.log("Launch with config", config);
+import { TetherAgent, ChannelReceiver, ChannelSender } from "tether-agent";
 
 const main = async () => {
-  const agent = await TetherAgent.create("dummy", {
-    loglevel: config.loglevel,
-    brokerOptions: {
-      ...NODEJS,
-      host: config.host,
-      port: config.port,
-      protocol: config.protocol,
-    },
-  });
+  const agent = await TetherAgent.create("dummy");
 
   console.log("Agent instance", agent.getConfig(), agent.getIsConnected());
 
   // Demonstrate Sending
   const channelSender = new ChannelSender(agent, "randomValue");
-  const fastChannelSender = new ChannelSender(agent, "fastValues");
+  const fastChannelSender = new ChannelSender(agent, "fastValues", {
+    publishOptions: { qos: 0 },
+  });
   const emptyChannelSender = new ChannelSender(agent, "emptyMessage");
+
+  let quitting = false;
 
   setInterval(() => {
     const m = {
       timestamp: Date.now(),
       value: Math.random(),
     };
-    channelSender.encodeAndSend(m);
+    if (!quitting) {
+      channelSender.send(m);
+    }
   }, 1000);
 
   setInterval(() => {
-    emptyChannelSender.send();
+    if (!quitting) {
+      emptyChannelSender.send();
+    }
   }, 3333);
 
   let num = 0;
   setInterval(() => {
     num++;
-    fastChannelSender.send(Buffer.from(encode(num)));
+    if (!quitting) {
+      fastChannelSender.send(num);
+    }
   }, 8);
+
+  setTimeout(() => {
+    console.log("Ready to stop!");
+    quitting = true;
+    agent
+      .disconnect()
+      .then(() => {
+        process.exit(0);
+      })
+      .catch((e) => {
+        console.error("Error disconnecting:", e);
+      });
+  }, 5000);
 
   // Demonstrate Receiving
   const inputChannelOne = await ChannelReceiver.create(agent, "randomValue");

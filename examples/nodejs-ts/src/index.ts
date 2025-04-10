@@ -51,7 +51,7 @@ const main = async () => {
     "randomValuesStrictlyTyped"
   );
   // This will be rejected by TypeScript compiler:
-  // typedSender.encodeAndSend({
+  // typedSender.send({
   //   value: Math.random(),
   //   timestamp: Date.now(),
   //   something: "one",

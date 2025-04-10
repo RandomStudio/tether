@@ -39,3 +39,13 @@ Unfortunately, the JS/TS package had already been bumped to v3 earlier. This mea
 Rust and Python packages could both move to a "v3" properly, however, and it seems most meaningful to use the correct MAJOR version when importing the Tether Base Agent in any language.
 
 Should we bump to "Tether 4" instead? (Reminds me of Angular 2->4 transition!)
+
+## JS (TS) changes
+Apart from the terminology changes, the following are important to note:
+- Encoding and decoding of messages happens AUTOMATICALLY BY DEFAULT now, so there is no need to import and use `encode` and `decode`
+- The `.send` function automatically encodes, and uses generics! No need to encode first (and applications must be careful NOT to encode before sending). `.sendRaw` is provided as an alternative if the end-user prefers to encode themselves
+- The EventEmitter class extension business has been removed, so callbacks for receiving messages are handled manually (internally). From the end-user perspective, everything looks very much the same, with the exception that `.on("message", cb)` will AUTOMATICALLY DECODE first, and tries to use generics! The end-user currently has no direct option to decode messages themselves, any more.
+
+## Rust changes
+Apart from the terminology changes, the following are important to note:
+- `agent.send` used to assume an already-encoded payload, while `.encode_and_send` did auto-encoding. Now, `.send` is the auto-encoding version and additional `.send_raw` and `.send_empty` functions are provided. It is VERY important that the new `.send` will actually (incorrectly!) accept already-encoded payloads, because `&[u8]` is ALSO `T: Serialize`! So applications using the new version must be carefully checked to ensure that things are not (double) encoded before sending!
