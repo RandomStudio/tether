@@ -1,6 +1,6 @@
 use log::{debug, error, info, warn};
 
-use crate::tether_compliant_topic::TetherCompliantTopic;
+use crate::{tether_compliant_topic::TetherCompliantTopic, TetherAgent};
 
 pub struct ChannelReceiverOptions {
     channel_name: String,
@@ -220,99 +220,98 @@ impl ChannelOptionsBuilder {
         self
     }
 
-    // /// Finalise the options (substituting suitable defaults if no custom values have been
-    // /// provided) and return a valid ChannelDefinition that you can actually use.
-    // pub fn build(self, tether_agent: &mut TetherAgent) -> anyhow::Result<TetherChannel> {
-    //     todo!();
-    //     // match self {
-    //     //     Self::ChannelReceiver(channel_options) => {
-    //     //         let tpt: TetherOrCustomTopic = match channel_options.override_topic {
-    //     //             Some(custom) => TetherOrCustomTopic::Custom(custom),
-    //     //             None => {
-    //     //                 debug!("Not a custom topic; provided overrides: role = {:?}, id = {:?}, name = {:?}", channel_options.override_subscribe_role, channel_options.override_subscribe_id, channel_options.override_subscribe_channel_name);
+    /// Finalise the options (substituting suitable defaults if no custom values have been
+    /// provided) and return a valid ChannelDefinition that you can actually use.
+    pub fn build(self, tether_agent: &mut TetherAgent) -> anyhow::Result<TetherChannel> {
+        match self {
+            Self::ChannelReceiver(channel_options) => {
+                let tpt: TetherOrCustomTopic = match channel_options.override_topic {
+                    Some(custom) => TetherOrCustomTopic::Custom(custom),
+                    None => {
+                        debug!("Not a custom topic; provided overrides: role = {:?}, id = {:?}, name = {:?}", channel_options.override_subscribe_role, channel_options.override_subscribe_id, channel_options.override_subscribe_channel_name);
 
-    //     //                 TetherOrCustomTopic::Tether(TetherCompliantTopic::new_for_subscribe(
-    //     //                     &channel_options
-    //     //                         .override_subscribe_channel_name
-    //     //                         .unwrap_or(channel_options.channel_name.clone()),
-    //     //                     channel_options.override_subscribe_role.as_deref(),
-    //     //                     channel_options.override_subscribe_id.as_deref(),
-    //     //                 ))
-    //     //             }
-    //     //         };
-    //     //         let channel_definition =
-    //     //             ChannelReceiver::new(&channel_options.channel_name, tpt, channel_options.qos);
+                        TetherOrCustomTopic::Tether(TetherCompliantTopic::new_for_subscribe(
+                            &channel_options
+                                .override_subscribe_channel_name
+                                .unwrap_or(channel_options.channel_name.clone()),
+                            channel_options.override_subscribe_role.as_deref(),
+                            channel_options.override_subscribe_id.as_deref(),
+                        ))
+                    }
+                };
+                let channel_definition =
+                    ChannelReceiver::new(&channel_options.channel_name, tpt, channel_options.qos);
 
-    //     //         // This is really only useful for testing purposes.
-    //     //         if !tether_agent.auto_connect_enabled() {
-    //     //             warn!("Auto-connect is disabled, skipping subscription");
-    //     //             return Ok(TetherChannel::ChannelReceiver(channel_definition));
-    //     //         }
+                // This is really only useful for testing purposes.
+                if !tether_agent.auto_connect_enabled() {
+                    warn!("Auto-connect is disabled, skipping subscription");
+                    return Ok(TetherChannel::ChannelReceiver(channel_definition));
+                }
 
-    //     //         if let Some(client) = &tether_agent.client {
-    //     //             match client.subscribe(
-    //     //                 channel_definition.generated_topic(),
-    //     //                 match channel_definition.qos() {
-    //     //                     0 => rumqttc::QoS::AtMostOnce,
-    //     //                     1 => rumqttc::QoS::AtLeastOnce,
-    //     //                     2 => rumqttc::QoS::ExactlyOnce,
-    //     //                     _ => rumqttc::QoS::AtLeastOnce,
-    //     //                 },
-    //     //             ) {
-    //     //                 Ok(res) => {
-    //     //                     debug!(
-    //     //                         "This topic was fine: \"{}\"",
-    //     //                         channel_definition.generated_topic()
-    //     //                     );
-    //     //                     debug!("Server respond OK for subscribe: {res:?}");
-    //     //                     Ok(TetherChannel::ChannelReceiver(channel_definition))
-    //     //                 }
-    //     //                 Err(_e) => Err(anyhow!("ClientError")),
-    //     //             }
-    //     //         } else {
-    //     //             Err(anyhow!("Client not available for subscription"))
-    //     //         }
-    //     //     }
-    //     //     Self::ChannelSender(channel_options) => {
-    //     //         let tpt: TetherOrCustomTopic = match channel_options.override_topic {
-    //     //             Some(custom) => {
-    //     //                 warn!(
-    //     //                     "Custom topic override: \"{}\" - all other options ignored",
-    //     //                     custom
-    //     //                 );
-    //     //                 TetherOrCustomTopic::Custom(custom)
-    //     //             }
-    //     //             None => {
-    //     //                 let optional_id_part = match channel_options.override_publish_id {
-    //     //                     Some(id) => {
-    //     //                         debug!("Publish ID was overriden at Channel options level. The Agent ID will be ignored.");
-    //     //                         Some(id)
-    //     //                     }
-    //     //                     None => {
-    //     //                         debug!("Publish ID was not overriden at Channel options level. The Agent ID will be used instead, if specified in Agent creation.");
-    //     //                         tether_agent.id().map(String::from)
-    //     //                     }
-    //     //                 };
+                if let Some(client) = &tether_agent.client {
+                    match client.subscribe(
+                        channel_definition.generated_topic(),
+                        match channel_definition.qos() {
+                            0 => rumqttc::QoS::AtMostOnce,
+                            1 => rumqttc::QoS::AtLeastOnce,
+                            2 => rumqttc::QoS::ExactlyOnce,
+                            _ => rumqttc::QoS::AtLeastOnce,
+                        },
+                    ) {
+                        Ok(res) => {
+                            debug!(
+                                "This topic was fine: \"{}\"",
+                                channel_definition.generated_topic()
+                            );
+                            debug!("Server respond OK for subscribe: {res:?}");
+                            Ok(TetherChannel::ChannelReceiver(channel_definition))
+                        }
+                        Err(_e) => Err(anyhow!("ClientError")),
+                    }
+                } else {
+                    Err(anyhow!("Client not available for subscription"))
+                }
+            }
+            Self::ChannelSender(channel_options) => {
+                let tpt: TetherOrCustomTopic = match channel_options.override_topic {
+                    Some(custom) => {
+                        warn!(
+                            "Custom topic override: \"{}\" - all other options ignored",
+                            custom
+                        );
+                        TetherOrCustomTopic::Custom(custom)
+                    }
+                    None => {
+                        let optional_id_part = match channel_options.override_publish_id {
+                            Some(id) => {
+                                debug!("Publish ID was overriden at Channel options level. The Agent ID will be ignored.");
+                                Some(id)
+                            }
+                            None => {
+                                debug!("Publish ID was not overriden at Channel options level. The Agent ID will be used instead, if specified in Agent creation.");
+                                tether_agent.id().map(String::from)
+                            }
+                        };
 
-    //     //                 TetherOrCustomTopic::Tether(TetherCompliantTopic::new_for_publish(
-    //     //                     tether_agent,
-    //     //                     &channel_options.channel_name,
-    //     //                     channel_options.override_publish_role.as_deref(),
-    //     //                     optional_id_part.as_deref(),
-    //     //                 ))
-    //     //             }
-    //     //         };
+                        TetherOrCustomTopic::Tether(TetherCompliantTopic::new_for_publish(
+                            tether_agent,
+                            &channel_options.channel_name,
+                            channel_options.override_publish_role.as_deref(),
+                            optional_id_part.as_deref(),
+                        ))
+                    }
+                };
 
-    //     //         let channel_definition = ChannelSender::new(
-    //     //             &channel_options.channel_name,
-    //     //             tpt,
-    //     //             channel_options.qos,
-    //     //             channel_options.retain,
-    //     //         );
-    //     //         Ok(TetherChannel::ChannelSender(channel_definition))
-    //     //     }
-    //     // }
-    // }
+                let channel_definition = ChannelSender::new(
+                    &channel_options.channel_name,
+                    tpt,
+                    channel_options.qos,
+                    channel_options.retain,
+                );
+                Ok(TetherChannel::ChannelSender(channel_definition))
+            }
+        }
+    }
 }
 
 // #[cfg(test)]

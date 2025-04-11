@@ -1,11 +1,9 @@
-use std::{thread, time::Duration};
-
 use env_logger::{Builder, Env};
-use log::{debug, info, warn};
-use rmp_serde::from_slice;
+use log::*;
 use serde::Deserialize;
-use tether_agent::{ChannelOptionsBuilder, TetherAgentOptionsBuilder};
+use tether_agent::TetherAgentOptionsBuilder;
 
+#[allow(dead_code)]
 #[derive(Deserialize, Debug)]
 struct CustomMessage {
     id: usize,
@@ -49,19 +47,6 @@ fn main() {
                     m
                 );
             }
-            // if receiver.matches(&topic) {
-            //     let decoded = from_slice::<CustomMessage>(&payload);
-            //     match decoded {
-            //         Ok(d) => {
-            //             info!("Yes, we decoded the MessagePack payload as: {:?}", d);
-            //             let CustomMessage { name, id } = d;
-            //             debug!("Name is {} and ID is {}", name, id);
-            //         }
-            //         Err(e) => {
-            //             warn!("Failed to decode the payload: {}", e)
-            //         }
-            //     };
-            // }
         }
     }
 }

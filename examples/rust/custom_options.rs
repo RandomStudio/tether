@@ -1,8 +1,6 @@
 use std::time::Duration;
 
-use tether_agent::{
-    ChannelDefinition, ChannelDefinitionCommon, ChannelOptionsBuilder, TetherAgentOptionsBuilder,
-};
+use tether_agent::{ChannelOptionsBuilder, TetherAgentOptionsBuilder};
 
 fn main() {
     let mut tether_agent = TetherAgentOptionsBuilder::new("example")
@@ -18,7 +16,7 @@ fn main() {
         .role(Some("pretendingToBeSomethingElse"))
         .qos(Some(2))
         .retain(Some(true))
-        .build(&mut tether_agent)
+        .build()
         .expect("failed to create sender channel");
     let input_wildcard_channel = ChannelOptionsBuilder::create_receiver("everything")
         .topic(Some("#"))
