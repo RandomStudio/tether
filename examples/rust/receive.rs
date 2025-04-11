@@ -29,15 +29,25 @@ fn main() {
         .build()
         .expect("failed to init Tether agent");
 
-    let receiver = tether_agent
+    let receiver_of_numbers = tether_agent
         .create_receiver::<u8>("numbersOnly")
+        .expect("failed to create receiver");
+
+    let receiver_of_custom_structs = tether_agent
+        .create_receiver::<CustomMessage>("values")
         .expect("failed to create receiver");
 
     loop {
         debug!("Checking for messages...");
         while let Some((topic, payload)) = tether_agent.check_messages() {
-            if let Some(decoded_message) = receiver.parse(&topic, &payload) {
-                info!("Decoded a message for our Channel: {:?}", decoded_message);
+            if let Some(m) = receiver_of_numbers.parse(&topic, &payload) {
+                info!("Decoded a message for our 'numbers' Channel: {:?}", m);
+            }
+            if let Some(m) = receiver_of_custom_structs.parse(&topic, &payload) {
+                info!(
+                    "Decoded a message for our 'custom structs' Channel: {:?}",
+                    m
+                );
             }
             // if receiver.matches(&topic) {
             //     let decoded = from_slice::<CustomMessage>(&payload);
