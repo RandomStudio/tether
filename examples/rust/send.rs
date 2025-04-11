@@ -1,4 +1,4 @@
-use std::{thread, time::Duration};
+use std::time::Duration;
 
 use env_logger::{Builder, Env};
 use log::{debug, info};
@@ -33,4 +33,13 @@ fn main() {
     };
     let payload = rmp_serde::to_vec_named(&test_struct).expect("failed to serialize");
     sender.send_raw(&payload).expect("failed to send");
+
+    let another_struct = CustomStruct {
+        id: 202,
+        name: "auto encoded".into(),
+    };
+
+    sender.send(&another_struct).expect("failed to encode+send");
+
+    std::thread::sleep(Duration::from_millis(3000));
 }

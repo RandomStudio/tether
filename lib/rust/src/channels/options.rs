@@ -1,11 +1,6 @@
-use anyhow::anyhow;
 use log::{debug, error, info, warn};
 
-use crate::{
-    definitions::ChannelCommon, tether_compliant_topic::TetherCompliantTopic, TetherAgent,
-};
-
-use super::{tether_compliant_topic::TetherOrCustomTopic, ChannelReceiver, ChannelSender};
+use crate::tether_compliant_topic::TetherCompliantTopic;
 
 pub struct ChannelReceiverOptions {
     channel_name: String,

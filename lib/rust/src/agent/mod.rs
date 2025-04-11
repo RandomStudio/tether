@@ -1,19 +1,13 @@
 use anyhow::anyhow;
 use log::{debug, error, info, trace, warn};
-use rmp_serde::to_vec_named;
 use rumqttc::tokio_rustls::rustls::ClientConfig;
 use rumqttc::{Client, Event, MqttOptions, Packet, QoS, Transport};
-use serde::Serialize;
-use std::rc::Rc;
 use std::sync::{Arc, Mutex};
 use std::{sync::mpsc, thread, time::Duration};
 use uuid::Uuid;
 
-use crate::ChannelSender;
-use crate::{
-    tether_compliant_topic::{TetherCompliantTopic, TetherOrCustomTopic},
-    ChannelCommon,
-};
+use crate::sender::ChannelSender;
+use crate::tether_compliant_topic::{TetherCompliantTopic, TetherOrCustomTopic};
 
 const TIMEOUT_SECONDS: u64 = 3;
 const DEFAULT_USERNAME: &str = "tether";
