@@ -12,10 +12,10 @@ For Output Plugs (publishing) NOW CHANNEL SENDERS, the topic will be constructed
 - agentRole/chanelName/optionalID
 
 For Input Plugs (subscribing) NOW CHANNEL RECEIVERS, the topic will be constructed as follows:
-- agentRole/chanelName/# (matches "no ID" part and "ID part included")
+- agentRole/chanelName/# (matches "no ID" part and "ID part(s) included")
 - agentRole/chanelName/optionalID (will only match when ID part is matched)
 
-The main practical difference between a "topic" and a "Channel" (previously "plug") is simply that a Channel is expected to match ONLY ONE TYPE OF MESSAGE. So, a single MQTT Client may have multiple subscriptions, but we ensure that the correct messages are matched with the correct Channel when received, by applying our additional Tether Complaint Topic (TCT) matching pattern.
+The main practical difference between a "topic" and a "Channel" (previously "plug") is simply that a Channel is expected to match ONLY ONE TYPE OF MESSAGE. So, a single MQTT Client may have multiple subscriptions, but we ensure that the correct messages are matched with the correct Channel when received, by applying our additional Tether Complaint Topic (TCT) matching pattern. The libraries (particularly typed languages such as TypeScript and Rust) should try to encourage (if not enforce) this practice.
 
 ## Cleaning up
 Unused "utilities" and the "explorer" will be removed.
