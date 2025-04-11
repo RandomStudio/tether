@@ -17,7 +17,7 @@ struct CustomMessage {
 fn main() {
     println!("Rust Tether Agent subscribe example");
 
-    let mut builder = Builder::from_env(Env::default().default_filter_or("debug"));
+    let mut builder = Builder::from_env(Env::default().default_filter_or("info"));
     builder.filter_module("tether_agent", log::LevelFilter::Warn);
     builder.filter_module("rumqttc", log::LevelFilter::Warn);
     builder.init();
@@ -32,4 +32,26 @@ fn main() {
     let receiver = tether_agent
         .create_receiver::<u8>("numbersOnly")
         .expect("failed to create receiver");
+
+    loop {
+        debug!("Checking for messages...");
+        while let Some((topic, payload)) = tether_agent.check_messages() {
+            if let Some(decoded_message) = receiver.parse(&topic, &payload) {
+                info!("Decoded a message for our Channel: {:?}", decoded_message);
+            }
+            // if receiver.matches(&topic) {
+            //     let decoded = from_slice::<CustomMessage>(&payload);
+            //     match decoded {
+            //         Ok(d) => {
+            //             info!("Yes, we decoded the MessagePack payload as: {:?}", d);
+            //             let CustomMessage { name, id } = d;
+            //             debug!("Name is {} and ID is {}", name, id);
+            //         }
+            //         Err(e) => {
+            //             warn!("Failed to decode the payload: {}", e)
+            //         }
+            //     };
+            // }
+        }
+    }
 }
