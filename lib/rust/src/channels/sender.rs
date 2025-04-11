@@ -1,6 +1,5 @@
 use crate::TetherAgent;
 use anyhow::anyhow;
-use log::*;
 use rmp_serde::to_vec_named;
 use serde::Serialize;
 
