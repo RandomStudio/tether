@@ -1,9 +1,14 @@
+use anyhow::anyhow;
+use std::rc::Rc;
+
 use log::{debug, error, warn};
 use serde::{Deserialize, Serialize};
 
+use crate::TetherAgent;
+
 use super::tether_compliant_topic::TetherOrCustomTopic;
 
-pub trait ChannelDefinitionCommon<'a> {
+pub trait ChannelCommon<'a> {
     fn name(&'a self) -> &'a str;
     /// Return the generated topic string actually used by the Channel
     fn generated_topic(&'a self) -> &'a str;
@@ -13,13 +18,13 @@ pub trait ChannelDefinitionCommon<'a> {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct ChannelReceiverDefinition {
+pub struct ChannelReceiver {
     name: String,
     topic: TetherOrCustomTopic,
     qos: i32,
 }
 
-impl ChannelDefinitionCommon<'_> for ChannelReceiverDefinition {
+impl ChannelCommon<'_> for ChannelReceiver {
     fn name(&self) -> &str {
         &self.name
     }
@@ -52,13 +57,9 @@ impl ChannelDefinitionCommon<'_> for ChannelReceiverDefinition {
     }
 }
 
-impl ChannelReceiverDefinition {
-    pub fn new(
-        name: &str,
-        topic: TetherOrCustomTopic,
-        qos: Option<i32>,
-    ) -> ChannelReceiverDefinition {
-        ChannelReceiverDefinition {
+impl ChannelReceiver {
+    pub fn new(name: &str, topic: TetherOrCustomTopic, qos: Option<i32>) -> ChannelReceiver {
+        ChannelReceiver {
             name: String::from(name),
             topic,
             qos: qos.unwrap_or(1),
@@ -129,15 +130,15 @@ impl ChannelReceiverDefinition {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
-pub struct ChannelSenderDefinition {
+pub struct ChannelSender<'a> {
     name: String,
     topic: TetherOrCustomTopic,
     qos: i32,
     retain: bool,
+    tether_agent: Rc<&'a TetherAgent>,
 }
 
-impl ChannelDefinitionCommon<'_> for ChannelSenderDefinition {
+impl<'a> ChannelCommon<'a> for ChannelSender<'a> {
     fn name(&'_ self) -> &'_ str {
         &self.name
     }
@@ -158,69 +159,86 @@ impl ChannelDefinitionCommon<'_> for ChannelSenderDefinition {
     }
 }
 
-impl ChannelSenderDefinition {
+impl<'a> ChannelSender<'a> {
     pub fn new(
         name: &str,
         topic: TetherOrCustomTopic,
         qos: Option<i32>,
         retain: Option<bool>,
-    ) -> ChannelSenderDefinition {
-        ChannelSenderDefinition {
+        tether_agent: Rc<&'a TetherAgent>,
+    ) -> ChannelSender<'a> {
+        ChannelSender {
             name: String::from(name),
             topic,
             qos: qos.unwrap_or(1),
             retain: retain.unwrap_or(false),
+            tether_agent,
         }
     }
 
     pub fn retain(&self) -> bool {
         self.retain
     }
-}
 
-#[derive(Serialize, Deserialize, Debug)]
-pub enum ChannelDefinition {
-    ChannelReceiver(ChannelReceiverDefinition),
-    ChannelSender(ChannelSenderDefinition),
-}
-
-impl ChannelDefinition {
-    pub fn name(&self) -> &str {
-        match self {
-            ChannelDefinition::ChannelReceiver(p) => p.name(),
-            ChannelDefinition::ChannelSender(p) => p.name(),
-        }
-    }
-
-    pub fn generated_topic(&self) -> &str {
-        match self {
-            ChannelDefinition::ChannelReceiver(p) => p.generated_topic(),
-            ChannelDefinition::ChannelSender(p) => p.generated_topic(),
-        }
-    }
-
-    pub fn matches(&self, topic: &TetherOrCustomTopic) -> bool {
-        match self {
-            ChannelDefinition::ChannelReceiver(p) => p.matches(topic),
-            ChannelDefinition::ChannelSender(_) => {
-                error!("We don't check matches for Channel Senders");
-                false
-            }
+    pub fn send_raw(&self, payload: &[u8]) -> anyhow::Result<()> {
+        if let Some(client) = &self.tether_agent.client {
+            let res = client
+                .publish(
+                    self.generated_topic(),
+                    rumqttc::QoS::AtLeastOnce,
+                    false,
+                    payload,
+                )
+                .map_err(anyhow::Error::msg);
+            res
+        } else {
+            Err(anyhow!("no client"))
         }
     }
 }
+
+// pub enum TetherChannel {
+//     ChannelReceiver(ChannelReceiver),
+//     ChannelSender(ChannelSender),
+// }
+
+// impl TetherChannel {
+//     pub fn name(&self) -> &str {
+//         match self {
+//             TetherChannel::ChannelReceiver(p) => p.name(),
+//             TetherChannel::ChannelSender(p) => p.name(),
+//         }
+//     }
+
+//     pub fn generated_topic(&self) -> &str {
+//         match self {
+//             TetherChannel::ChannelReceiver(p) => p.generated_topic(),
+//             TetherChannel::ChannelSender(p) => p.generated_topic(),
+//         }
+//     }
+
+//     pub fn matches(&self, topic: &TetherOrCustomTopic) -> bool {
+//         match self {
+//             TetherChannel::ChannelReceiver(p) => p.matches(topic),
+//             TetherChannel::ChannelSender(_) => {
+//                 error!("We don't check matches for Channel Senders");
+//                 false
+//             }
+//         }
+//     }
+// }
 
 #[cfg(test)]
 mod tests {
 
     use crate::{
         tether_compliant_topic::{parse_channel_name, TetherCompliantTopic, TetherOrCustomTopic},
-        ChannelDefinitionCommon, ChannelReceiverDefinition,
+        ChannelCommon, ChannelReceiver,
     };
 
     #[test]
     fn receiver_match_tpt() {
-        let channel_def = ChannelReceiverDefinition::new(
+        let channel_def = ChannelReceiver::new(
             "testChannel",
             TetherOrCustomTopic::Tether(TetherCompliantTopic::new_for_subscribe(
                 "testChannel",
@@ -250,7 +268,7 @@ mod tests {
 
     #[test]
     fn receiver_match_tpt_custom_role() {
-        let channel_def = ChannelReceiverDefinition::new(
+        let channel_def = ChannelReceiver::new(
             "customChanel",
             TetherOrCustomTopic::Tether(TetherCompliantTopic::new_for_subscribe(
                 "customChanel",
@@ -278,7 +296,7 @@ mod tests {
 
     #[test]
     fn receiver_match_custom_id() {
-        let channel_def = ChannelReceiverDefinition::new(
+        let channel_def = ChannelReceiver::new(
             "customChanel",
             TetherOrCustomTopic::Tether(TetherCompliantTopic::new_for_subscribe(
                 "customChanel",
@@ -306,7 +324,7 @@ mod tests {
 
     #[test]
     fn receiver_match_both() {
-        let channel_def = ChannelReceiverDefinition::new(
+        let channel_def = ChannelReceiver::new(
             "customChanel",
             TetherOrCustomTopic::Tether(TetherCompliantTopic::new_for_subscribe(
                 "customChanel",
@@ -337,7 +355,7 @@ mod tests {
 
     #[test]
     fn receiver_match_custom_topic() {
-        let channel_def = ChannelReceiverDefinition::new(
+        let channel_def = ChannelReceiver::new(
             "customChanel",
             TetherOrCustomTopic::Custom("one/two/three/four/five".into()), // not a standard Tether Three Part Topic
             None,
@@ -355,7 +373,7 @@ mod tests {
 
     #[test]
     fn receiver_match_wildcard() {
-        let channel_def = ChannelReceiverDefinition::new(
+        let channel_def = ChannelReceiver::new(
             "everything",
             TetherOrCustomTopic::Custom("#".into()), // fully legal, but not a standard Three Part Topic
             None,

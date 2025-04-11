@@ -4,14 +4,15 @@ use rmp_serde::to_vec_named;
 use rumqttc::tokio_rustls::rustls::ClientConfig;
 use rumqttc::{Client, Event, MqttOptions, Packet, QoS, Transport};
 use serde::Serialize;
+use std::rc::Rc;
 use std::sync::{Arc, Mutex};
 use std::{sync::mpsc, thread, time::Duration};
 use uuid::Uuid;
 
-use crate::ChannelDefinition;
+use crate::ChannelSender;
 use crate::{
     tether_compliant_topic::{TetherCompliantTopic, TetherOrCustomTopic},
-    ChannelDefinitionCommon,
+    ChannelCommon,
 };
 
 const TIMEOUT_SECONDS: u64 = 3;
@@ -169,6 +170,18 @@ impl TetherAgentOptionsBuilder {
 }
 
 impl TetherAgent {
+    pub fn create_sender(&self, name: &str) -> ChannelSender {
+        ChannelSender::new(
+            name,
+            TetherOrCustomTopic::Tether(TetherCompliantTopic::new_for_publish(
+                self, name, None, None,
+            )),
+            None,
+            None,
+            Rc::new(&self),
+        )
+    }
+
     pub fn is_connected(&self) -> bool {
         self.client.is_some()
     }
@@ -386,67 +399,67 @@ impl TetherAgent {
         }
     }
 
-    /// Unlike .send, this function does NOT serialize the data before publishing.
-    ///
-    /// Given a channel definition and a raw (u8 buffer) payload, publishes a message
-    /// using an appropriate topic and with the QOS specified in the Channel Definition
-    pub fn send_raw(
-        &self,
-        channel_definition: &ChannelDefinition,
-        payload: Option<&[u8]>,
-    ) -> anyhow::Result<()> {
-        match channel_definition {
-            ChannelDefinition::ChannelReceiver(_) => {
-                panic!("You cannot publish using a Channel Receiver")
-            }
-            ChannelDefinition::ChannelSender(channel_sender_definition) => {
-                let topic = channel_sender_definition.generated_topic();
-                let qos = match channel_sender_definition.qos() {
-                    0 => QoS::AtMostOnce,
-                    1 => QoS::AtLeastOnce,
-                    2 => QoS::ExactlyOnce,
-                    _ => QoS::AtMostOnce,
-                };
+    // /// Unlike .send, this function does NOT serialize the data before publishing.
+    // ///
+    // /// Given a channel definition and a raw (u8 buffer) payload, publishes a message
+    // /// using an appropriate topic and with the QOS specified in the Channel Definition
+    // pub fn send_raw(
+    //     &self,
+    //     channel_definition: &TetherChannel,
+    //     payload: Option<&[u8]>,
+    // ) -> anyhow::Result<()> {
+    //     match channel_definition {
+    //         TetherChannel::ChannelReceiver(_) => {
+    //             panic!("You cannot publish using a Channel Receiver")
+    //         }
+    //         TetherChannel::ChannelSender(channel_sender_definition) => {
+    //             let topic = channel_sender_definition.generated_topic();
+    //             let qos = match channel_sender_definition.qos() {
+    //                 0 => QoS::AtMostOnce,
+    //                 1 => QoS::AtLeastOnce,
+    //                 2 => QoS::ExactlyOnce,
+    //                 _ => QoS::AtMostOnce,
+    //             };
 
-                if let Some(client) = &self.client {
-                    let res = client
-                        .publish(
-                            topic,
-                            qos,
-                            channel_sender_definition.retain(),
-                            payload.unwrap_or_default(),
-                        )
-                        .map_err(anyhow::Error::msg);
-                    debug!("Published OK");
-                    res
-                } else {
-                    Err(anyhow!("Client not ready for publish"))
-                }
-            }
-        }
-    }
+    //             if let Some(client) = &self.client {
+    //                 let res = client
+    //                     .publish(
+    //                         topic,
+    //                         qos,
+    //                         channel_sender_definition.retain(),
+    //                         payload.unwrap_or_default(),
+    //                     )
+    //                     .map_err(anyhow::Error::msg);
+    //                 debug!("Published OK");
+    //                 res
+    //             } else {
+    //                 Err(anyhow!("Client not ready for publish"))
+    //             }
+    //         }
+    //     }
+    // }
 
-    /// Serializes the data automatically before publishing.
-    ///
-    /// Given a channel definition and serializeable data payload, publishes a message
-    /// using an appropriate topic and with the QOS specified in the Channel Definition
-    pub fn send<T: Serialize>(
-        &self,
-        channel_definition: &ChannelDefinition,
-        data: T,
-    ) -> anyhow::Result<()> {
-        match to_vec_named(&data) {
-            Ok(payload) => self.send_raw(channel_definition, Some(&payload)),
-            Err(e) => {
-                error!("Failed to encode: {e:?}");
-                Err(e.into())
-            }
-        }
-    }
+    // /// Serializes the data automatically before publishing.
+    // ///
+    // /// Given a channel definition and serializeable data payload, publishes a message
+    // /// using an appropriate topic and with the QOS specified in the Channel Definition
+    // pub fn send<T: Serialize>(
+    //     &self,
+    //     channel_definition: &TetherChannel,
+    //     data: T,
+    // ) -> anyhow::Result<()> {
+    //     match to_vec_named(&data) {
+    //         Ok(payload) => self.send_raw(channel_definition, Some(&payload)),
+    //         Err(e) => {
+    //             error!("Failed to encode: {e:?}");
+    //             Err(e.into())
+    //         }
+    //     }
+    // }
 
-    pub fn send_empty(&self, channel_definition: &ChannelDefinition) -> anyhow::Result<()> {
-        self.send_raw(channel_definition, None)
-    }
+    // pub fn send_empty(&self, channel_definition: &TetherChannel) -> anyhow::Result<()> {
+    //     self.send_raw(channel_definition, None)
+    // }
 
     pub fn publish_raw(
         &self,
