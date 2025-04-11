@@ -41,5 +41,9 @@ fn main() {
 
     sender.send(&another_struct).expect("failed to encode+send");
 
+    let number_sender = tether_agent.create_sender::<u8>("numbersOnly");
+
+    number_sender.send(8).expect("failed to send");
+
     std::thread::sleep(Duration::from_millis(3000));
 }

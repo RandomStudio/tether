@@ -2,6 +2,7 @@ use anyhow::anyhow;
 use log::{debug, error, info, trace, warn};
 use rumqttc::tokio_rustls::rustls::ClientConfig;
 use rumqttc::{Client, Event, MqttOptions, Packet, QoS, Transport};
+use serde::Serialize;
 use std::sync::{Arc, Mutex};
 use std::{sync::mpsc, thread, time::Duration};
 use uuid::Uuid;
@@ -164,7 +165,7 @@ impl TetherAgentOptionsBuilder {
 }
 
 impl TetherAgent {
-    pub fn create_sender(&self, name: &str) -> ChannelSender {
+    pub fn create_sender<T: Serialize>(&self, name: &str) -> ChannelSender<T> {
         ChannelSender::new(
             name,
             TetherOrCustomTopic::Tether(TetherCompliantTopic::new_for_publish(

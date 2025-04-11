@@ -6,15 +6,16 @@ use serde::Serialize;
 
 use super::{tether_compliant_topic::TetherOrCustomTopic, ChannelCommon};
 
-pub struct ChannelSender<'a> {
+pub struct ChannelSender<'a, T: Serialize> {
     name: String,
     topic: TetherOrCustomTopic,
     qos: i32,
     retain: bool,
     tether_agent: &'a TetherAgent,
+    marker: std::marker::PhantomData<T>,
 }
 
-impl<'a> ChannelCommon<'a> for ChannelSender<'a> {
+impl<'a, T: Serialize> ChannelCommon<'a> for ChannelSender<'a, T> {
     fn name(&'_ self) -> &'_ str {
         &self.name
     }
@@ -35,20 +36,21 @@ impl<'a> ChannelCommon<'a> for ChannelSender<'a> {
     }
 }
 
-impl<'a> ChannelSender<'a> {
+impl<'a, T: Serialize> ChannelSender<'a, T> {
     pub fn new(
         name: &str,
         topic: TetherOrCustomTopic,
         qos: Option<i32>,
         retain: Option<bool>,
         tether_agent: &'a TetherAgent,
-    ) -> ChannelSender<'a> {
+    ) -> ChannelSender<'a, T> {
         ChannelSender {
             name: String::from(name),
             topic,
             qos: qos.unwrap_or(1),
             retain: retain.unwrap_or(false),
             tether_agent,
+            marker: std::marker::PhantomData,
         }
     }
 
@@ -72,7 +74,7 @@ impl<'a> ChannelSender<'a> {
         }
     }
 
-    pub fn send<T: Serialize>(&self, payload: T) -> anyhow::Result<()> {
+    pub fn send(&self, payload: T) -> anyhow::Result<()> {
         match to_vec_named(&payload) {
             Ok(data) => self.send_raw(&data),
             Err(e) => Err(e.into()),
