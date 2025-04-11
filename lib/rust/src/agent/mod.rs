@@ -178,7 +178,7 @@ impl TetherAgent {
             )),
             None,
             None,
-            Rc::new(&self),
+            self,
         )
     }
 

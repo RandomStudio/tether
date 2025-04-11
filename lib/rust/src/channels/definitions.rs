@@ -135,7 +135,7 @@ pub struct ChannelSender<'a> {
     topic: TetherOrCustomTopic,
     qos: i32,
     retain: bool,
-    tether_agent: Rc<&'a TetherAgent>,
+    tether_agent: &'a TetherAgent,
 }
 
 impl<'a> ChannelCommon<'a> for ChannelSender<'a> {
@@ -165,7 +165,7 @@ impl<'a> ChannelSender<'a> {
         topic: TetherOrCustomTopic,
         qos: Option<i32>,
         retain: Option<bool>,
-        tether_agent: Rc<&'a TetherAgent>,
+        tether_agent: &'a TetherAgent,
     ) -> ChannelSender<'a> {
         ChannelSender {
             name: String::from(name),
