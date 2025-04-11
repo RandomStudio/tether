@@ -3,11 +3,12 @@ use log::{debug, error, info, trace, warn};
 use rmp_serde::to_vec_named;
 use rumqttc::tokio_rustls::rustls::ClientConfig;
 use rumqttc::{Client, Event, MqttOptions, Packet, QoS, Transport};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::sync::{Arc, Mutex};
 use std::{sync::mpsc, thread, time::Duration};
 use uuid::Uuid;
 
+use crate::receiver::ChannelReceiver;
 use crate::sender::ChannelSender;
 use crate::tether_compliant_topic::{TetherCompliantTopic, TetherOrCustomTopic};
 use crate::ChannelCommon;
@@ -166,16 +167,28 @@ impl TetherAgentOptionsBuilder {
     }
 }
 
-impl TetherAgent {
+impl<'a> TetherAgent {
     pub fn create_sender<T: Serialize>(&self, name: &str) -> ChannelSender<T> {
         ChannelSender::new(
+            self,
             name,
             TetherOrCustomTopic::Tether(TetherCompliantTopic::new_for_publish(
                 self, name, None, None,
             )),
             None,
             None,
+        )
+    }
+
+    pub fn create_receiver<T: Deserialize<'a>>(
+        &'a self,
+        name: &str,
+    ) -> anyhow::Result<ChannelReceiver<'a, T>> {
+        ChannelReceiver::new(
             self,
+            name,
+            TetherOrCustomTopic::Tether(TetherCompliantTopic::new_for_subscribe(name, None, None)),
+            None,
         )
     }
 

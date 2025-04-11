@@ -37,11 +37,11 @@ impl<'a, T: Serialize> ChannelCommon<'a> for ChannelSender<'a, T> {
 
 impl<'a, T: Serialize> ChannelSender<'a, T> {
     pub fn new(
+        tether_agent: &'a TetherAgent,
         name: &str,
         topic: TetherOrCustomTopic,
         qos: Option<i32>,
         retain: Option<bool>,
-        tether_agent: &'a TetherAgent,
     ) -> ChannelSender<'a, T> {
         ChannelSender {
             name: String::from(name),
