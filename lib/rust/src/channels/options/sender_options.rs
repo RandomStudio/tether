@@ -1,0 +1,145 @@
+use crate::{
+    sender::ChannelSender,
+    tether_compliant_topic::{TetherCompliantTopic, TetherOrCustomTopic},
+    TetherAgent,
+};
+
+use super::{ChannelOptions, ChannelSenderOptionsBuilder};
+use log::*;
+use serde::Serialize;
+
+impl ChannelOptions for ChannelSenderOptionsBuilder {
+    fn new(name: &str) -> Self {
+        ChannelSenderOptionsBuilder {
+            channel_name: String::from(name),
+            override_publish_id: None,
+            override_publish_role: None,
+            override_topic: None,
+            retain: None,
+            qos: None,
+        }
+    }
+
+    fn qos(self, qos: Option<i32>) -> Self {
+        ChannelSenderOptionsBuilder { qos, ..self }
+    }
+
+    fn role(self, role: Option<&str>) -> Self {
+        if self.override_topic.is_some() {
+            error!("Override topic was also provided; this will take precedence");
+            self
+        } else {
+            let override_publish_role = role.map(|s| s.into());
+            ChannelSenderOptionsBuilder {
+                override_publish_role,
+                ..self
+            }
+        }
+    }
+
+    fn id(self, id: Option<&str>) -> Self {
+        if self.override_topic.is_some() {
+            error!("Override topic was also provided; this will take precedence");
+            self
+        } else {
+            let override_publish_id = id.map(|s| s.into());
+            ChannelSenderOptionsBuilder {
+                override_publish_id,
+                ..self
+            }
+        }
+    }
+
+    fn override_name(self, override_channel_name: Option<&str>) -> Self {
+        if self.override_topic.is_some() {
+            error!("Override topic was also provided; this will take precedence");
+            return self;
+        }
+        match override_channel_name {
+            Some(n) => ChannelSenderOptionsBuilder {
+                channel_name: n.into(),
+                ..self
+            },
+            None => {
+                debug!("Override Channel name set to None; will use original name \"{}\" given in ::create_receiver constructor", self.channel_name);
+                self
+            }
+        }
+    }
+
+    fn override_topic(self, override_topic: Option<&str>) -> Self {
+        match override_topic {
+            Some(t) => {
+                if TryInto::<TetherCompliantTopic>::try_into(t).is_ok() {
+                    info!("Custom topic passes Tether Compliant Topic validation");
+                } else if t == "#" {
+                    info!("Wildcard \"#\" custom topics are not Tether Compliant Topics but are valid");
+                } else {
+                    warn!(
+                        "Could not convert \"{}\" into Tether Compliant Topic; presumably you know what you're doing!",
+                        t
+                    );
+                }
+                ChannelSenderOptionsBuilder {
+                    override_topic: Some(t.into()),
+                    ..self
+                }
+            }
+            None => ChannelSenderOptionsBuilder {
+                override_topic: None,
+                ..self
+            },
+        }
+    }
+}
+
+impl ChannelSenderOptionsBuilder {
+    pub fn retain(self, should_retain: Option<bool>) -> Self {
+        ChannelSenderOptionsBuilder {
+            retain: should_retain,
+            ..self
+        }
+    }
+
+    pub fn build<T: Serialize>(
+        self,
+        tether_agent: &TetherAgent,
+    ) -> anyhow::Result<ChannelSender<T>> {
+        let tpt: TetherOrCustomTopic = match self.override_topic {
+            Some(custom) => {
+                warn!(
+                    "Custom topic override: \"{}\" - all other options ignored",
+                    custom
+                );
+                TetherOrCustomTopic::Custom(custom)
+            }
+            None => {
+                let optional_id_part = match self.override_publish_id {
+                    Some(id) => {
+                        debug!("Publish ID was overriden at Channel options level. The Agent ID will be ignored.");
+                        Some(id)
+                    }
+                    None => {
+                        debug!("Publish ID was not overriden at Channel options level. The Agent ID will be used instead, if specified in Agent creation.");
+                        tether_agent.id().map(String::from)
+                    }
+                };
+
+                TetherOrCustomTopic::Tether(TetherCompliantTopic::new_for_publish(
+                    tether_agent,
+                    &self.channel_name,
+                    self.override_publish_role.as_deref(),
+                    optional_id_part.as_deref(),
+                ))
+            }
+        };
+
+        Ok(ChannelSender::new(
+            tether_agent,
+            &self.channel_name,
+            tpt,
+            self.qos,
+            self.retain,
+        ))
+    }
+}

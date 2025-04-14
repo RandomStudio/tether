@@ -21,7 +21,10 @@ pub trait ChannelCommon<'a> {
 //     ChannelSender(ChannelSender),
 // }
 
-// impl TetherChannel {
+// impl<T> ChannelCommon< for T
+// where
+//     T: ChannelCommon,
+// {
 //     pub fn name(&self) -> &str {
 //         match self {
 //             TetherChannel::ChannelReceiver(p) => p.name(),

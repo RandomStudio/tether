@@ -1,0 +1,138 @@
+use crate::{
+    receiver::ChannelReceiver,
+    tether_compliant_topic::{TetherCompliantTopic, TetherOrCustomTopic},
+    TetherAgent,
+};
+
+use super::ChannelOptions;
+use log::*;
+use serde::Deserialize;
+
+pub struct ChannelReceiverOptionsBuilder {
+    channel_name: String,
+    qos: Option<i32>,
+    override_subscribe_role: Option<String>,
+    override_subscribe_id: Option<String>,
+    override_subscribe_channel_name: Option<String>,
+    override_topic: Option<String>,
+}
+
+impl ChannelOptions for ChannelReceiverOptionsBuilder {
+    fn new(name: &str) -> Self {
+        ChannelReceiverOptionsBuilder {
+            channel_name: String::from(name),
+            override_subscribe_id: None,
+            override_subscribe_role: None,
+            override_subscribe_channel_name: None,
+            override_topic: None,
+            qos: None,
+        }
+    }
+
+    fn qos(self, qos: Option<i32>) -> Self {
+        ChannelReceiverOptionsBuilder { qos, ..self }
+    }
+
+    fn role(self, role: Option<&str>) -> Self {
+        if self.override_topic.is_some() {
+            error!("Override topic was also provided; this will take precedence");
+            self
+        } else {
+            let override_subscribe_role = role.map(|s| s.into());
+            ChannelReceiverOptionsBuilder {
+                override_subscribe_role,
+                ..self
+            }
+        }
+    }
+
+    fn id(self, id: Option<&str>) -> Self {
+        if self.override_topic.is_some() {
+            error!("Override topic was also provided; this will take precedence");
+            self
+        } else {
+            let override_subscribe_id = id.map(|s| s.into());
+            ChannelReceiverOptionsBuilder {
+                override_subscribe_id,
+                ..self
+            }
+        }
+    }
+
+    fn override_name(self, override_channel_name: Option<&str>) -> Self {
+        if self.override_topic.is_some() {
+            error!("Override topic was also provided; this will take precedence");
+            return self;
+        }
+        if override_channel_name.is_some() {
+            let override_subscribe_channel_name = override_channel_name.map(|s| s.into());
+            ChannelReceiverOptionsBuilder {
+                override_subscribe_channel_name,
+                ..self
+            }
+        } else {
+            debug!("Override Channel name set to None; will use original name \"{}\" given in ::create_receiver constructor", self.channel_name);
+            self
+        }
+    }
+
+    fn override_topic(self, override_topic: Option<&str>) -> Self {
+        match override_topic {
+            Some(t) => {
+                if TryInto::<TetherCompliantTopic>::try_into(t).is_ok() {
+                    info!("Custom topic passes Tether Compliant Topic validation");
+                } else if t == "#" {
+                    info!("Wildcard \"#\" custom topics are not Tether Compliant Topics but are valid");
+                } else {
+                    warn!(
+                        "Could not convert \"{}\" into Tether Compliant Topic; presumably you know what you're doing!",
+                        t
+                    );
+                }
+                ChannelReceiverOptionsBuilder {
+                    override_topic: Some(t.into()),
+                    ..self
+                }
+            }
+            None => ChannelReceiverOptionsBuilder {
+                override_topic: None,
+                ..self
+            },
+        }
+    }
+}
+
+impl ChannelReceiverOptionsBuilder {
+    pub fn any_channel(self) -> Self {
+        ChannelReceiverOptionsBuilder {
+            override_subscribe_channel_name: Some("+".into()),
+            ..self
+        }
+    }
+
+    pub fn build<'a, T: Deserialize<'a>>(
+        self,
+        tether_agent: &'a mut TetherAgent,
+    ) -> anyhow::Result<ChannelReceiver<'a, T>> {
+        let tpt: TetherOrCustomTopic = match self.override_topic {
+            Some(custom) => TetherOrCustomTopic::Custom(custom),
+            None => {
+                debug!(
+                    "Not a custom topic; provided overrides: role = {:?}, id = {:?}, name = {:?}",
+                    self.override_subscribe_role,
+                    self.override_subscribe_id,
+                    self.override_subscribe_channel_name
+                );
+
+                TetherOrCustomTopic::Tether(TetherCompliantTopic::new_for_subscribe(
+                    &self
+                        .override_subscribe_channel_name
+                        .unwrap_or(self.channel_name.clone()),
+                    self.override_subscribe_role.as_deref(),
+                    self.override_subscribe_id.as_deref(),
+                ))
+            }
+        };
+        ChannelReceiver::new(tether_agent, &self.channel_name, tpt, self.qos)
+    }
+}
