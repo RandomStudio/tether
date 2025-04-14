@@ -3,7 +3,10 @@ use anyhow::anyhow;
 use rmp_serde::to_vec_named;
 use serde::Serialize;
 
-use super::{tether_compliant_topic::TetherOrCustomTopic, ChannelCommon};
+use super::{
+    definitions::definitions::{ChannelDefinition, ChannelSenderDefinition},
+    tether_compliant_topic::TetherOrCustomTopic,
+};
 
 pub struct ChannelSender<'a, T: Serialize> {
     name: String,
@@ -14,7 +17,7 @@ pub struct ChannelSender<'a, T: Serialize> {
     marker: std::marker::PhantomData<T>,
 }
 
-impl<'a, T: Serialize> ChannelCommon<'a> for ChannelSender<'a, T> {
+impl<'a, T: Serialize> ChannelDefinition<'a> for ChannelSender<'a, T> {
     fn name(&'_ self) -> &'_ str {
         &self.name
     }
@@ -38,16 +41,13 @@ impl<'a, T: Serialize> ChannelCommon<'a> for ChannelSender<'a, T> {
 impl<'a, T: Serialize> ChannelSender<'a, T> {
     pub fn new(
         tether_agent: &'a TetherAgent,
-        name: &str,
-        topic: TetherOrCustomTopic,
-        qos: Option<i32>,
-        retain: Option<bool>,
+        definition: &ChannelSenderDefinition,
     ) -> ChannelSender<'a, T> {
         ChannelSender {
-            name: String::from(name),
-            topic,
-            qos: qos.unwrap_or(1),
-            retain: retain.unwrap_or(false),
+            name: String::from(definition.name()),
+            topic: definition.topic().clone(),
+            qos: definition.qos(),
+            retain: definition.retain(),
             tether_agent,
             marker: std::marker::PhantomData,
         }

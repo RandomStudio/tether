@@ -3,7 +3,10 @@ use std::time::Duration;
 use env_logger::{Builder, Env};
 use log::{debug, info};
 use serde::Serialize;
-use tether_agent::{ChannelOptionsBuilder, TetherAgentOptionsBuilder};
+use tether_agent::{
+    definitions::{sender_options::ChannelSenderOptions, ChannelOptions},
+    TetherAgentOptionsBuilder,
+};
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -25,7 +28,8 @@ fn main() {
     let (role, id, _) = tether_agent.description();
     info!("Created agent OK: {}, {}", role, id);
 
-    let sender = tether_agent.create_sender("values");
+    let sender_definition = ChannelSenderOptions::new("values").build(&tether_agent);
+    let sender = tether_agent.create_sender(&sender_definition);
 
     let test_struct = CustomStruct {
         id: 101,
@@ -41,7 +45,8 @@ fn main() {
 
     sender.send(&another_struct).expect("failed to encode+send");
 
-    let number_sender = tether_agent.create_sender::<u8>("numbersOnly");
+    let number_sender = tether_agent
+        .create_sender::<u8>(&ChannelSenderOptions::new("numbersOnly").build(&tether_agent));
 
     number_sender.send(8).expect("failed to send");
 

@@ -1,20 +1,7 @@
-pub mod options;
+pub mod definitions;
 pub mod receiver;
 pub mod sender;
 pub mod tether_compliant_topic;
-
-pub use options::*;
-
-use super::tether_compliant_topic::TetherOrCustomTopic;
-
-pub trait ChannelCommon<'a> {
-    fn name(&'a self) -> &'a str;
-    /// Return the generated topic string actually used by the Channel
-    fn generated_topic(&'a self) -> &'a str;
-    /// Return the custom or Tether-compliant topic
-    fn topic(&'a self) -> &'a TetherOrCustomTopic;
-    fn qos(&'a self) -> i32;
-}
 
 // pub enum TetherChannel {
 //     ChannelReceiver(ChannelReceiver),

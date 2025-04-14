@@ -1,16 +1,23 @@
 use crate::{
-    sender::ChannelSender,
     tether_compliant_topic::{TetherCompliantTopic, TetherOrCustomTopic},
     TetherAgent,
 };
 
-use super::{ChannelOptions, ChannelSenderOptionsBuilder};
+use super::{definitions::ChannelSenderDefinition, ChannelOptions};
 use log::*;
-use serde::Serialize;
 
-impl ChannelOptions for ChannelSenderOptionsBuilder {
+pub struct ChannelSenderOptions {
+    channel_name: String,
+    qos: Option<i32>,
+    override_publish_role: Option<String>,
+    override_publish_id: Option<String>,
+    override_topic: Option<String>,
+    retain: Option<bool>,
+}
+
+impl ChannelOptions for ChannelSenderOptions {
     fn new(name: &str) -> Self {
-        ChannelSenderOptionsBuilder {
+        ChannelSenderOptions {
             channel_name: String::from(name),
             override_publish_id: None,
             override_publish_role: None,
@@ -21,7 +28,7 @@ impl ChannelOptions for ChannelSenderOptionsBuilder {
     }
 
     fn qos(self, qos: Option<i32>) -> Self {
-        ChannelSenderOptionsBuilder { qos, ..self }
+        ChannelSenderOptions { qos, ..self }
     }
 
     fn role(self, role: Option<&str>) -> Self {
@@ -30,7 +37,7 @@ impl ChannelOptions for ChannelSenderOptionsBuilder {
             self
         } else {
             let override_publish_role = role.map(|s| s.into());
-            ChannelSenderOptionsBuilder {
+            ChannelSenderOptions {
                 override_publish_role,
                 ..self
             }
@@ -43,7 +50,7 @@ impl ChannelOptions for ChannelSenderOptionsBuilder {
             self
         } else {
             let override_publish_id = id.map(|s| s.into());
-            ChannelSenderOptionsBuilder {
+            ChannelSenderOptions {
                 override_publish_id,
                 ..self
             }
@@ -56,7 +63,7 @@ impl ChannelOptions for ChannelSenderOptionsBuilder {
             return self;
         }
         match override_channel_name {
-            Some(n) => ChannelSenderOptionsBuilder {
+            Some(n) => ChannelSenderOptions {
                 channel_name: n.into(),
                 ..self
             },
@@ -80,12 +87,12 @@ impl ChannelOptions for ChannelSenderOptionsBuilder {
                         t
                     );
                 }
-                ChannelSenderOptionsBuilder {
+                ChannelSenderOptions {
                     override_topic: Some(t.into()),
                     ..self
                 }
             }
-            None => ChannelSenderOptionsBuilder {
+            None => ChannelSenderOptions {
                 override_topic: None,
                 ..self
             },
@@ -93,18 +100,15 @@ impl ChannelOptions for ChannelSenderOptionsBuilder {
     }
 }
 
-impl ChannelSenderOptionsBuilder {
+impl ChannelSenderOptions {
     pub fn retain(self, should_retain: Option<bool>) -> Self {
-        ChannelSenderOptionsBuilder {
+        ChannelSenderOptions {
             retain: should_retain,
             ..self
         }
     }
 
-    pub fn build<T: Serialize>(
-        self,
-        tether_agent: &TetherAgent,
-    ) -> anyhow::Result<ChannelSender<T>> {
+    pub fn build(self, tether_agent: &TetherAgent) -> ChannelSenderDefinition {
         let tpt: TetherOrCustomTopic = match self.override_topic {
             Some(custom) => {
                 warn!(
@@ -134,12 +138,12 @@ impl ChannelSenderOptionsBuilder {
             }
         };
 
-        Ok(ChannelSender::new(
-            tether_agent,
-            &self.channel_name,
-            tpt,
-            self.qos,
-            self.retain,
-        ))
+        ChannelSenderDefinition {
+            name: self.channel_name,
+            generated_topic: tpt.full_topic_string(),
+            topic: tpt,
+            qos: self.qos.unwrap_or(1),
+            retain: self.retain.unwrap_or(false),
+        }
     }
 }

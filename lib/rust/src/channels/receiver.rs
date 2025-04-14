@@ -5,7 +5,10 @@ use serde::Deserialize;
 
 use crate::TetherAgent;
 
-use super::{tether_compliant_topic::TetherOrCustomTopic, ChannelCommon};
+use super::{
+    definitions::definitions::{ChannelDefinition, ChannelReceiverDefinition},
+    tether_compliant_topic::TetherOrCustomTopic,
+};
 
 pub struct ChannelReceiver<'a, T: Deserialize<'a>> {
     name: String,
@@ -15,7 +18,7 @@ pub struct ChannelReceiver<'a, T: Deserialize<'a>> {
     marker: std::marker::PhantomData<T>,
 }
 
-impl<'a, T: Deserialize<'a>> ChannelCommon<'a> for ChannelReceiver<'a, T> {
+impl<'a, T: Deserialize<'a>> ChannelDefinition<'a> for ChannelReceiver<'a, T> {
     fn name(&self) -> &str {
         &self.name
     }
@@ -51,16 +54,14 @@ impl<'a, T: Deserialize<'a>> ChannelCommon<'a> for ChannelReceiver<'a, T> {
 impl<'a, T: Deserialize<'a>> ChannelReceiver<'a, T> {
     pub fn new(
         tether_agent: &'a TetherAgent,
-        name: &str,
-        topic: TetherOrCustomTopic,
-        qos: Option<i32>,
+        definition: &ChannelReceiverDefinition,
     ) -> anyhow::Result<ChannelReceiver<'a, T>> {
-        let topic_string = topic.full_topic_string();
+        let topic_string = definition.topic().full_topic_string();
 
         let channel = ChannelReceiver {
-            name: String::from(name),
-            topic,
-            qos: qos.unwrap_or(1),
+            name: String::from(definition.name()),
+            topic: definition.topic().clone(),
+            qos: definition.qos(),
             tether_agent,
             marker: std::marker::PhantomData,
         };
@@ -73,10 +74,10 @@ impl<'a, T: Deserialize<'a>> ChannelReceiver<'a, T> {
 
         if let Some(client) = &tether_agent.client {
             match client.subscribe(&topic_string, {
-                match qos {
-                    Some(0) => rumqttc::QoS::AtMostOnce,
-                    Some(1) => rumqttc::QoS::AtLeastOnce,
-                    Some(2) => rumqttc::QoS::ExactlyOnce,
+                match definition.qos() {
+                    0 => rumqttc::QoS::AtMostOnce,
+                    1 => rumqttc::QoS::AtLeastOnce,
+                    2 => rumqttc::QoS::ExactlyOnce,
                     _ => rumqttc::QoS::AtLeastOnce,
                 }
             }) {

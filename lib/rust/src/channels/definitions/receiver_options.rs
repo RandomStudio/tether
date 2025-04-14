@@ -1,14 +1,9 @@
-use crate::{
-    receiver::ChannelReceiver,
-    tether_compliant_topic::{TetherCompliantTopic, TetherOrCustomTopic},
-    TetherAgent,
-};
+use crate::tether_compliant_topic::{TetherCompliantTopic, TetherOrCustomTopic};
 
-use super::ChannelOptions;
+use super::{definitions::ChannelReceiverDefinition, ChannelOptions};
 use log::*;
-use serde::Deserialize;
 
-pub struct ChannelReceiverOptionsBuilder {
+pub struct ChannelReceiverOptions {
     channel_name: String,
     qos: Option<i32>,
     override_subscribe_role: Option<String>,
@@ -17,9 +12,9 @@ pub struct ChannelReceiverOptionsBuilder {
     override_topic: Option<String>,
 }
 
-impl ChannelOptions for ChannelReceiverOptionsBuilder {
+impl ChannelOptions for ChannelReceiverOptions {
     fn new(name: &str) -> Self {
-        ChannelReceiverOptionsBuilder {
+        ChannelReceiverOptions {
             channel_name: String::from(name),
             override_subscribe_id: None,
             override_subscribe_role: None,
@@ -30,7 +25,7 @@ impl ChannelOptions for ChannelReceiverOptionsBuilder {
     }
 
     fn qos(self, qos: Option<i32>) -> Self {
-        ChannelReceiverOptionsBuilder { qos, ..self }
+        ChannelReceiverOptions { qos, ..self }
     }
 
     fn role(self, role: Option<&str>) -> Self {
@@ -39,7 +34,7 @@ impl ChannelOptions for ChannelReceiverOptionsBuilder {
             self
         } else {
             let override_subscribe_role = role.map(|s| s.into());
-            ChannelReceiverOptionsBuilder {
+            ChannelReceiverOptions {
                 override_subscribe_role,
                 ..self
             }
@@ -52,7 +47,7 @@ impl ChannelOptions for ChannelReceiverOptionsBuilder {
             self
         } else {
             let override_subscribe_id = id.map(|s| s.into());
-            ChannelReceiverOptionsBuilder {
+            ChannelReceiverOptions {
                 override_subscribe_id,
                 ..self
             }
@@ -66,7 +61,7 @@ impl ChannelOptions for ChannelReceiverOptionsBuilder {
         }
         if override_channel_name.is_some() {
             let override_subscribe_channel_name = override_channel_name.map(|s| s.into());
-            ChannelReceiverOptionsBuilder {
+            ChannelReceiverOptions {
                 override_subscribe_channel_name,
                 ..self
             }
@@ -89,12 +84,12 @@ impl ChannelOptions for ChannelReceiverOptionsBuilder {
                         t
                     );
                 }
-                ChannelReceiverOptionsBuilder {
+                ChannelReceiverOptions {
                     override_topic: Some(t.into()),
                     ..self
                 }
             }
-            None => ChannelReceiverOptionsBuilder {
+            None => ChannelReceiverOptions {
                 override_topic: None,
                 ..self
             },
@@ -102,18 +97,15 @@ impl ChannelOptions for ChannelReceiverOptionsBuilder {
     }
 }
 
-impl ChannelReceiverOptionsBuilder {
+impl ChannelReceiverOptions {
     pub fn any_channel(self) -> Self {
-        ChannelReceiverOptionsBuilder {
+        ChannelReceiverOptions {
             override_subscribe_channel_name: Some("+".into()),
             ..self
         }
     }
 
-    pub fn build<'a, T: Deserialize<'a>>(
-        self,
-        tether_agent: &'a mut TetherAgent,
-    ) -> anyhow::Result<ChannelReceiver<'a, T>> {
+    pub fn build(self) -> ChannelReceiverDefinition {
         let tpt: TetherOrCustomTopic = match self.override_topic {
             Some(custom) => TetherOrCustomTopic::Custom(custom),
             None => {
@@ -133,6 +125,12 @@ impl ChannelReceiverOptionsBuilder {
                 ))
             }
         };
-        ChannelReceiver::new(tether_agent, &self.channel_name, tpt, self.qos)
+
+        ChannelReceiverDefinition {
+            name: self.channel_name,
+            generated_topic: tpt.full_topic_string(),
+            topic: tpt,
+            qos: self.qos.unwrap_or(1),
+        }
     }
 }

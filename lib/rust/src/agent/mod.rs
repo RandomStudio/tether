@@ -8,10 +8,12 @@ use std::sync::{Arc, Mutex};
 use std::{sync::mpsc, thread, time::Duration};
 use uuid::Uuid;
 
+use crate::definitions::definitions::{
+    ChannelDefinition, ChannelReceiverDefinition, ChannelSenderDefinition,
+};
 use crate::receiver::ChannelReceiver;
 use crate::sender::ChannelSender;
 use crate::tether_compliant_topic::{TetherCompliantTopic, TetherOrCustomTopic};
-use crate::ChannelCommon;
 
 const TIMEOUT_SECONDS: u64 = 3;
 const DEFAULT_USERNAME: &str = "tether";
@@ -168,28 +170,18 @@ impl TetherAgentOptionsBuilder {
 }
 
 impl<'a> TetherAgent {
-    pub fn create_sender<T: Serialize>(&self, name: &str) -> ChannelSender<T> {
-        ChannelSender::new(
-            self,
-            name,
-            TetherOrCustomTopic::Tether(TetherCompliantTopic::new_for_publish(
-                self, name, None, None,
-            )),
-            None,
-            None,
-        )
+    pub fn create_sender<T: Serialize>(
+        &self,
+        definition: &ChannelSenderDefinition,
+    ) -> ChannelSender<T> {
+        ChannelSender::new(self, definition)
     }
 
     pub fn create_receiver<T: Deserialize<'a>>(
         &'a self,
-        name: &str,
+        definition: &ChannelReceiverDefinition,
     ) -> anyhow::Result<ChannelReceiver<'a, T>> {
-        ChannelReceiver::new(
-            self,
-            name,
-            TetherOrCustomTopic::Tether(TetherCompliantTopic::new_for_subscribe(name, None, None)),
-            None,
-        )
+        ChannelReceiver::new(&self, definition)
     }
 
     pub fn is_connected(&self) -> bool {

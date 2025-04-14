@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::TetherAgent;
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct TetherCompliantTopic {
     role: String,
     id: Option<String>,
@@ -12,7 +12,7 @@ pub struct TetherCompliantTopic {
     full_topic: String,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Clone, Serialize, Deserialize, Debug)]
 pub enum TetherOrCustomTopic {
     Tether(TetherCompliantTopic),
     Custom(String),

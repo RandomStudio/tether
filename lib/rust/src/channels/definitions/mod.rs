@@ -1,3 +1,4 @@
+pub mod definitions;
 pub mod receiver_options;
 pub mod sender_options;
 
@@ -8,15 +9,6 @@ pub trait ChannelOptions {
     fn id(self, id: Option<&str>) -> Self;
     fn override_name(self, override_channel_name: Option<&str>) -> Self;
     fn override_topic(self, override_topic: Option<&str>) -> Self;
-}
-
-pub struct ChannelSenderOptionsBuilder {
-    channel_name: String,
-    qos: Option<i32>,
-    override_publish_role: Option<String>,
-    override_publish_id: Option<String>,
-    override_topic: Option<String>,
-    retain: Option<bool>,
 }
 
 // #[cfg(test)]
