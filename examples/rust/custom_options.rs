@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use tether_agent::{
-    definitions::{
+    options::{
         definitions::ChannelDefinition, receiver_options::ChannelReceiverOptions,
         sender_options::ChannelSenderOptions, ChannelOptions,
     },

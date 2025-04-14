@@ -4,7 +4,7 @@ use env_logger::{Builder, Env};
 use log::{debug, info};
 use serde::Serialize;
 use tether_agent::{
-    definitions::{sender_options::ChannelSenderOptions, ChannelOptions},
+    options::{sender_options::ChannelSenderOptions, ChannelOptions},
     TetherAgentOptionsBuilder,
 };
 

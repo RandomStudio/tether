@@ -10,15 +10,15 @@ use super::{
     tether_compliant_topic::TetherOrCustomTopic,
 };
 
-pub struct ChannelReceiver<'a, T: Deserialize<'a>> {
+pub struct ChannelReceiver<'a, 'de, T: Deserialize<'de>> {
     name: String,
     topic: TetherOrCustomTopic,
     qos: i32,
     tether_agent: &'a TetherAgent,
-    marker: std::marker::PhantomData<T>,
+    marker: std::marker::PhantomData<&'de T>,
 }
 
-impl<'a, T: Deserialize<'a>> ChannelDefinition<'a> for ChannelReceiver<'a, T> {
+impl<'a, 'de, T: Deserialize<'de>> ChannelDefinition<'a> for ChannelReceiver<'a, 'de, T> {
     fn name(&self) -> &str {
         &self.name
     }
@@ -51,11 +51,11 @@ impl<'a, T: Deserialize<'a>> ChannelDefinition<'a> for ChannelReceiver<'a, T> {
     }
 }
 
-impl<'a, T: Deserialize<'a>> ChannelReceiver<'a, T> {
+impl<'a, 'de, T: Deserialize<'de>> ChannelReceiver<'a, 'de, T> {
     pub fn new(
         tether_agent: &'a TetherAgent,
         definition: ChannelReceiverDefinition,
-    ) -> anyhow::Result<ChannelReceiver<'a, T>> {
+    ) -> anyhow::Result<ChannelReceiver<'a, 'de, T>> {
         let topic_string = definition.topic().full_topic_string();
 
         let channel = ChannelReceiver {
@@ -155,7 +155,7 @@ impl<'a, T: Deserialize<'a>> ChannelReceiver<'a, T> {
         }
     }
 
-    pub fn parse(&self, incoming_topic: &TetherOrCustomTopic, payload: &'a [u8]) -> Option<T> {
+    pub fn parse(&self, incoming_topic: &TetherOrCustomTopic, payload: &'de [u8]) -> Option<T> {
         if self.matches(incoming_topic) {
             match from_slice::<T>(payload) {
                 Ok(msg) => Some(msg),
@@ -166,6 +166,36 @@ impl<'a, T: Deserialize<'a>> ChannelReceiver<'a, T> {
             }
         } else {
             None
+        }
+    }
+
+    pub fn check(&self, on_message: fn(decoded: Option<T>)) {
+        // if let Ok((topic, payload)) = self.tether_agent.message_receiver.try_recv() {
+        //     let decoded = rmp_serde::from_slice::<T>(&payload);
+        //     // match rmp_serde::from_slice::<T>(&incoming_payload) {
+        //     //     Ok(msg) => on_message(Some(msg)),
+        //     //     Err(e) => {
+        //     //         error!(
+        //     //             "Failure parsing message on Channel Receiver \"{}\": {}",
+        //     //             &self.name, e
+        //     //         );
+        //     //         on_message(None)
+        //     //     }
+        //     // }
+        // }
+        if let Some((_topic, incoming_payload)) = self.tether_agent.check_messages() {
+            let cp = incoming_payload.clone();
+            let decoded = from_slice::<T>(&cp);
+            // match rmp_serde::from_slice::<T>(&incoming_payload) {
+            //     Ok(msg) => on_message(Some(msg)),
+            //     Err(e) => {
+            //         error!(
+            //             "Failure parsing message on Channel Receiver \"{}\": {}",
+            //             &self.name, e
+            //         );
+            //         on_message(None)
+            //     }
+            // }
         }
     }
 }

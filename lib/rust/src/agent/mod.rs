@@ -34,7 +34,7 @@ pub struct TetherAgent {
     mqtt_client_id: Option<String>,
     pub(crate) client: Option<Client>,
     message_sender: mpsc::Sender<(TetherOrCustomTopic, Vec<u8>)>,
-    message_receiver: mpsc::Receiver<(TetherOrCustomTopic, Vec<u8>)>,
+    pub message_receiver: mpsc::Receiver<(TetherOrCustomTopic, Vec<u8>)>,
     is_connected: Arc<Mutex<bool>>,
     auto_connect_enabled: bool,
 }
