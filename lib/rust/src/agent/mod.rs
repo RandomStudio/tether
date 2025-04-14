@@ -11,6 +11,9 @@ use uuid::Uuid;
 use crate::definitions::definitions::{
     ChannelDefinition, ChannelReceiverDefinition, ChannelSenderDefinition,
 };
+use crate::definitions::receiver_options::ChannelReceiverOptions;
+use crate::definitions::sender_options::ChannelSenderOptions;
+use crate::definitions::ChannelOptions;
 use crate::receiver::ChannelReceiver;
 use crate::sender::ChannelSender;
 use crate::tether_compliant_topic::{TetherCompliantTopic, TetherOrCustomTopic};
@@ -170,18 +173,29 @@ impl TetherAgentOptionsBuilder {
 }
 
 impl<'a> TetherAgent {
-    pub fn create_sender<T: Serialize>(
+    pub fn create_sender_with_definition<T: Serialize>(
         &self,
-        definition: &ChannelSenderDefinition,
+        definition: ChannelSenderDefinition,
     ) -> ChannelSender<T> {
         ChannelSender::new(self, definition)
     }
 
-    pub fn create_receiver<T: Deserialize<'a>>(
+    pub fn create_sender<T: Serialize>(&self, name: &str) -> ChannelSender<T> {
+        ChannelSender::new(self, ChannelSenderOptions::new(name).build(self))
+    }
+
+    pub fn create_receiver_with_definition<T: Deserialize<'a>>(
         &'a self,
-        definition: &ChannelReceiverDefinition,
+        definition: ChannelReceiverDefinition,
     ) -> anyhow::Result<ChannelReceiver<'a, T>> {
         ChannelReceiver::new(&self, definition)
+    }
+
+    pub fn create_receiver<T: Deserialize<'a>>(
+        &'a self,
+        name: &str,
+    ) -> anyhow::Result<ChannelReceiver<'a, T>> {
+        ChannelReceiver::new(&self, ChannelReceiverOptions::new(name).build())
     }
 
     pub fn is_connected(&self) -> bool {

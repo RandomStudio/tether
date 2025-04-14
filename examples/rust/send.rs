@@ -29,7 +29,7 @@ fn main() {
     info!("Created agent OK: {}, {}", role, id);
 
     let sender_definition = ChannelSenderOptions::new("values").build(&tether_agent);
-    let sender = tether_agent.create_sender(&sender_definition);
+    let sender = tether_agent.create_sender_with_definition(sender_definition);
 
     let test_struct = CustomStruct {
         id: 101,
@@ -45,8 +45,7 @@ fn main() {
 
     sender.send(&another_struct).expect("failed to encode+send");
 
-    let number_sender = tether_agent
-        .create_sender::<u8>(&ChannelSenderOptions::new("numbersOnly").build(&tether_agent));
+    let number_sender = tether_agent.create_sender::<u8>("numbersOnly");
 
     number_sender.send(8).expect("failed to send");
 

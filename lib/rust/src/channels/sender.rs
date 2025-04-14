@@ -41,7 +41,7 @@ impl<'a, T: Serialize> ChannelDefinition<'a> for ChannelSender<'a, T> {
 impl<'a, T: Serialize> ChannelSender<'a, T> {
     pub fn new(
         tether_agent: &'a TetherAgent,
-        definition: &ChannelSenderDefinition,
+        definition: ChannelSenderDefinition,
     ) -> ChannelSender<'a, T> {
         ChannelSender {
             name: String::from(definition.name()),

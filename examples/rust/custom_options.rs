@@ -1,8 +1,11 @@
 use std::time::Duration;
 
 use tether_agent::{
-    channels::options::ChannelOptions, receiver_options::ChannelReceiverOptions, ChannelDefinition,
-    ChannelSenderOptionsBuilder, TetherAgentOptionsBuilder,
+    definitions::{
+        definitions::ChannelDefinition, receiver_options::ChannelReceiverOptions,
+        sender_options::ChannelSenderOptions, ChannelOptions,
+    },
+    TetherAgentOptionsBuilder,
 };
 
 fn main() {
@@ -15,22 +18,25 @@ fn main() {
         .build()
         .expect("failed to create Tether Agent");
 
-    let sender_channel = ChannelSenderOptionsBuilder::new("anOutput")
+    let sender_channel_def = ChannelSenderOptions::new("anOutput")
         .role(Some("pretendingToBeSomethingElse"))
         .qos(Some(2))
         .retain(Some(true))
-        .build(&mut tether_agent)
-        .expect("failed to create sender channel");
-    let input_wildcard_channel = ChannelReceiverOptions::new("everything")
-        .override_topic(Some("#"))
-        .build()
-        .expect("failed to create receiver channel");
+        .build(&tether_agent);
 
-    let input_customid_channel = ChannelReceiverOptions::new("someData")
-        .role(None) // i.e., just use default
-        .id(Some("specificIDonly"))
-        .build()
-        .expect("failed to create receiver channel");
+    let sender_channel = tether_agent.create_sender_with_definition(sender_channel_def);
+
+    let input_wildcard_channel_def = ChannelReceiverOptions::new("everything")
+        .override_topic(Some("#"))
+        .build();
+    let input_wildcard_channel = tether_agent
+        .create_receiver_with_definition::<u8>(input_wildcard_channel_def)
+        .expect("failed to create Channel Receiver");
+
+    // let input_customid_channel_def = ChannelReceiverOptions::new("someData")
+    //     .role(None) // i.e., just use default
+    //     .id(Some("specificIDonly"))
+    //     .build();
 
     println!("Agent looks like this: {:?}", tether_agent.description());
     let (role, id, _) = tether_agent.description();
@@ -41,10 +47,10 @@ fn main() {
         "wildcard input channel: {:?}",
         input_wildcard_channel.generated_topic()
     );
-    println!(
-        "speific ID input channel: {:?}",
-        input_customid_channel.generated_topic()
-    );
+    // println!(
+    //     "speific ID input channel: {:?}",
+    //     input_customid_channel_def.generated_topic()
+    // );
 
     let payload =
         rmp_serde::to_vec::<String>(&String::from("boo")).expect("failed to serialise payload");

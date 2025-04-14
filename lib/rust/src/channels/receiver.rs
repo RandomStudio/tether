@@ -54,7 +54,7 @@ impl<'a, T: Deserialize<'a>> ChannelDefinition<'a> for ChannelReceiver<'a, T> {
 impl<'a, T: Deserialize<'a>> ChannelReceiver<'a, T> {
     pub fn new(
         tether_agent: &'a TetherAgent,
-        definition: &ChannelReceiverDefinition,
+        definition: ChannelReceiverDefinition,
     ) -> anyhow::Result<ChannelReceiver<'a, T>> {
         let topic_string = definition.topic().full_topic_string();
 
