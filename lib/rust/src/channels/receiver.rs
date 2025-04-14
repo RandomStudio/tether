@@ -6,7 +6,7 @@ use serde::Deserialize;
 use crate::TetherAgent;
 
 use super::{
-    definitions::definitions::{ChannelDefinition, ChannelReceiverDefinition},
+    options::definitions::{ChannelDefinition, ChannelReceiverDefinition},
     tether_compliant_topic::TetherOrCustomTopic,
 };
 

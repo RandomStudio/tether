@@ -4,7 +4,7 @@ use rmp_serde::to_vec_named;
 use serde::Serialize;
 
 use super::{
-    definitions::definitions::{ChannelDefinition, ChannelSenderDefinition},
+    options::definitions::{ChannelDefinition, ChannelSenderDefinition},
     tether_compliant_topic::TetherOrCustomTopic,
 };
 

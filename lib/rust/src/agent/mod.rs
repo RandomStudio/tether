@@ -8,12 +8,12 @@ use std::sync::{Arc, Mutex};
 use std::{sync::mpsc, thread, time::Duration};
 use uuid::Uuid;
 
-use crate::definitions::definitions::{
+use crate::options::definitions::{
     ChannelDefinition, ChannelReceiverDefinition, ChannelSenderDefinition,
 };
-use crate::definitions::receiver_options::ChannelReceiverOptions;
-use crate::definitions::sender_options::ChannelSenderOptions;
-use crate::definitions::ChannelOptions;
+use crate::options::receiver_options::ChannelReceiverOptions;
+use crate::options::sender_options::ChannelSenderOptions;
+use crate::options::ChannelOptions;
 use crate::receiver::ChannelReceiver;
 use crate::sender::ChannelSender;
 use crate::tether_compliant_topic::{TetherCompliantTopic, TetherOrCustomTopic};
@@ -188,14 +188,14 @@ impl<'a> TetherAgent {
         &'a self,
         definition: ChannelReceiverDefinition,
     ) -> anyhow::Result<ChannelReceiver<'a, T>> {
-        ChannelReceiver::new(&self, definition)
+        ChannelReceiver::new(self, definition)
     }
 
     pub fn create_receiver<T: Deserialize<'a>>(
         &'a self,
         name: &str,
     ) -> anyhow::Result<ChannelReceiver<'a, T>> {
-        ChannelReceiver::new(&self, ChannelReceiverOptions::new(name).build())
+        ChannelReceiver::new(self, ChannelReceiverOptions::new(name).build())
     }
 
     pub fn is_connected(&self) -> bool {
