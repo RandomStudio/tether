@@ -17,7 +17,11 @@ logger.debug("Debug logging enabled; output could be verbose!");
 const main = async () => {
   const agent = await TetherAgent.create("brain");
 
-  const sender = new ChannelSender(agent, "randomValues");
+  // Note the alternative syntax for doing the same thing, below:
+  // ...
+  // const sender = new ChannelSender(agent, "randomValues");
+  const sender = agent.createSender("randomValues");
+
   sender.send({
     value: Math.random(),
     timestamp: Date.now(),

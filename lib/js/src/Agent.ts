@@ -1,7 +1,8 @@
 import mqtt, { AsyncMqttClient } from "async-mqtt";
 import { TetherAgentConfig, TetherOptions } from "./types";
+import { ChannelReceiver } from "./Channel/ChannelReceiver";
 import { LogLevelDesc } from "loglevel";
-import { logger } from "./";
+import { ChannelSender, logger } from "./";
 import defaults from "./defaults";
 
 enum State {
@@ -153,4 +154,12 @@ export class TetherAgent {
   };
 
   public getConfig = () => this.config;
+
+  public async createReceiver<T>(name: string): Promise<ChannelReceiver<T>> {
+    return ChannelReceiver.create(this, name);
+  }
+
+  public createSender<T>(name: string): ChannelSender<T> {
+    return new ChannelSender(this, name);
+  }
 }
