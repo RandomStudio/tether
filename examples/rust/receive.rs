@@ -1,7 +1,7 @@
 use env_logger::{Builder, Env};
 use log::*;
 use serde::Deserialize;
-use tether_agent::TetherAgentOptionsBuilder;
+use tether_agent::TetherAgentBuilder;
 
 #[allow(dead_code)]
 #[derive(Deserialize, Debug)]
@@ -22,7 +22,7 @@ fn main() {
 
     debug!("Debugging is enabled; could be verbose");
 
-    let tether_agent = TetherAgentOptionsBuilder::new("RustDemo")
+    let tether_agent = TetherAgentBuilder::new("RustDemo")
         .id(Some("example"))
         .build()
         .expect("failed to init Tether agent");

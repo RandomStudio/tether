@@ -189,7 +189,7 @@ pub fn parse_agent_role(topic: &str) -> Option<&str> {
 mod tests {
     use crate::{
         tether_compliant_topic::{parse_agent_id, parse_agent_role, parse_channel_name},
-        TetherAgentOptionsBuilder,
+        TetherAgentBuilder,
     };
 
     use super::TetherCompliantTopic;
@@ -204,7 +204,7 @@ mod tests {
 
     #[test]
     fn build_full_topic() {
-        let agent = TetherAgentOptionsBuilder::new("testingRole")
+        let agent = TetherAgentBuilder::new("testingRole")
             .auto_connect(false)
             .build()
             .expect("failed to construct agent");

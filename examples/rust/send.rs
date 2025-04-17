@@ -5,7 +5,7 @@ use log::{debug, info};
 use serde::Serialize;
 use tether_agent::{
     options::{sender_options::ChannelSenderOptions, ChannelOptions},
-    TetherAgentOptionsBuilder,
+    TetherAgentBuilder,
 };
 
 #[derive(Serialize)]
@@ -22,7 +22,7 @@ fn main() {
 
     debug!("Debugging is enabled; could be verbose");
 
-    let tether_agent = TetherAgentOptionsBuilder::new("rustExample")
+    let tether_agent = TetherAgentBuilder::new("rustExample")
         .build()
         .expect("failed to connect Tether");
     let (role, id, _) = tether_agent.description();
@@ -31,11 +31,11 @@ fn main() {
     let sender_definition = ChannelSenderOptions::new("values").build(&tether_agent);
     let sender = tether_agent.create_sender_with_definition(sender_definition);
 
-    let test_struct = CustomStruct {
-        id: 101,
-        name: "something".into(),
-    };
-    let payload = rmp_serde::to_vec_named(&test_struct).expect("failed to serialize");
+    // let test_struct = CustomStruct {
+    //     id: 101,
+    //     name: "something".into(),
+    // };
+    let payload = rmp_serde::to_vec_named(&101).expect("failed to serialize");
     sender.send_raw(&payload).expect("failed to send");
 
     let another_struct = CustomStruct {

@@ -40,7 +40,7 @@ pub struct TetherAgent {
 }
 
 #[derive(Clone)]
-pub struct TetherAgentOptionsBuilder {
+pub struct TetherAgentBuilder {
     role: String,
     id: Option<String>,
     protocol: Option<String>,
@@ -53,11 +53,11 @@ pub struct TetherAgentOptionsBuilder {
     mqtt_client_id: Option<String>,
 }
 
-impl TetherAgentOptionsBuilder {
+impl TetherAgentBuilder {
     /// Initialise Tether Options struct with default options; call other methods to customise.
     /// Call `build()` to get the actual TetherAgent instance (and connect automatically, by default)
     pub fn new(role: &str) -> Self {
-        TetherAgentOptionsBuilder {
+        TetherAgentBuilder {
             role: String::from(role),
             id: None,
             protocol: None,

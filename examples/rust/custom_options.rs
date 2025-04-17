@@ -5,11 +5,11 @@ use tether_agent::{
         definitions::ChannelDefinition, receiver_options::ChannelReceiverOptions,
         sender_options::ChannelSenderOptions, ChannelOptions,
     },
-    TetherAgentOptionsBuilder,
+    TetherAgentBuilder,
 };
 
 fn main() {
-    let mut tether_agent = TetherAgentOptionsBuilder::new("example")
+    let tether_agent = TetherAgentBuilder::new("example")
         .id(None)
         .host(Some("localhost"))
         .port(Some(1883))
