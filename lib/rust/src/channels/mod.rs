@@ -3,40 +3,6 @@ pub mod receiver;
 pub mod sender;
 pub mod tether_compliant_topic;
 
-// pub enum TetherChannel {
-//     ChannelReceiver(ChannelReceiver),
-//     ChannelSender(ChannelSender),
-// }
-
-// impl<T> ChannelCommon< for T
-// where
-//     T: ChannelCommon,
-// {
-//     pub fn name(&self) -> &str {
-//         match self {
-//             TetherChannel::ChannelReceiver(p) => p.name(),
-//             TetherChannel::ChannelSender(p) => p.name(),
-//         }
-//     }
-
-//     pub fn generated_topic(&self) -> &str {
-//         match self {
-//             TetherChannel::ChannelReceiver(p) => p.generated_topic(),
-//             TetherChannel::ChannelSender(p) => p.generated_topic(),
-//         }
-//     }
-
-//     pub fn matches(&self, topic: &TetherOrCustomTopic) -> bool {
-//         match self {
-//             TetherChannel::ChannelReceiver(p) => p.matches(topic),
-//             TetherChannel::ChannelSender(_) => {
-//                 error!("We don't check matches for Channel Senders");
-//                 false
-//             }
-//         }
-//     }
-// }
-
 // #[cfg(test)]
 // mod tests {
 

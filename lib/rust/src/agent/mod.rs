@@ -232,7 +232,7 @@ impl<'a> TetherAgent {
         &'a self,
         name: &str,
     ) -> anyhow::Result<ChannelReceiver<'a, T>> {
-        ChannelReceiver::new(self, ChannelReceiverBuilder::new(name).build())
+        ChannelReceiver::new(self, ChannelReceiverBuilder::new(name).build(self))
     }
 
     /// Create a ChannelReceiver instance using a ChannelReceiverDefinition already constructed

@@ -3,21 +3,21 @@ import { topicMatchesChannel } from "./Channel/ChannelReceiver";
 import { describe, test, expect } from "@jest/globals";
 
 describe("building topic strings", () => {
-  test("Default Channel Output, no ID", async () => {
+  test("Default Channel Sender, no ID", async () => {
     const agent = await TetherAgent.create("tester", { autoConnect: false });
     const output = new ChannelSender(agent, "someChannelName");
     expect(output.getDefinition().name).toEqual("someChannelName");
     expect(output.getDefinition().topic).toEqual("tester/someChannelName");
   });
 
-  test("Default Channel Input, no ID", async () => {
+  test("Default Channel Receiver, no ID", async () => {
     const agent = await TetherAgent.create("tester", { autoConnect: false });
     const input = await ChannelReceiver.create(agent, "someChannelName");
     expect(input.getDefinition().name).toEqual("someChannelName");
     expect(input.getDefinition().topic).toEqual("+/someChannelName/#");
   });
 
-  test("Agent with custom ID, Channel Output with defaults", async () => {
+  test("Agent with custom ID, Channel Sender with defaults", async () => {
     const agent = await TetherAgent.create("tester", {
       autoConnect: false,
       id: "specialGroup",
@@ -29,7 +29,7 @@ describe("building topic strings", () => {
     );
   });
 
-  test("Agent with custom ID, Channel Output with custom still overrides", async () => {
+  test("Agent with custom ID, Channel Sender with custom still overrides", async () => {
     const agent = await TetherAgent.create("tester", {
       autoConnect: false,
       id: "originalSpecialGroup",
@@ -43,7 +43,7 @@ describe("building topic strings", () => {
     );
   });
 
-  test("Agent with custom ID, Channel Input with defaults; NOT generic", async () => {
+  test("Agent with custom ID, Channel Receiver with defaults; NOT generic", async () => {
     const agent = await TetherAgent.create("tester", {
       autoConnect: false,
       id: "specialGroup",

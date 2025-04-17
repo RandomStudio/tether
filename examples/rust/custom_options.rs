@@ -22,7 +22,7 @@ fn main() {
 
     let input_wildcard_channel_def = ChannelReceiverBuilder::new("everything")
         .override_topic(Some("#"))
-        .build();
+        .build(&tether_agent);
     let input_wildcard_channel = tether_agent
         .create_receiver_with_definition::<u8>(input_wildcard_channel_def)
         .expect("failed to create Channel Receiver");

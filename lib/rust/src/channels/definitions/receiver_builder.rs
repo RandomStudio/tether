@@ -1,4 +1,7 @@
-use crate::tether_compliant_topic::{TetherCompliantTopic, TetherOrCustomTopic};
+use crate::{
+    tether_compliant_topic::{TetherCompliantTopic, TetherOrCustomTopic},
+    TetherAgent,
+};
 
 use log::*;
 
@@ -9,7 +12,6 @@ pub struct ChannelReceiverBuilder {
     qos: Option<i32>,
     override_subscribe_role: Option<String>,
     override_subscribe_id: Option<String>,
-    override_subscribe_channel_name: Option<String>,
     override_topic: Option<String>,
 }
 
@@ -19,7 +21,6 @@ impl ChannelBuilder for ChannelReceiverBuilder {
             channel_name: String::from(name),
             override_subscribe_id: None,
             override_subscribe_role: None,
-            override_subscribe_channel_name: None,
             override_topic: None,
             qos: None,
         }
@@ -56,19 +57,29 @@ impl ChannelBuilder for ChannelReceiverBuilder {
     }
 
     fn override_name(self, override_channel_name: Option<&str>) -> Self {
+        debug!(
+            "Override channel name explicity? Might use '{:?}' instead of '{}' ...",
+            override_channel_name, self.channel_name
+        );
         if self.override_topic.is_some() {
             error!("Override topic was also provided; this will take precedence");
             return self;
         }
-        if override_channel_name.is_some() {
-            let override_subscribe_channel_name = override_channel_name.map(|s| s.into());
-            ChannelReceiverBuilder {
-                override_subscribe_channel_name,
-                ..self
+        match override_channel_name {
+            Some(n) => {
+                warn!(
+                    "Override channel name explicity, use '{:?}' instead of '{}'",
+                    override_channel_name, self.channel_name
+                );
+                ChannelReceiverBuilder {
+                    channel_name: n.into(),
+                    ..self
+                }
             }
-        } else {
-            debug!("Override Channel name set to None; will use original name \"{}\" given in ::create_receiver constructor", self.channel_name);
-            self
+            None => {
+                debug!("Override Channel name set to None; will use original name \"{}\" given in ::create_receiver constructor", self.channel_name);
+                self
+            }
         }
     }
 
@@ -101,28 +112,35 @@ impl ChannelBuilder for ChannelReceiverBuilder {
 impl ChannelReceiverBuilder {
     pub fn any_channel(self) -> Self {
         ChannelReceiverBuilder {
-            override_subscribe_channel_name: Some("+".into()),
+            channel_name: "+".into(),
             ..self
         }
     }
 
-    pub fn build(self) -> ChannelReceiverDefinition {
+    pub fn build(self, tether_agent: &TetherAgent) -> ChannelReceiverDefinition {
         let tpt: TetherOrCustomTopic = match self.override_topic {
             Some(custom) => TetherOrCustomTopic::Custom(custom),
             None => {
                 debug!(
-                    "Not a custom topic; provided overrides: role = {:?}, id = {:?}, name = {:?}",
-                    self.override_subscribe_role,
-                    self.override_subscribe_id,
-                    self.override_subscribe_channel_name
+                    "Not a custom topic; provided overrides: role = {:?}, id = {:?}",
+                    self.override_subscribe_role, self.override_subscribe_id,
                 );
 
+                let optional_id_part = match self.override_subscribe_id {
+                    Some(id) => {
+                        debug!("Subscribe ID was overriden at Channel options level. The Agent ID will be ignored.");
+                        Some(id)
+                    }
+                    None => {
+                        debug!("Subscribe ID was not overriden at Channel options level. The Agent ID will be used instead, if specified in Agent creation.");
+                        tether_agent.id().map(String::from)
+                    }
+                };
+
                 TetherOrCustomTopic::Tether(TetherCompliantTopic::new_for_subscribe(
-                    &self
-                        .override_subscribe_channel_name
-                        .unwrap_or(self.channel_name.clone()),
+                    &self.channel_name,
                     self.override_subscribe_role.as_deref(),
-                    self.override_subscribe_id.as_deref(),
+                    optional_id_part.as_deref(),
                 ))
             }
         };
