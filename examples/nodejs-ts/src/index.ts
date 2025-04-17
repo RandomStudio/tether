@@ -20,7 +20,7 @@ const main = async () => {
   // Note the alternative syntax for doing the same thing, below:
   // ...
   // const sender = new ChannelSender(agent, "randomValues");
-  const sender = agent.createSender("randomValues");
+  const sender = agent.getSender("randomValues");
 
   sender.send({
     value: Math.random(),
@@ -29,16 +29,14 @@ const main = async () => {
   });
 
   // This should result in the same channel being re-used!
-  const sender2 = agent.createSender("randomValues");
+  const sender2 = agent.getSender("randomValues");
   sender.send({
     value: Math.random(),
     timestamp: Date.now(),
     something: "two",
   });
 
-  const genericReceiver = await agent.createReceiver(
-    "randomValuesStrictlyTyped"
-  );
+  const genericReceiver = await agent.getReceiver("randomValuesStrictlyTyped");
   genericReceiver.on("message", (payload, topic) => {
     logger.info(
       "Our generic receiver got:",
@@ -49,21 +47,21 @@ const main = async () => {
     );
   });
 
-  const typedReceiver = await agent.createReceiver<number>(
+  const typedReceiver = await agent.getReceiver<number>(
     "randomValuesStrictlyTyped"
   );
   typedReceiver.on("message", (payload) => {
     logger.info("Our typed receiver got", payload, typeof payload);
   });
 
-  const reuseReceiver = await agent.createReceiver<number>(
+  const reuseReceiver = await agent.getReceiver<number>(
     "randomValuesStrictlyTyped"
   );
   reuseReceiver.on("message", (payload) => {
     logger.info("Duplicate receiver also got:", payload, typeof payload);
   });
 
-  const typedSender = agent.createSender<number>("randomValuesStrictlyTyped");
+  const typedSender = agent.getSender<number>("randomValuesStrictlyTyped");
   // This will be rejected by TypeScript compiler:
   // typedSender.send({
   //   value: Math.random(),

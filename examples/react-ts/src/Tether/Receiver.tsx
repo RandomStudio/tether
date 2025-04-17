@@ -12,7 +12,7 @@ export const Receiver = (props: Props) => {
 
   useEffect(() => {
     agent
-      .createReceiver("everything", {
+      .getReceiver("everything", {
         overrideTopic: "#",
       })
       .then((channel) => {

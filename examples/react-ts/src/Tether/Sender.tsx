@@ -34,7 +34,7 @@ export const Sender = (props: Props) => {
             <button
               onClick={() =>
                 setChannel(
-                  agent.createSender("sender", {
+                  agent.getSender("sender", {
                     overrideTopic: customTopic,
                   })
                 )
@@ -45,7 +45,7 @@ export const Sender = (props: Props) => {
             <button
               onClick={() => {
                 setUseCustomTopic(false);
-                setChannel(agent.createSender("sender"));
+                setChannel(agent.getSender("sender"));
               }}
             >
               Back to default

@@ -158,7 +158,8 @@ export class TetherAgent {
 
   public getConfig = () => this.config;
 
-  public async createReceiver<T>(
+  /** Create a new ChannelReceiver, or return an existing one if it was already created (match on name). */
+  public async getReceiver<T>(
     name: string,
     options?: ReceiverOptions,
     ignoreExisting?: boolean
@@ -185,7 +186,8 @@ export class TetherAgent {
     }
   }
 
-  public createSender<T>(
+  /** Create a new ChannelSender, or return an existing one if it was already created (match on name). */
+  public getSender<T>(
     name: string,
     options?: SenderOptions,
     ignoreExisting?: boolean
