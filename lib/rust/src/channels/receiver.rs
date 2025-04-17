@@ -6,48 +6,13 @@ use serde::Deserialize;
 use crate::TetherAgent;
 
 use super::{
-    options::definitions::{ChannelDefinition, ChannelReceiverDefinition},
+    definitions::{ChannelDefinition, ChannelReceiverDefinition},
     tether_compliant_topic::TetherOrCustomTopic,
 };
 
 pub struct ChannelReceiver<'a, T: Deserialize<'a>> {
-    name: String,
-    topic: TetherOrCustomTopic,
-    qos: i32,
+    definition: ChannelReceiverDefinition,
     marker: std::marker::PhantomData<&'a T>,
-}
-
-impl<'a, T: Deserialize<'a>> ChannelDefinition<'a> for ChannelReceiver<'a, T> {
-    fn name(&self) -> &str {
-        &self.name
-    }
-
-    fn generated_topic(&self) -> &str {
-        match &self.topic {
-            TetherOrCustomTopic::Custom(s) => {
-                debug!(
-                    "Channel named \"{}\" has custom topic \"{}\"",
-                    &self.name, &s
-                );
-                s
-            }
-            TetherOrCustomTopic::Tether(t) => {
-                debug!(
-                    "Channel named \"{}\" has Tether-compliant topic \"{:?}\"",
-                    &self.name, t
-                );
-                t.topic()
-            }
-        }
-    }
-
-    fn topic(&'_ self) -> &'_ TetherOrCustomTopic {
-        &self.topic
-    }
-
-    fn qos(&self) -> i32 {
-        self.qos
-    }
 }
 
 impl<'a, T: Deserialize<'a>> ChannelReceiver<'a, T> {
@@ -58,9 +23,7 @@ impl<'a, T: Deserialize<'a>> ChannelReceiver<'a, T> {
         let topic_string = definition.topic().full_topic_string();
 
         let channel = ChannelReceiver {
-            name: String::from(definition.name()),
-            topic: definition.topic().clone(),
-            qos: definition.qos(),
+            definition: definition.clone(),
             marker: std::marker::PhantomData,
         };
 
@@ -91,7 +54,14 @@ impl<'a, T: Deserialize<'a>> ChannelReceiver<'a, T> {
         }
     }
 
-    /// Use the topic of an incoming message to check against the definition of an Channel Receiver.
+    pub fn definition(&self) -> &ChannelReceiverDefinition {
+        &self.definition
+    }
+
+    /// Typically, you do not need to call this function yourself - rather use `.parse` which will
+    /// both check if the message belongs this channel AND, if so, decode it as well.
+    ///
+    /// Uses the topic of an incoming message to check against the definition of an Channel Receiver.
     ///
     /// Due to the use of wildcard subscriptions, multiple topic strings might match a given
     /// Channel Receiver definition. e.g. `someRole/channelMessages` and `anotherRole/channelMessages` and `someRole/channelMessages/specificID`
@@ -103,7 +73,7 @@ impl<'a, T: Deserialize<'a>> ChannelReceiver<'a, T> {
     /// developer is expected to match against topic strings themselves.
     pub fn matches(&self, incoming_topic: &TetherOrCustomTopic) -> bool {
         match incoming_topic {
-            TetherOrCustomTopic::Tether(incoming_three_parts) => match &self.topic {
+            TetherOrCustomTopic::Tether(incoming_three_parts) => match &self.definition().topic() {
                 TetherOrCustomTopic::Tether(my_tpt) => {
                     let matches_role =
                         my_tpt.role() == "+" || my_tpt.role().eq(incoming_three_parts.role());
@@ -119,7 +89,9 @@ impl<'a, T: Deserialize<'a>> ChannelReceiver<'a, T> {
                         None => true,
                     };
 
-                    debug!("Test match for Channel named \"{}\" with def {:?} against {:?} => matches_role? {}, matches_id? {}, matches_channel_name? {}", &self.name, &self.topic, &incoming_three_parts, matches_role, matches_id, matches_channel_name);
+                    debug!("Test match for Channel named \"{}\" with def {:?} against {:?} => matches_role? {}, matches_id? {}, matches_channel_name? {}",
+                        &self.definition().name(), &self.definition().topic(),
+                        &incoming_three_parts, matches_role, matches_id, matches_channel_name);
                     matches_role && matches_id && matches_channel_name
                 }
                 TetherOrCustomTopic::Custom(my_custom_topic) => {
@@ -131,7 +103,7 @@ impl<'a, T: Deserialize<'a>> ChannelReceiver<'a, T> {
                         || my_custom_topic.as_str() == incoming_three_parts.topic()
                 }
             },
-            TetherOrCustomTopic::Custom(incoming_custom) => match &self.topic {
+            TetherOrCustomTopic::Custom(incoming_custom) => match &self.definition().topic {
                 TetherOrCustomTopic::Custom(my_custom_topic) => {
                     if my_custom_topic.as_str() == "#"
                         || my_custom_topic.as_str() == incoming_custom.as_str()
@@ -160,7 +132,8 @@ impl<'a, T: Deserialize<'a>> ChannelReceiver<'a, T> {
                 Err(e) => {
                     error!(
                         "Failed to parse message on channel \"{}\": {}",
-                        &self.name, e
+                        &self.definition().name,
+                        e
                     );
                     None
                 }

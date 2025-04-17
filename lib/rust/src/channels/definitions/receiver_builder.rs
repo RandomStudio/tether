@@ -1,9 +1,10 @@
 use crate::tether_compliant_topic::{TetherCompliantTopic, TetherOrCustomTopic};
 
-use super::{definitions::ChannelReceiverDefinition, ChannelOptions};
 use log::*;
 
-pub struct ChannelReceiverOptions {
+use super::{ChannelBuilder, ChannelReceiverDefinition};
+
+pub struct ChannelReceiverBuilder {
     channel_name: String,
     qos: Option<i32>,
     override_subscribe_role: Option<String>,
@@ -12,9 +13,9 @@ pub struct ChannelReceiverOptions {
     override_topic: Option<String>,
 }
 
-impl ChannelOptions for ChannelReceiverOptions {
+impl ChannelBuilder for ChannelReceiverBuilder {
     fn new(name: &str) -> Self {
-        ChannelReceiverOptions {
+        ChannelReceiverBuilder {
             channel_name: String::from(name),
             override_subscribe_id: None,
             override_subscribe_role: None,
@@ -25,7 +26,7 @@ impl ChannelOptions for ChannelReceiverOptions {
     }
 
     fn qos(self, qos: Option<i32>) -> Self {
-        ChannelReceiverOptions { qos, ..self }
+        ChannelReceiverBuilder { qos, ..self }
     }
 
     fn role(self, role: Option<&str>) -> Self {
@@ -34,7 +35,7 @@ impl ChannelOptions for ChannelReceiverOptions {
             self
         } else {
             let override_subscribe_role = role.map(|s| s.into());
-            ChannelReceiverOptions {
+            ChannelReceiverBuilder {
                 override_subscribe_role,
                 ..self
             }
@@ -47,7 +48,7 @@ impl ChannelOptions for ChannelReceiverOptions {
             self
         } else {
             let override_subscribe_id = id.map(|s| s.into());
-            ChannelReceiverOptions {
+            ChannelReceiverBuilder {
                 override_subscribe_id,
                 ..self
             }
@@ -61,7 +62,7 @@ impl ChannelOptions for ChannelReceiverOptions {
         }
         if override_channel_name.is_some() {
             let override_subscribe_channel_name = override_channel_name.map(|s| s.into());
-            ChannelReceiverOptions {
+            ChannelReceiverBuilder {
                 override_subscribe_channel_name,
                 ..self
             }
@@ -84,12 +85,12 @@ impl ChannelOptions for ChannelReceiverOptions {
                         t
                     );
                 }
-                ChannelReceiverOptions {
+                ChannelReceiverBuilder {
                     override_topic: Some(t.into()),
                     ..self
                 }
             }
-            None => ChannelReceiverOptions {
+            None => ChannelReceiverBuilder {
                 override_topic: None,
                 ..self
             },
@@ -97,9 +98,9 @@ impl ChannelOptions for ChannelReceiverOptions {
     }
 }
 
-impl ChannelReceiverOptions {
+impl ChannelReceiverBuilder {
     pub fn any_channel(self) -> Self {
-        ChannelReceiverOptions {
+        ChannelReceiverBuilder {
             override_subscribe_channel_name: Some("+".into()),
             ..self
         }

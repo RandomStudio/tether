@@ -1,14 +1,94 @@
-pub mod definitions;
-pub mod receiver_options;
-pub mod sender_options;
+use super::tether_compliant_topic::TetherOrCustomTopic;
 
-pub trait ChannelOptions {
+pub mod receiver_builder;
+pub mod sender_builder;
+
+pub use receiver_builder::ChannelReceiverBuilder;
+pub use sender_builder::ChannelSenderBuilder;
+
+/**
+A Channel Builder is used for creating a Channel Definition.
+*/
+pub trait ChannelBuilder {
     fn new(name: &str) -> Self;
     fn qos(self, qos: Option<i32>) -> Self;
     fn role(self, role: Option<&str>) -> Self;
     fn id(self, id: Option<&str>) -> Self;
     fn override_name(self, override_channel_name: Option<&str>) -> Self;
     fn override_topic(self, override_topic: Option<&str>) -> Self;
+}
+
+/**
+A Channel Definition is intended to encapsulate only the essential metadata
+and configuration needed to describe a Channel. In contrast with a Channel Sender/Receiver,
+it is **not** responsible for actually sending or receiving messages on that Channel.
+*/
+pub trait ChannelDefinition<'a> {
+    fn name(&'a self) -> &'a str;
+    /// Return the generated topic string actually used by the Channel
+    fn generated_topic(&'a self) -> &'a str;
+    /// Return the custom or Tether-compliant topic
+    fn topic(&'a self) -> &'a TetherOrCustomTopic;
+    fn qos(&'a self) -> i32;
+}
+
+#[derive(Clone)]
+pub struct ChannelSenderDefinition {
+    pub name: String,
+    pub generated_topic: String,
+    pub topic: TetherOrCustomTopic,
+    pub qos: i32,
+    pub retain: bool,
+}
+
+impl ChannelSenderDefinition {
+    pub fn retain(&self) -> bool {
+        self.retain
+    }
+}
+
+#[derive(Clone)]
+pub struct ChannelReceiverDefinition {
+    pub name: String,
+    pub generated_topic: String,
+    pub topic: TetherOrCustomTopic,
+    pub qos: i32,
+}
+
+impl<'a> ChannelDefinition<'a> for ChannelSenderDefinition {
+    fn name(&'a self) -> &'a str {
+        &self.name
+    }
+
+    fn generated_topic(&'a self) -> &'a str {
+        &self.generated_topic
+    }
+
+    fn topic(&'a self) -> &'a TetherOrCustomTopic {
+        &self.topic
+    }
+
+    fn qos(&'a self) -> i32 {
+        self.qos
+    }
+}
+
+impl<'a> ChannelDefinition<'a> for ChannelReceiverDefinition {
+    fn name(&'a self) -> &'a str {
+        &self.name
+    }
+
+    fn generated_topic(&'a self) -> &'a str {
+        &self.generated_topic
+    }
+
+    fn topic(&'a self) -> &'a TetherOrCustomTopic {
+        &self.topic
+    }
+
+    fn qos(&'a self) -> i32 {
+        self.qos
+    }
 }
 
 // #[cfg(test)]

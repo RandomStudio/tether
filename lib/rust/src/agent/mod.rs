@@ -8,12 +8,10 @@ use std::sync::{Arc, Mutex};
 use std::{sync::mpsc, thread, time::Duration};
 use uuid::Uuid;
 
-use crate::options::definitions::{
-    ChannelDefinition, ChannelReceiverDefinition, ChannelSenderDefinition,
-};
-use crate::options::receiver_options::ChannelReceiverOptions;
-use crate::options::sender_options::ChannelSenderOptions;
-use crate::options::ChannelOptions;
+use crate::definitions::receiver_builder::ChannelReceiverBuilder;
+use crate::definitions::sender_builder::ChannelSenderBuilder;
+use crate::definitions::ChannelBuilder;
+use crate::definitions::{ChannelDefinition, ChannelReceiverDefinition, ChannelSenderDefinition};
 use crate::receiver::ChannelReceiver;
 use crate::sender::ChannelSender;
 use crate::tether_compliant_topic::{TetherCompliantTopic, TetherOrCustomTopic};
@@ -22,6 +20,22 @@ const TIMEOUT_SECONDS: u64 = 3;
 const DEFAULT_USERNAME: &str = "tether";
 const DEFAULT_PASSWORD: &str = "sp_ceB0ss!";
 
+/**
+A Tether Agent struct encapsulates everything required to set up a single
+"Agent" as part of your Tether-based system. The only thing absolutely required is
+a "role" - everything else is optional and sensible defaults will be used when
+not explicitly specified.
+
+By default, the Agent will connect (automatically) to an MQTT Broker on localhost:1883
+
+It will **not** have an ID, and therefore publishing/subscribing topics will not append anything
+this into the topic string when ChannelSender and ChannelReceiver instances are created using
+this Tether Agent instance, unless explicitly provided on creation.
+
+Note that you should typically not construct a new TetherAgent instance yourself; rather
+use the provided TetherAgentBuilder to specify any options you might need, and call
+.build to get a well-configured TetherAgent.
+*/
 pub struct TetherAgent {
     role: String,
     id: Option<String>,
@@ -39,6 +53,13 @@ pub struct TetherAgent {
     auto_connect_enabled: bool,
 }
 
+/**
+Typically, you will use this to construct a well-configured TetherAgent with a combination
+of sensible defaults and custom overrides.
+
+Make a new instance of TetherAgentBuilder with `TetherAgentBuilder::new()`, chain whatever
+overrides you might need, and finally call `build()` to get the actual TetherAgent instance.
+*/
 #[derive(Clone)]
 pub struct TetherAgentBuilder {
     role: String,
@@ -123,11 +144,20 @@ impl TetherAgentBuilder {
         self
     }
 
+    /// Specify explicitly whether to attempt auto-connection on build;
+    /// if set to `false` you will need to connect the TetherAgent (and therefore
+    /// its underlying MQTT client) yourself after creating the instance.
     pub fn auto_connect(mut self, should_auto_connect: bool) -> Self {
         self.auto_connect = should_auto_connect;
         self
     }
 
+    /// Using a combination of sensible defaults and any overrides you might
+    /// have provided using other functions called on TetherAgentOptions, this
+    /// function returns a well-configured TetherAgent instance.
+    ///
+    /// Unless you set `.auto_connect(false)`, the TetherAgent will attempt to
+    /// connect to the MQTT broker automatically upon creation.
     pub fn build(self) -> anyhow::Result<TetherAgent> {
         let protocol = self.protocol.clone().unwrap_or("mqtt".into());
         let host = self.host.clone().unwrap_or("localhost".into());
@@ -173,6 +203,17 @@ impl TetherAgentBuilder {
 }
 
 impl<'a> TetherAgent {
+    /// The simplest way to create a ChannelSender.
+    ///
+    /// You provide only a Channel Name;
+    /// configuration derived from your Tether Agent instance is used to construct
+    /// the appropriate publishing topics.
+    pub fn create_sender<T: Serialize>(&self, name: &str) -> ChannelSender<T> {
+        ChannelSender::new(self, ChannelSenderBuilder::new(name).build(self))
+    }
+
+    /// Create a ChannelSender instance using a ChannelSenderDefinition already constructed
+    /// elsewhere.
     pub fn create_sender_with_definition<T: Serialize>(
         &self,
         definition: ChannelSenderDefinition,
@@ -180,22 +221,27 @@ impl<'a> TetherAgent {
         ChannelSender::new(self, definition)
     }
 
-    pub fn create_sender<T: Serialize>(&self, name: &str) -> ChannelSender<T> {
-        ChannelSender::new(self, ChannelSenderOptions::new(name).build(self))
+    /// The simplest way to create a Channel Receiver.
+    ///
+    /// You provide only a Channel Name;
+    /// configuration derived from your Tether Agent instance is used to construct
+    /// the appropriate subscribing topics.
+    ///
+    /// The actual subscription is also initiated automatically.
+    pub fn create_receiver<T: Deserialize<'a>>(
+        &'a self,
+        name: &str,
+    ) -> anyhow::Result<ChannelReceiver<'a, T>> {
+        ChannelReceiver::new(self, ChannelReceiverBuilder::new(name).build())
     }
 
+    /// Create a ChannelReceiver instance using a ChannelReceiverDefinition already constructed
+    /// elsewhere.
     pub fn create_receiver_with_definition<T: Deserialize<'a>>(
         &'a self,
         definition: ChannelReceiverDefinition,
     ) -> anyhow::Result<ChannelReceiver<'a, T>> {
         ChannelReceiver::new(self, definition)
-    }
-
-    pub fn create_receiver<T: Deserialize<'a>>(
-        &'a self,
-        name: &str,
-    ) -> anyhow::Result<ChannelReceiver<'a, T>> {
-        ChannelReceiver::new(self, ChannelReceiverOptions::new(name).build())
     }
 
     pub fn is_connected(&self) -> bool {
@@ -235,15 +281,25 @@ impl<'a> TetherAgent {
         )
     }
 
+    /// Change the role, even if it was set before. Be careful _when_ you call this,
+    /// as it could affect any new Channel Senders/Receivers created after that point.
     pub fn set_role(&mut self, role: &str) {
         self.role = role.into();
     }
 
+    /// Change the ID, even if it was set (or left empty) before.
+    /// Be careful _when_ you call this,
+    /// as it could affect any new Channel Senders/Receivers created after that point.
     pub fn set_id(&mut self, id: &str) {
         self.id = Some(id.into());
     }
 
-    /// Self must be mutable in order to create and assign new Client (with Connection)
+    /// Use this function yourself **only if you explicitly disallowed auto connection**.
+    /// Otherwise, this function is called automatically as part of the `.build` process.
+    ///
+    /// This function spawns a separate thread for polling the MQTT broker. Any events
+    /// and messages are relayed via mpsc channels internally; for example, you will call
+    /// `.check_messages()` to see if any messages were received and are waiting to be parsed.
     pub fn connect(&mut self) -> anyhow::Result<()> {
         info!(
             "Make new connection to the MQTT server at {}://{}:{}...",
@@ -400,7 +456,9 @@ impl<'a> TetherAgent {
         Ok(())
     }
 
-    /// If a message is waiting return ThreePartTopic, Message (String, Message)
+    /// If a message is waiting to be parsed by your application,
+    /// this function will return Topic, Message, i.e. `(TetherOrCustomTopic, Message)`
+    ///
     /// Messages received on topics that are not parseable as Tether Three Part Topics will be returned with
     /// the complete Topic string instead
     pub fn check_messages(&self) -> Option<(TetherOrCustomTopic, Vec<u8>)> {
@@ -415,13 +473,39 @@ impl<'a> TetherAgent {
         }
     }
 
-    /// Unlike .send, this function does NOT serialize the data before publishing.
+    /// Typically called via the Channel Sender itself.
     ///
-    /// Given a channel definition and a raw (u8 buffer) payload, publishes a message
-    /// using an appropriate topic and with the QOS specified in the Channel Definition
-    pub fn send_raw<T: Serialize>(
+    /// This function serializes the data (using Serde/MessagePack) automatically before publishing.
+    ///
+    /// Given a Channel Sender and serializeable data payload, publishes a message
+    /// using an appropriate topic and with the QOS specified in the Channel Definition.
+    ///
+    /// Note that this function requires that the data payload be the same type <T> as
+    /// the Channel Sender, so it will return an Error if the types do not match.
+    pub fn send<T: Serialize>(
         &self,
-        channel_definition: &ChannelSender<T>,
+        channel_sender: &ChannelSender<T>,
+        data: &T,
+    ) -> anyhow::Result<()> {
+        match to_vec_named(&data) {
+            Ok(payload) => self.send_raw(channel_sender.definition(), Some(&payload)),
+            Err(e) => {
+                error!("Failed to encode: {e:?}");
+                Err(e.into())
+            }
+        }
+    }
+
+    /// Typically called via the Channel Sender itself.
+    ///
+    /// Unlike .send, this function does NOT serialize the data before publishing. It therefore
+    /// does no type checking of the payload.
+    ///
+    /// Given a Channel Sender and a raw (u8 buffer) payload, publishes a message
+    /// using an appropriate topic and with the QOS specified in the Channel Definition
+    pub fn send_raw(
+        &self,
+        channel_definition: &ChannelSenderDefinition,
         payload: Option<&[u8]>,
     ) -> anyhow::Result<()> {
         let topic = channel_definition.generated_topic();
@@ -448,34 +532,16 @@ impl<'a> TetherAgent {
         }
     }
 
-    /// Serializes the data automatically before publishing.
-    ///
-    /// Given a channel definition and serializeable data payload, publishes a message
-    /// using an appropriate topic and with the QOS specified in the Channel Definition
-    pub fn send<T: Serialize>(
-        &self,
-        channel_definition: &ChannelSender<T>,
-        data: T,
-    ) -> anyhow::Result<()> {
-        match to_vec_named(&data) {
-            Ok(payload) => self.send_raw(channel_definition, Some(&payload)),
-            Err(e) => {
-                error!("Failed to encode: {e:?}");
-                Err(e.into())
-            }
-        }
-    }
-
-    pub fn send_empty<T: Serialize>(
-        &self,
-        channel_definition: &ChannelSender<T>,
-    ) -> anyhow::Result<()> {
+    pub fn send_empty(&self, channel_definition: &ChannelSenderDefinition) -> anyhow::Result<()> {
         self.send_raw(channel_definition, None)
     }
 
-    /// Publish an already-encoded payload using a
-    /// full topic string - no need for passing a ChannelSender
-    /// reference
+    /// Publish an already-encoded payload using a provided
+    /// **full topic string** - no need for passing a ChannelSender or
+    /// ChannelSenderDefinition reference.
+    ///
+    /// **WARNING:** This is a back door to using MQTT directly, without any
+    /// guarrantees of correctedness in a Tether-based system!
     pub fn publish_raw(
         &self,
         topic: &str,

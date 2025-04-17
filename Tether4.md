@@ -49,3 +49,18 @@ Apart from the terminology changes, the following are important to note:
 ## Rust changes
 Apart from the terminology changes, the following are important to note:
 - `agent.send` used to assume an already-encoded payload, while `.encode_and_send` did auto-encoding. Now, `.send` is the auto-encoding version and additional `.send_raw` and `.send_empty` functions are provided. It is VERY important that the new `.send` will actually (incorrectly!) accept already-encoded payloads, because `&[u8]` is ALSO `T: Serialize`! So applications using the new version must be carefully checked to ensure that things are not (double) encoded before sending!
+
+The term "OptionsBuilder" suffix has now been replaced with the much simpler "Builder", so we have simply:
+- TetherAgentBuilder
+- ChannelSenderBuilder
+- ChannelReceiverBuilder
+
+Even better, the ChannelSenderBuilder/ChannelReceiver builder do not **have** to be used in all cases, since both ChannelSender and ChannelReceiver objects can be constructed via the Tether Agent object itself, i.e.
+
+- `tether_agent::create_sender`
+- `tether_agent::create_receiver`
+
+All that needs to be provided, in the default cases, is the name and the type. For example:
+- `tether_agent.create_sender::<u8>("numbersOnly")` creates a ChannelSender called "numbersOnly" which will automatically expect (require) u8 payloads
+
+Arguably, the TypeScript library should work in a similar way!

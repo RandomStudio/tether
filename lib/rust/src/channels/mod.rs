@@ -1,4 +1,4 @@
-pub mod options;
+pub mod definitions;
 pub mod receiver;
 pub mod sender;
 pub mod tether_compliant_topic;

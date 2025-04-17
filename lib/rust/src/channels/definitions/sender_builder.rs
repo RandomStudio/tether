@@ -3,10 +3,11 @@ use crate::{
     TetherAgent,
 };
 
-use super::{definitions::ChannelSenderDefinition, ChannelOptions};
 use log::*;
 
-pub struct ChannelSenderOptions {
+use super::{ChannelBuilder, ChannelSenderDefinition};
+
+pub struct ChannelSenderBuilder {
     channel_name: String,
     qos: Option<i32>,
     override_publish_role: Option<String>,
@@ -15,9 +16,9 @@ pub struct ChannelSenderOptions {
     retain: Option<bool>,
 }
 
-impl ChannelOptions for ChannelSenderOptions {
+impl ChannelBuilder for ChannelSenderBuilder {
     fn new(name: &str) -> Self {
-        ChannelSenderOptions {
+        ChannelSenderBuilder {
             channel_name: String::from(name),
             override_publish_id: None,
             override_publish_role: None,
@@ -28,7 +29,7 @@ impl ChannelOptions for ChannelSenderOptions {
     }
 
     fn qos(self, qos: Option<i32>) -> Self {
-        ChannelSenderOptions { qos, ..self }
+        ChannelSenderBuilder { qos, ..self }
     }
 
     fn role(self, role: Option<&str>) -> Self {
@@ -37,7 +38,7 @@ impl ChannelOptions for ChannelSenderOptions {
             self
         } else {
             let override_publish_role = role.map(|s| s.into());
-            ChannelSenderOptions {
+            ChannelSenderBuilder {
                 override_publish_role,
                 ..self
             }
@@ -50,7 +51,7 @@ impl ChannelOptions for ChannelSenderOptions {
             self
         } else {
             let override_publish_id = id.map(|s| s.into());
-            ChannelSenderOptions {
+            ChannelSenderBuilder {
                 override_publish_id,
                 ..self
             }
@@ -63,7 +64,7 @@ impl ChannelOptions for ChannelSenderOptions {
             return self;
         }
         match override_channel_name {
-            Some(n) => ChannelSenderOptions {
+            Some(n) => ChannelSenderBuilder {
                 channel_name: n.into(),
                 ..self
             },
@@ -87,12 +88,12 @@ impl ChannelOptions for ChannelSenderOptions {
                         t
                     );
                 }
-                ChannelSenderOptions {
+                ChannelSenderBuilder {
                     override_topic: Some(t.into()),
                     ..self
                 }
             }
-            None => ChannelSenderOptions {
+            None => ChannelSenderBuilder {
                 override_topic: None,
                 ..self
             },
@@ -100,9 +101,9 @@ impl ChannelOptions for ChannelSenderOptions {
     }
 }
 
-impl ChannelSenderOptions {
+impl ChannelSenderBuilder {
     pub fn retain(self, should_retain: Option<bool>) -> Self {
-        ChannelSenderOptions {
+        ChannelSenderBuilder {
             retain: should_retain,
             ..self
         }

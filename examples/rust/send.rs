@@ -3,10 +3,7 @@ use std::time::Duration;
 use env_logger::{Builder, Env};
 use log::{debug, info};
 use serde::Serialize;
-use tether_agent::{
-    options::{sender_options::ChannelSenderOptions, ChannelOptions},
-    TetherAgentBuilder,
-};
+use tether_agent::*;
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -28,7 +25,7 @@ fn main() {
     let (role, id, _) = tether_agent.description();
     info!("Created agent OK: {}, {}", role, id);
 
-    let sender_definition = ChannelSenderOptions::new("customStructs").build(&tether_agent);
+    let sender_definition = ChannelSenderBuilder::new("customStructs").build(&tether_agent);
     let sender = tether_agent.create_sender_with_definition::<CustomStruct>(sender_definition);
 
     // let test_struct = CustomStruct {
