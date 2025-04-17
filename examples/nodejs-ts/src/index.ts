@@ -28,8 +28,7 @@ const main = async () => {
     something: "one",
   });
 
-  const genericReceiver = await ChannelReceiver.create(
-    agent,
+  const genericReceiver = await agent.createReceiver(
     "randomValuesStrictlyTyped"
   );
   genericReceiver.on("message", (payload, topic) => {
@@ -42,18 +41,14 @@ const main = async () => {
     );
   });
 
-  const typedReceiver = await ChannelReceiver.create<number>(
-    agent,
+  const typedReceiver = await agent.createReceiver<number>(
     "randomValuesStrictlyTyped"
   );
   typedReceiver.on("message", (payload) => {
     logger.info("Our typed receiver got", payload, typeof payload);
   });
 
-  const typedSender = new ChannelSender<number>(
-    agent,
-    "randomValuesStrictlyTyped"
-  );
+  const typedSender = agent.createSender<number>("randomValuesStrictlyTyped");
   // This will be rejected by TypeScript compiler:
   // typedSender.send({
   //   value: Math.random(),

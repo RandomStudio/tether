@@ -9,17 +9,19 @@ import {
   TetherAgent,
 } from "..";
 
+export interface SenderOptions {
+  overrideTopic?: string;
+  id?: string;
+  publishOptions?: IClientPublishOptions;
+}
+
 export class ChannelSender<T> extends Channel {
   private publishOptions: IClientPublishOptions;
 
   constructor(
     agent: TetherAgent,
     channelName: string,
-    options?: {
-      overrideTopic?: string;
-      id?: string;
-      publishOptions?: IClientPublishOptions;
-    }
+    options?: SenderOptions
   ) {
     super(agent, {
       name: channelName,

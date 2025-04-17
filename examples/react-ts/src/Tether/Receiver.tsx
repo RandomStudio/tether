@@ -6,13 +6,15 @@ interface Props {
 }
 
 export const Receiver = (props: Props) => {
+  const { agent } = props;
   const [channel, setChannel] = useState<ChannelReceiver<unknown> | null>(null);
   const [lastMessage, setLastMessage] = useState("");
 
   useEffect(() => {
-    ChannelReceiver.create(props.agent, "everything", {
-      overrideTopic: "#",
-    })
+    agent
+      .createReceiver("everything", {
+        overrideTopic: "#",
+      })
       .then((channel) => {
         setChannel(channel);
         channel.on("message", (payload, topic) => {
@@ -24,7 +26,7 @@ export const Receiver = (props: Props) => {
       .catch((e) => {
         console.error("Error creating Channel Receiver:", e);
       });
-  }, [props.agent]);
+  }, [agent]);
 
   return (
     <div>

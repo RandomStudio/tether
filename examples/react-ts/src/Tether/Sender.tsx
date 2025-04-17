@@ -6,10 +6,12 @@ interface Props {
 }
 
 export const Sender = (props: Props) => {
+  const { agent } = props;
+
   useEffect(() => {
     console.log("Sender useEffect");
-    setChannel(new ChannelSender(props.agent, "sender"));
-  }, [props.agent]);
+    setChannel(new ChannelSender(agent, "sender"));
+  }, [agent]);
 
   const [useCustomTopic, setUseCustomTopic] = useState(false);
   const [customTopic, setTCustomTopic] = useState("");
@@ -32,7 +34,7 @@ export const Sender = (props: Props) => {
             <button
               onClick={() =>
                 setChannel(
-                  new ChannelSender(props.agent, "sender", {
+                  agent.createSender("sender", {
                     overrideTopic: customTopic,
                   })
                 )
@@ -43,7 +45,7 @@ export const Sender = (props: Props) => {
             <button
               onClick={() => {
                 setUseCustomTopic(false);
-                setChannel(new ChannelSender(props.agent, "sender"));
+                setChannel(agent.createSender("sender"));
               }}
             >
               Back to default
@@ -65,9 +67,9 @@ export const Sender = (props: Props) => {
                 await channel.send();
               } catch (e) {
                 console.error("We got an error when trying to publish:", e);
-                console.log("agent connected?", props.agent.getIsConnected());
-                console.log("agent state?", props.agent.getState());
-                console.log("agent client?", props.agent.getClient());
+                console.log("agent connected?", agent.getIsConnected());
+                console.log("agent state?", agent.getState());
+                console.log("agent client?", agent.getClient());
               }
             }}
           >

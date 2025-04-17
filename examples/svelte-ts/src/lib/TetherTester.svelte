@@ -27,9 +27,9 @@
       brokerOptions: BROWSER,
     });
 
-    sender = new ChannelSender(agent, "randomNumbers");
+    sender = agent.createSender("randomNumbers");
 
-    const receiver = await ChannelReceiver.create<number>(agent, "everything", {
+    const receiver = await agent.createReceiver<number>("everything", {
       overrideTopic: "#",
     });
     receiver.on("message", (payload, topic) => {
@@ -65,8 +65,7 @@
           onclick={async () => {
             if (sender) {
               const randomNumber = Math.round(Math.random() * 10000);
-              // await sender.send(encode(randomNumber));
-              await sender.encodeAndSend(randomNumber);
+              await sender.send(randomNumber);
             } else {
               throw Error("ChannelSender does not exist");
             }

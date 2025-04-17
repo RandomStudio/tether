@@ -9,6 +9,13 @@ import {
   TetherAgent,
 } from "..";
 
+export interface ReceiverOptions {
+  overrideTopic?: string;
+  id?: string;
+  role?: string;
+  subscribeOptions?: IClientSubscribeOptions;
+}
+
 type ReceiverCallback<T> = (payload: T, topic: string) => void;
 export class ChannelReceiver<T> extends Channel {
   private callbacks: ReceiverCallback<T>[];
@@ -16,12 +23,7 @@ export class ChannelReceiver<T> extends Channel {
   public static async create<T>(
     agent: TetherAgent,
     channelName: string,
-    options?: {
-      overrideTopic?: string;
-      id?: string;
-      role?: string;
-      subscribeOptions?: IClientSubscribeOptions;
-    }
+    options?: ReceiverOptions
   ) {
     const instance = new ChannelReceiver<T>(agent, channelName, options || {});
 
