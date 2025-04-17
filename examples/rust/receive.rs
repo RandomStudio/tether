@@ -32,7 +32,7 @@ fn main() {
         .expect("failed to create receiver");
 
     let receiver_of_custom_structs = tether_agent
-        .create_receiver::<CustomMessage>("values")
+        .create_receiver::<CustomMessage>("customStructs")
         .expect("failed to create receiver");
 
     loop {

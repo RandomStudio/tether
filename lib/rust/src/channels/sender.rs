@@ -73,7 +73,7 @@ impl<'a, T: Serialize> ChannelSender<'a, T> {
         }
     }
 
-    pub fn send(&self, payload: T) -> anyhow::Result<()> {
+    pub fn send(&self, payload: &T) -> anyhow::Result<()> {
         match to_vec_named(&payload) {
             Ok(data) => self.send_raw(&data),
             Err(e) => Err(e.into()),

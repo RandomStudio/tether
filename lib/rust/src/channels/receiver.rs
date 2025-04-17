@@ -158,7 +158,10 @@ impl<'a, T: Deserialize<'a>> ChannelReceiver<'a, T> {
             match from_slice::<T>(payload) {
                 Ok(msg) => Some(msg),
                 Err(e) => {
-                    error!("Failed to parse message: {}", e);
+                    error!(
+                        "Failed to parse message on channel \"{}\": {}",
+                        &self.name, e
+                    );
                     None
                 }
             }

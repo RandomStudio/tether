@@ -28,8 +28,8 @@ fn main() {
     let (role, id, _) = tether_agent.description();
     info!("Created agent OK: {}, {}", role, id);
 
-    let sender_definition = ChannelSenderOptions::new("values").build(&tether_agent);
-    let sender = tether_agent.create_sender_with_definition(sender_definition);
+    let sender_definition = ChannelSenderOptions::new("customStructs").build(&tether_agent);
+    let sender = tether_agent.create_sender_with_definition::<CustomStruct>(sender_definition);
 
     // let test_struct = CustomStruct {
     //     id: 101,
@@ -43,11 +43,15 @@ fn main() {
         name: "auto encoded".into(),
     };
 
+    // Notice how the line below will produce a compiler error, whereas sender.send_raw for the
+    // exact same payload (101) is fine, because .send_raw is not type-checked.
+    // sender.send(&101).expect("failed to encode+send");
+
     sender.send(&another_struct).expect("failed to encode+send");
 
     let number_sender = tether_agent.create_sender::<u8>("numbersOnly");
 
-    number_sender.send(8).expect("failed to send");
+    number_sender.send(&8).expect("failed to send");
 
     std::thread::sleep(Duration::from_millis(3000));
 }
