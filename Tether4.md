@@ -46,9 +46,24 @@ Apart from the terminology changes, the following are important to note:
 - The `.send` function automatically encodes, and uses generics! No need to encode first (and applications must be careful NOT to encode before sending). `.sendRaw` is provided as an alternative if the end-user prefers to encode themselves
 - The EventEmitter class extension business has been removed, so callbacks for receiving messages are handled manually (internally). From the end-user perspective, everything looks very much the same, with the exception that `.on("message", cb)` will AUTOMATICALLY DECODE first, and tries to use generics! The end-user currently has no direct option to decode messages themselves, any more.
 
+### "Ownership" of Channels
+
+Returning to an older concept (pre-version "3" for TS/JS), the end-user can decide whether to manage Channel Sender/Receivers "themselves" (essentially, keep ownership of the Channel instances) or allow the TetherAgent instance to handle this for them.
+
+Practically, it means that you could create a ChannelReceiver in two ways:
+
+1. `const sender = agent.getReceiver("numberValues")` : Let TetherAgent own the ChannelReceiver
+2. `const sender = await ChannelReceiver.create(agent, "numberValues")` : Let user/application own the ChannelReceiver
+
+In the case of (1.), assigning the "same" receiver (by name) will in fact NOT initiate the creation of a new ChannelReceiver or the subscription to the MQTT Broker. `const sender2 = agent.getReceiver("numberValues")` will return the existing, previously-created, ChannelReceiver object. This is because the TetherAgent keeps track of a list of ChannelReceivers (and, similarly, ChannelSenders) internally.
+
+This type of functionality is quite useful in a web application, particularly in frontend frameworks where the "same channel" could be re-used in various places / UI components. Also, the order of "creating" and "getting" a particular channel might be complicated to manage in many cases; this way, it doesn't matter in which order this happens.
+
+This functionality probably makes little sense for a Rust application, by contrast, where ownership needs to be much more explicit, and the end-user developer should be expected to manage the order of creating/mutating/deleting things more carefully.
+
 ## Rust changes
 Apart from the terminology changes, the following are important to note:
-- `agent.send` used to assume an already-encoded payload, while `.encode_and_send` did auto-encoding. Now, `.send` is the auto-encoding version and additional `.send_raw` and `.send_empty` functions are provided. It is VERY important that the new `.send` will actually (incorrectly!) accept already-encoded payloads, because `&[u8]` is ALSO `T: Serialize`! So applications using the new version must be carefully checked to ensure that things are not (double) encoded before sending!
+- `agent.send` used to assume an already-encoded payload, while `.encode_and_send` did auto-encoding. Now, `.send` is the auto-encoding version and additional `.send_raw` and `.send_empty` functions are provided. It is VERY important that the new `.send` will actually (incorrectly!) accept already-encoded payloads, because `&[u8]` is ALSO `T: Serialize`! So applications using the new version must be carefully checked to ensure that things are not (double) encoded before sending! It does mean that the end-user application no longer needs to do encoding/decoding themselves.
 
 The term "OptionsBuilder" suffix has now been replaced with the much simpler "Builder", so we have simply:
 - TetherAgentBuilder
@@ -63,4 +78,4 @@ Even better, the ChannelSenderBuilder/ChannelReceiver builder do not **have** to
 All that needs to be provided, in the default cases, is the name and the type. For example:
 - `tether_agent.create_sender::<u8>("numbersOnly")` creates a ChannelSender called "numbersOnly" which will automatically expect (require) u8 payloads
 
-The TypeScript library is now set up to mirror this as well (also, optional!). It means having to pass fewer arguments.
+The TypeScript library is now set up to mirror this as well (also, optional!), where it means having to pass fewer arguments (and also allows the TetherAgent to "own" the Channels, which is **not** the case in the Rust library).
