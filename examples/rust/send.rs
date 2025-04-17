@@ -1,9 +1,9 @@
-use std::{thread, time::Duration};
+use std::time::Duration;
 
 use env_logger::{Builder, Env};
 use log::{debug, info};
 use serde::Serialize;
-use tether_agent::{ChannelOptionsBuilder, TetherAgentOptionsBuilder};
+use tether_agent::*;
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -19,52 +19,36 @@ fn main() {
 
     debug!("Debugging is enabled; could be verbose");
 
-    let mut tether_agent = TetherAgentOptionsBuilder::new("rustExample")
+    let tether_agent = TetherAgentBuilder::new("rustExample")
         .build()
         .expect("failed to connect Tether");
     let (role, id, _) = tether_agent.description();
     info!("Created agent OK: {}, {}", role, id);
 
-    let empty_message_output = ChannelOptionsBuilder::create_sender("nothing")
-        .build(&mut tether_agent)
-        .expect("failed to create output");
-    let boolean_message_output = ChannelOptionsBuilder::create_sender("one")
-        .build(&mut tether_agent)
-        .expect("failed to create output");
-    let custom_output = ChannelOptionsBuilder::create_sender("two")
-        .topic(Some("custom/custom/two"))
-        .build(&mut tether_agent)
-        .expect("failed to create output");
-    let grouped_output_1 = ChannelOptionsBuilder::create_sender("one")
-        .id(Some("groupMessages"))
-        .build(&mut tether_agent)
-        .expect("failed to create output");
-    let grouped_output_2 = ChannelOptionsBuilder::create_sender("two")
-        .id(Some("groupMessages"))
-        .build(&mut tether_agent)
-        .expect("failed to create output");
+    let sender_definition = ChannelSenderBuilder::new("customStructs").build(&tether_agent);
+    let sender = tether_agent.create_sender_with_definition::<CustomStruct>(sender_definition);
 
-    for i in 1..=10 {
-        info!("#{i}: Sending empty message...");
-        tether_agent.send_raw(&empty_message_output, None).unwrap();
+    // let test_struct = CustomStruct {
+    //     id: 101,
+    //     name: "something".into(),
+    // };
+    let payload = rmp_serde::to_vec_named(&101).expect("failed to serialize");
+    sender.send_raw(&payload).expect("failed to send");
 
-        let just_a_boolean = i % 2 == 0;
-        info!("#{i}: Sending boolean message...");
-        tether_agent
-            .send(&boolean_message_output, just_a_boolean)
-            .unwrap();
+    let another_struct = CustomStruct {
+        id: 202,
+        name: "auto encoded".into(),
+    };
 
-        info!("#{i}: Sending custom struct message...");
-        let custom_message = CustomStruct {
-            id: i,
-            name: "hello".into(),
-        };
-        tether_agent.send(&custom_output, custom_message).unwrap();
+    // Notice how the line below will produce a compiler error, whereas sender.send_raw for the
+    // exact same payload (101) is fine, because .send_raw is not type-checked.
+    // sender.send(&101).expect("failed to encode+send");
 
-        info!("#{i}: Sending grouped messages...");
-        tether_agent.send_empty(&grouped_output_1).unwrap();
-        tether_agent.send_empty(&grouped_output_2).unwrap();
+    sender.send(&another_struct).expect("failed to encode+send");
 
-        thread::sleep(Duration::from_millis(1000))
-    }
+    let number_sender = tether_agent.create_sender::<u8>("numbersOnly");
+
+    number_sender.send(&8).expect("failed to send");
+
+    std::thread::sleep(Duration::from_millis(3000));
 }

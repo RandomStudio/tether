@@ -1,5 +1,5 @@
 import { ChannelReceiver, ChannelSender, TetherAgent } from ".";
-import { topicMatchesChannel } from "./Channel";
+import { topicMatchesChannel } from "./Channel/ChannelReceiver";
 import { describe, test, expect } from "@jest/globals";
 
 describe("building topic strings", () => {
@@ -25,7 +25,7 @@ describe("building topic strings", () => {
     const output = new ChannelSender(agent, "someChannelName");
     expect(output.getDefinition().name).toEqual("someChannelName");
     expect(output.getDefinition().topic).toEqual(
-      "tester/someChannelName/specialGroup",
+      "tester/someChannelName/specialGroup"
     );
   });
 
@@ -39,7 +39,7 @@ describe("building topic strings", () => {
     });
     expect(output.getDefinition().name).toEqual("someChannelName");
     expect(output.getDefinition().topic).toEqual(
-      "tester/someChannelName/overrideOnChannelCreation",
+      "tester/someChannelName/overrideOnChannelCreation"
     );
   });
 
@@ -51,7 +51,7 @@ describe("building topic strings", () => {
     const input = await ChannelReceiver.create(agent, "someChannelName");
     expect(input.getDefinition().name).toEqual("someChannelName");
     expect(input.getDefinition().topic).toEqual(
-      "+/someChannelName/specialGroup",
+      "+/someChannelName/specialGroup"
     );
   });
 
@@ -65,11 +65,11 @@ describe("building topic strings", () => {
       "someChannelName",
       {
         id: "specialID",
-      },
+      }
     );
     expect(inputCustomID.getDefinition().name).toEqual("someChannelName");
     expect(inputCustomID.getDefinition().topic).toEqual(
-      "+/someChannelName/specialID",
+      "+/someChannelName/specialID"
     );
 
     const inputCustomRole = await ChannelReceiver.create(
@@ -77,11 +77,11 @@ describe("building topic strings", () => {
       "someChannelName",
       {
         role: "specialRole",
-      },
+      }
     );
     expect(inputCustomRole.getDefinition().name).toEqual("someChannelName");
     expect(inputCustomRole.getDefinition().topic).toEqual(
-      "specialRole/someChannelName/#",
+      "specialRole/someChannelName/#"
     );
 
     const inputCustomBoth = await ChannelReceiver.create(
@@ -90,11 +90,11 @@ describe("building topic strings", () => {
       {
         id: "id2",
         role: "role2",
-      },
+      }
     );
     expect(inputCustomBoth.getDefinition().name).toEqual("someChannelName");
     expect(inputCustomBoth.getDefinition().topic).toEqual(
-      "role2/someChannelName/id2",
+      "role2/someChannelName/id2"
     );
   });
 });
@@ -106,28 +106,28 @@ describe("matching topics to Channels", () => {
     expect(
       topicMatchesChannel(
         channelDefinedTopic,
-        "someType/someChannelName/someID",
-      ),
+        "someType/someChannelName/someID"
+      )
     ).toBeTruthy();
 
     expect(
       topicMatchesChannel(
         channelDefinedTopic,
-        "other/someChannelName/otherGroup",
-      ),
+        "other/someChannelName/otherGroup"
+      )
     ).toBeFalsy();
   });
 
   test("if ONLY Channel Name specified, match any with same ChanelName", () => {
     const channelDefinedTopic = "+/someChannelName/#";
     expect(
-      topicMatchesChannel(channelDefinedTopic, "something/someChannelName"),
+      topicMatchesChannel(channelDefinedTopic, "something/someChannelName")
     ).toBeTruthy();
     expect(
       topicMatchesChannel(
         channelDefinedTopic,
-        "something/someChannelName/something",
-      ),
+        "something/someChannelName/something"
+      )
     ).toBeTruthy();
   });
 
@@ -136,14 +136,14 @@ describe("matching topics to Channels", () => {
     expect(
       topicMatchesChannel(
         channelDefinedTopic,
-        "something/someChannelName/something",
-      ),
+        "something/someChannelName/something"
+      )
     ).toBeTruthy();
     expect(
       topicMatchesChannel(
         channelDefinedTopic,
-        "something/someOtherChannelName.something",
-      ),
+        "something/someOtherChannelName.something"
+      )
     ).toBeFalsy();
   });
 
@@ -151,35 +151,35 @@ describe("matching topics to Channels", () => {
     const channelDefinedTopic = "specificAgent/channelName/#";
 
     expect(
-      topicMatchesChannel(channelDefinedTopic, "specificAgent/channelName"),
+      topicMatchesChannel(channelDefinedTopic, "specificAgent/channelName")
     ).toBeTruthy();
     expect(
       topicMatchesChannel(
         channelDefinedTopic,
-        "specificAgent/channelName/anything",
-      ),
+        "specificAgent/channelName/anything"
+      )
     ).toBeTruthy();
     expect(
       topicMatchesChannel(
         channelDefinedTopic,
-        "specificAgent/channelName/somethingElse",
-      ),
+        "specificAgent/channelName/somethingElse"
+      )
     ).toBeTruthy();
     expect(
       topicMatchesChannel(
         channelDefinedTopic,
-        "differentAgent/channelName/anything",
-      ),
+        "differentAgent/channelName/anything"
+      )
     ).toBeFalsy();
   });
 
   test("# wildcard should match any topic", () => {
     const channelDefinedTopic = "#";
     expect(
-      topicMatchesChannel(channelDefinedTopic, "something/something/something"),
+      topicMatchesChannel(channelDefinedTopic, "something/something/something")
     ).toBeTruthy();
     expect(
-      topicMatchesChannel(channelDefinedTopic, "not/event/tether/standard"),
+      topicMatchesChannel(channelDefinedTopic, "not/event/tether/standard")
     ).toBeTruthy();
   });
 
@@ -189,20 +189,20 @@ describe("matching topics to Channels", () => {
     expect(
       topicMatchesChannel(
         channelDefinedTopic,
-        "LidarConsolidation/clusters/e933b82f-cb0d-4f91-a4a7-5625ce3ed20b",
-      ),
+        "LidarConsolidation/clusters/e933b82f-cb0d-4f91-a4a7-5625ce3ed20b"
+      )
     ).toBeFalsy();
     expect(
       topicMatchesChannel(
         channelDefinedTopic,
-        "LidarConsolidation/trackedPoints/e933b82f-cb0d-4f91-a4a7-5625ce3ed20b",
-      ),
+        "LidarConsolidation/trackedPoints/e933b82f-cb0d-4f91-a4a7-5625ce3ed20b"
+      )
     ).toBeTruthy();
     expect(
       topicMatchesChannel(
         channelDefinedTopic,
-        "SomethingElse/trackedPoints/e933b82f-cb0d-4f91-a4a7-5625ce3ed20b",
-      ),
+        "SomethingElse/trackedPoints/e933b82f-cb0d-4f91-a4a7-5625ce3ed20b"
+      )
     ).toBeFalsy();
   });
 
@@ -210,25 +210,25 @@ describe("matching topics to Channels", () => {
     const channelDefinedTopic = "+/channelName/specificGroupOrId";
 
     expect(
-      topicMatchesChannel(channelDefinedTopic, "someAgentRole/channelName"),
+      topicMatchesChannel(channelDefinedTopic, "someAgentRole/channelName")
     ).toBeFalsy();
     expect(
       topicMatchesChannel(
         channelDefinedTopic,
-        "someAgentRole/channelName/specificGroupOrId",
-      ),
+        "someAgentRole/channelName/specificGroupOrId"
+      )
     ).toBeTruthy();
     expect(
       topicMatchesChannel(
         channelDefinedTopic,
-        "anotherAgent/channelName/specificGroupOrId",
-      ),
+        "anotherAgent/channelName/specificGroupOrId"
+      )
     ).toBeTruthy();
     expect(
       topicMatchesChannel(
         channelDefinedTopic,
-        "someAgent/channelName/wrongGroup",
-      ),
+        "someAgent/channelName/wrongGroup"
+      )
     ).toBeFalsy();
   });
 
@@ -236,7 +236,7 @@ describe("matching topics to Channels", () => {
     const channelDefinedTopic = "something/something/+";
     try {
       expect(
-        topicMatchesChannel(channelDefinedTopic, "anything/anything/anything"),
+        topicMatchesChannel(channelDefinedTopic, "anything/anything/anything")
       ).toThrow();
     } catch (e) {
       //

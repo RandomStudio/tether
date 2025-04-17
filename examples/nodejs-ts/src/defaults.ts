@@ -1,5 +1,5 @@
 const defaults = {
-  appName: "Node-TS-Tether",
+  appName: "NodeExample",
   loglevel: "info",
 };
 
