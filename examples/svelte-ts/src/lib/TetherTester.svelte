@@ -1,13 +1,6 @@
 <script lang="ts">
   import { onDestroy, onMount } from "svelte";
-  import {
-    TetherAgent,
-    BROWSER,
-    ChannelSender,
-    encode,
-    ChannelReceiver,
-    decode,
-  } from "tether-agent";
+  import { TetherAgent, BROWSER, ChannelSender } from "tether-agent";
 
   interface CustomMessage {
     timestamp: number;

@@ -63,4 +63,4 @@ Even better, the ChannelSenderBuilder/ChannelReceiver builder do not **have** to
 All that needs to be provided, in the default cases, is the name and the type. For example:
 - `tether_agent.create_sender::<u8>("numbersOnly")` creates a ChannelSender called "numbersOnly" which will automatically expect (require) u8 payloads
 
-Arguably, the TypeScript library should work in a similar way!
+The TypeScript library is now set up to mirror this as well (also, optional!). It means having to pass fewer arguments.
