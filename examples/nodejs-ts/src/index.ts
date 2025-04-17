@@ -2,7 +2,7 @@ import defaults from "./defaults";
 import parse from "parse-strings-in-object";
 import rc from "rc";
 import { getLogger } from "log4js";
-import { ChannelReceiver, ChannelSender, TetherAgent } from "tether-agent";
+import { TetherAgent } from "tether-agent";
 
 const appName = defaults.appName;
 
@@ -15,7 +15,7 @@ logger.info("started with config", config);
 logger.debug("Debug logging enabled; output could be verbose!");
 
 const main = async () => {
-  const agent = await TetherAgent.create("brain");
+  const agent = await TetherAgent.create("testerNodeTS");
 
   // Note the alternative syntax for doing the same thing, below:
   // ...
@@ -26,6 +26,14 @@ const main = async () => {
     value: Math.random(),
     timestamp: Date.now(),
     something: "one",
+  });
+
+  // This should result in the same channel being re-used!
+  const sender2 = agent.createSender("randomValues");
+  sender.send({
+    value: Math.random(),
+    timestamp: Date.now(),
+    something: "two",
   });
 
   const genericReceiver = await agent.createReceiver(
@@ -46,6 +54,13 @@ const main = async () => {
   );
   typedReceiver.on("message", (payload) => {
     logger.info("Our typed receiver got", payload, typeof payload);
+  });
+
+  const reuseReceiver = await agent.createReceiver<number>(
+    "randomValuesStrictlyTyped"
+  );
+  reuseReceiver.on("message", (payload) => {
+    logger.info("Duplicate receiver also got:", payload, typeof payload);
   });
 
   const typedSender = agent.createSender<number>("randomValuesStrictlyTyped");

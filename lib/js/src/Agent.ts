@@ -1,10 +1,9 @@
 import mqtt, { AsyncMqttClient } from "async-mqtt";
 import { TetherAgentConfig, TetherOptions } from "./types";
 import { ChannelReceiver, ReceiverOptions } from "./Channel/ChannelReceiver";
-import { LogLevelDesc } from "loglevel";
-import { ChannelSender, logger } from "./";
+import { logger } from "./";
 import defaults from "./defaults";
-import { SenderOptions } from "./Channel/ChannelSender";
+import { ChannelSender, SenderOptions } from "./Channel/ChannelSender";
 
 enum State {
   INITIALISED = "INITIALISED",
@@ -17,6 +16,9 @@ export class TetherAgent {
   private state: State;
   private config: TetherAgentConfig;
   private client: AsyncMqttClient | null;
+
+  private mySenders: ChannelSender<any>[];
+  private myReceivers: ChannelReceiver<any>[];
 
   /**
    * Create a new Tether Agent, and connect automatically unless options.autoConnect is.set to `false`.
@@ -35,7 +37,7 @@ export class TetherAgent {
     options?: TetherOptions
   ): Promise<TetherAgent> {
     if (options?.loglevel) {
-      logger.setLevel(options.loglevel as LogLevelDesc);
+      logger.level = options.loglevel;
     }
     if (
       options &&
@@ -54,10 +56,7 @@ export class TetherAgent {
       brokerOptions: options?.brokerOptions ?? defaults.brokerOptions,
       autoConnect: options?.autoConnect ?? defaults.autoConnect,
     };
-    const agent = new TetherAgent(
-      config,
-      (options?.loglevel || "info") as LogLevelDesc
-    );
+    const agent = new TetherAgent(config, options?.loglevel || "warn");
     if (config.autoConnect === true) {
       try {
         await agent.connect();
@@ -73,14 +72,17 @@ export class TetherAgent {
     return agent;
   }
 
-  private constructor(config: TetherAgentConfig, loglevel?: LogLevelDesc) {
+  private constructor(config: TetherAgentConfig, loglevel?: string) {
     this.config = config;
     this.client = null;
     this.state = State.INITIALISED;
+    this.myReceivers = [];
+    this.mySenders = [];
     if (loglevel) {
-      logger.setLevel(loglevel);
+      logger.level = loglevel;
     }
-    logger.info(`Tether Agent instance with role ${config.role}"`);
+    logger.info(`Tether Agent instance with role "${config.role}"`);
+    logger.debug("TetherAgent log level:", logger.level);
   }
 
   public connect = async () => {
@@ -98,7 +100,7 @@ export class TetherAgent {
         },
         false
       );
-      console.info("Connected OK");
+      logger.info("Connected OK");
       this.client = client;
       this.state = State.CONNECTED;
     } catch (error) {
@@ -158,15 +160,52 @@ export class TetherAgent {
 
   public async createReceiver<T>(
     name: string,
-    options?: ReceiverOptions
+    options?: ReceiverOptions,
+    ignoreExisting?: boolean
   ): Promise<ChannelReceiver<T>> {
-    return ChannelReceiver.create(this, name);
+    const existing = this.myReceivers.find(
+      (c) => c.getDefinition().name === name
+    );
+    logger.debug({
+      name,
+      existing: existing?.getDefinition(),
+      options,
+      ignoreExisting,
+    });
+    if (existing && ignoreExisting !== true) {
+      logger.warn(`Channel "${name}" already exists; will re-use`);
+      return existing;
+    } else {
+      const receiver = (await ChannelReceiver.create(
+        this,
+        name
+      )) as ChannelReceiver<T>;
+      this.myReceivers.push(receiver);
+      return receiver;
+    }
   }
 
   public createSender<T>(
     name: string,
-    options?: SenderOptions
+    options?: SenderOptions,
+    ignoreExisting?: boolean
   ): ChannelSender<T> {
-    return new ChannelSender(this, name);
+    const existing = this.mySenders.find(
+      (c) => c.getDefinition().name === name
+    );
+    // logger.debug({
+    //   name,
+    //   existing: existing?.getDefinition(),
+    //   options,
+    //   ignoreExisting,
+    // });
+    if (existing && ignoreExisting !== true) {
+      logger.warn(`Channel "${name}" already exists; will re-use`);
+      return existing;
+    } else {
+      const sender = new ChannelSender(this, name);
+      this.mySenders.push(sender);
+      return sender;
+    }
   }
 }
