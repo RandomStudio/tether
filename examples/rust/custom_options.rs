@@ -18,13 +18,13 @@ fn main() {
         .retain(Some(true))
         .build(&tether_agent);
 
-    let sender_channel = tether_agent.create_sender_with_definition(sender_channel_def);
+    let sender_channel = tether_agent.create_sender_with_def(sender_channel_def);
 
     let input_wildcard_channel_def = ChannelReceiverDefBuilder::new("everything")
         .override_topic(Some("#"))
         .build(&tether_agent);
     let input_wildcard_channel = tether_agent
-        .create_receiver_with_definition::<u8>(input_wildcard_channel_def)
+        .create_receiver_with_def::<u8>(input_wildcard_channel_def)
         .expect("failed to create Channel Receiver");
 
     // let input_customid_channel_def = ChannelReceiverOptions::new("someData")

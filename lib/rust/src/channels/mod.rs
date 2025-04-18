@@ -7,6 +7,7 @@ pub mod tether_compliant_topic;
 mod tests {
     use crate::{
         agent::builder::TetherAgentBuilder,
+        receiver::ChannelReceiver,
         tether_compliant_topic::{parse_channel_name, TetherCompliantTopic, TetherOrCustomTopic},
         ChannelDef, ChannelDefBuilder, ChannelReceiverDefBuilder,
     };
@@ -52,7 +53,7 @@ mod tests {
             .build(&tether_agent);
 
         let channel = tether_agent
-            .create_receiver_with_definition::<u8>(channel_def)
+            .create_receiver_with_def::<u8>(channel_def)
             .expect("failed to create Channel");
 
         assert_eq!(channel.definition().name, "customChannel");
@@ -87,7 +88,7 @@ mod tests {
             .build(&tether_agent);
 
         let channel = tether_agent
-            .create_receiver_with_definition::<u8>(channel_def)
+            .create_receiver_with_def::<u8>(channel_def)
             .expect("failed to create Channel");
 
         assert_eq!(channel.definition().name, "customChanel");
@@ -122,7 +123,7 @@ mod tests {
             .build(&tether_agent);
 
         let channel = tether_agent
-            .create_receiver_with_definition::<String>(channel_def)
+            .create_receiver_with_def::<String>(channel_def)
             .expect("failed to create Channel");
 
         assert_eq!(channel.definition().name, "customChanel");
@@ -153,7 +154,7 @@ mod tests {
 
         // Note alternative way of constructing channel with inline ChannelReceiverDefBuilder:
         let channel = tether_agent
-            .create_receiver_with_definition::<u8>(
+            .create_receiver_with_def::<u8>(
                 ChannelReceiverDefBuilder::new("customChannel")
                     .override_topic(Some("one/two/three/four/five"))
                     .build(&tether_agent),
@@ -177,13 +178,23 @@ mod tests {
             .build()
             .expect("failed to create Agent");
 
-        let channel = tether_agent
-            .create_receiver_with_definition::<bool>(
-                ChannelReceiverDefBuilder::new("everything")
-                    .override_topic(Some("#")) // fully legal, but not a standard Three Part Topic)
-                    .build(&tether_agent),
-            )
-            .expect("failed to create Channel");
+        // let channel = tether_agent
+        //     .create_receiver_with_definition::<bool>(
+        //         ChannelReceiverDefBuilder::new("everything")
+        //             .override_topic(Some("#")) // fully legal, but not a standard Three Part Topic)
+        //             .build(&tether_agent),
+        //     )
+        //     .expect("failed to create Channel");
+        //
+
+        // Note somehwat convoluted "direct ChannelReceiver::new" creation method
+        let channel: ChannelReceiver<'_, u8> = ChannelReceiver::new(
+            &tether_agent,
+            ChannelReceiverDefBuilder::new("everything")
+                .override_topic(Some("#")) // fully legal, but not a standard Three Part Topic)
+                .build(&tether_agent),
+        )
+        .expect("failed to create Channel");
 
         assert_eq!(channel.definition().name(), "everything");
 

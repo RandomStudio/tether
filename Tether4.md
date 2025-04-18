@@ -35,17 +35,22 @@ TouchDesigner (Python) and ESP32 (C++) examples should include both sending and 
 An example of integration from P5JS would be a good idea. Optionally, Cables.GL as well.
 
 ## Versioning / Semver
-Unfortunately, the JS/TS package had already been bumped to v3 earlier. This means that we are actually on "Tether 2" up till v3.2.x and change to the very-different "Tether 3" from v3.3, supposedly a "minor version".
+Unfortunately, the JS/TS package had already been bumped to v3 earlier. This means that we are actually on "Tether 2" up till v3.2.x and would have to change to the very-different "Tether 3" from v3.3, supposedly a "minor version".
+
 Rust and Python packages could both move to a "v3" properly, however, and it seems most meaningful to use the correct MAJOR version when importing the Tether Base Agent in any language.
 
 We are therefore bumping to "Tether 4" instead. (Reminds me of Angular 2->4 transition!)
 
+### Protocol / Lib versions
 We will follow Semantic Versioning for the "lib" (formerly "base agent") as follows:
-- MAJOR versions will represent a change to the underlying "Tether Protocol" (i.e. the conventions around Topics, Messages, etc.)
-- MINOR versions will represent a change to the library API, in whichever language. These could **include breaking changes** in terms of the contract between the end-user application and the library.
+
+- MAJOR versions will represent a change to the **underlying "Tether Protocol" itself** (i.e. the conventions around Topics, Messages, etc.)
+- MINOR versions will represent a change to the library API, in whichever language. These **could include breaking changes** in terms of the contract between the end-user application and the library.
 - PATCH versions will represent any non-breaking changes to the API
 
-This is perhaps slightly different to how Semver is strictly applied. The principle that should be observed is:
+### Meaning of our versioning
+The above is perhaps slightly different to how Semver is strictly applied. The principle that should be observed is:
+
 - Any two Tether Agents using the same MAJOR version, in any language, should be able to communicate with each other seamlessly, because they are **talking the same version of Tether as a whole**
 - Bumping the MINOR version in the "lib" for a particular language **may entail a breaking change** in the sense that function names, arguments, etc. might be different. That means that the end-user application may need some modifications when "upgrading" a MINOR version, in order to compile and work correctly. However, the implication is that an Agent using lib 4.1.x will still 100% be able to communicate with an Agent using lib 4.2.x in the same or different language; they might just have some differences in how the API is accessed.
 - Bumping the PATCH version should neither break inter-process communication nor require changes to any end-user application for compatibility.
@@ -72,20 +77,30 @@ This type of functionality is quite useful in a web application, particularly in
 This functionality probably makes little sense for a Rust application, by contrast, where ownership needs to be much more explicit, and the end-user developer should be expected to manage the order of creating/mutating/deleting things more carefully.
 
 ## Rust changes
-Apart from the terminology changes, the following are important to note:
-- `agent.send` used to assume an already-encoded payload, while `.encode_and_send` did auto-encoding. Now, `.send` is the auto-encoding version and additional `.send_raw` and `.send_empty` functions are provided. It is VERY important that the new `.send` will actually (incorrectly!) accept already-encoded payloads, because `&[u8]` is ALSO `T: Serialize`! So applications using the new version must be carefully checked to ensure that things are not (double) encoded before sending! It does mean that the end-user application no longer needs to do encoding/decoding themselves.
+Apart from the terminology changes, the following are important to note.
 
+### Typed send and receive
+- `agent.send` used to assume an already-encoded payload, while `.encode_and_send` did auto-encoding. Now, `.send` is the auto-encoding version and additional `.send_raw` and `.send_empty` functions are provided. It is VERY important that the new `.send` will actually (incorrectly!) accept already-encoded payloads, because `&[u8]` is ALSO `T: Serialize`! So applications using the new version must be carefully checked to ensure that things are not (double) encoded before sending! It does mean that the end-user application no longer needs to do any explicit encoding/decoding themselves.
+- The end-user application used to have to handle incoming `(Topic, Payload)` where Payload was a `Vec<u8>`, i.e. an encoded MsgPack payload. This had to be decoded first. Now, the Channel Receiver itself provides a method `.parse ` which will not only check incoming messages for matches, but also return an `Option<T>` where `T: Deserialize`, i.e. already-decoded data that matches the type strictly defined on the Channel Receiver itself!
+
+### Terminology for "Builder" patterns
 The term "OptionsBuilder" suffix has now been replaced with the much simpler "Builder", so we have simply:
 - TetherAgentBuilder
-- ChannelSenderBuilder
-- ChannelReceiverBuilder
+- ChannelSenderDefBuilder
+- ChannelReceiverDefBuilder
 
-Even better, the ChannelSenderBuilder/ChannelReceiver builder do not **have** to be used in all cases, since both ChannelSender and ChannelReceiver objects can be constructed via the Tether Agent object itself, i.e.
+### Constructing Definitions and Channels
+Note that there is **no such thing** as "ChannelSenderBuilder" or "ChannelReceiverBuilder". The standard ways to create Channel Receiver/Sender are intended to be the following:
 
-- `tether_agent::create_sender`
-- `tether_agent::create_receiver`
+- Create a "standard" (non-customised) Sender/Receiver via the Tether Agent instance `::create_sender` / `::create_receiver`
+- Build a customised Channel Def(inition) first, using `ChannelSenderDefBuilder::new` / `ChannelReceiverDefBuilder::new` (passing a &ref to TetherAgent at the final `.build` step), and then creating the actual Channel Sender/Receiver via the Tether Agent instance using `::create_sender_with_def` / `::create_receiver_with_def`
+
+To reiterate: ChannelSenderDefBuilder/ChannelReceiverDefBuilder "builders" do not **have** to be used in many cases, since both ChannelSender and ChannelReceiver objects can be constructed directly via the Tether Agent object itself with minimal arguments, i.e.
+
+- `tether_agent::create_sender("someName")`
+- `tether_agent::create_receiver("someName")`
 
 All that needs to be provided, in the default cases, is the name and the type. For example:
 - `tether_agent.create_sender::<u8>("numbersOnly")` creates a ChannelSender called "numbersOnly" which will automatically expect (require) u8 payloads
 
-The TypeScript library is now set up to mirror this as well (also, optional!), where it means having to pass fewer arguments (and also allows the TetherAgent to "own" the Channels, which is **not** the case in the Rust library).
+The TypeScript library is now set up to mirror this "creation via Tether Agent instance" method as well (also, optional!) - in the case of TS it means having to pass fewer arguments (and also allows the TetherAgent to "own" the Channels, which is **not** the case in the Rust library).

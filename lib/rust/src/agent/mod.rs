@@ -67,7 +67,7 @@ impl<'a> TetherAgent {
 
     /// Create a ChannelSender instance using a ChannelSenderDefinition already constructed
     /// elsewhere.
-    pub fn create_sender_with_definition<T: Serialize>(
+    pub fn create_sender_with_def<T: Serialize>(
         &self,
         definition: ChannelSenderDef,
     ) -> ChannelSender<T> {
@@ -90,7 +90,7 @@ impl<'a> TetherAgent {
 
     /// Create a ChannelReceiver instance using a ChannelReceiverDefinition already constructed
     /// elsewhere.
-    pub fn create_receiver_with_definition<T: Deserialize<'a>>(
+    pub fn create_receiver_with_def<T: Deserialize<'a>>(
         &'a self,
         definition: ChannelReceiverDef,
     ) -> anyhow::Result<ChannelReceiver<'a, T>> {

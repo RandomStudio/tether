@@ -25,9 +25,8 @@ fn main() {
     let (role, id, _) = tether_agent.description();
     info!("Created agent OK: {}, {}", role, id);
 
-    let sender_definition =
-        ChannelSenderDefBuilder::new("customStructs").build(&tether_agent);
-    let sender = tether_agent.create_sender_with_definition::<CustomStruct>(sender_definition);
+    let sender_definition = ChannelSenderDefBuilder::new("customStructs").build(&tether_agent);
+    let sender = tether_agent.create_sender_with_def::<CustomStruct>(sender_definition);
 
     // let test_struct = CustomStruct {
     //     id: 101,
