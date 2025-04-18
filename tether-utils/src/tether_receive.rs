@@ -33,7 +33,7 @@ pub fn receive(
 ) {
     info!("Tether Receive Utility");
 
-    let channel_def = build_receiver(options, &tether_agent);
+    let channel_def = build_receiver(options, tether_agent);
 
     // let channel = channel_options
     //     .build(tether_agent)
@@ -123,202 +123,189 @@ fn build_receiver(options: &ReceiveOptions, tether_agent: &TetherAgent) -> Chann
     }
 }
 
-// #[cfg(test)]
-// mod tests {
-//     use tether_agent::TetherAgentBuilder;
+#[cfg(test)]
+mod tests {
+    use tether_agent::{ChannelDef, TetherAgentBuilder};
 
-//     use crate::tether_receive::build_receiver;
+    use crate::tether_receive::build_receiver;
 
-//     use super::ReceiveOptions;
+    use super::ReceiveOptions;
 
-//     #[test]
-//     fn default_options() {
-//         let mut tether_agent = TetherAgentBuilder::new("tester")
-//             .auto_connect(false)
-//             .build()
-//             .unwrap();
+    #[test]
+    fn default_options() {
+        let tether_agent = TetherAgentBuilder::new("tester")
+            .auto_connect(false)
+            .build()
+            .unwrap();
 
-//         let options = ReceiveOptions::default();
+        let options = ReceiveOptions::default();
 
-//         let receiver = build_receiver(&options, &tether_agent);
+        let receiver_def = build_receiver(&options, &tether_agent);
 
-//         assert_eq!(receiver.definition().name(), "custom");
-//         assert_eq!(receiver.generated_topic(), "#");
-//     }
+        assert_eq!(receiver_def.name(), "custom");
+        assert_eq!(receiver_def.generated_topic(), "#");
+    }
 
-//     #[test]
-//     fn only_topic_custom() {
-//         let mut tether_agent = TetherAgentBuilder::new("tester")
-//             .auto_connect(false)
-//             .build()
-//             .unwrap();
+    #[test]
+    fn only_topic_custom() {
+        let tether_agent = TetherAgentBuilder::new("tester")
+            .auto_connect(false)
+            .build()
+            .unwrap();
 
-//         let options = ReceiveOptions {
-//             subscribe_role: None,
-//             subscribe_id: None,
-//             subscribe_channel_name: None,
-//             subscribe_topic: Some("some/channel/special/fourpart".into()),
-//         };
+        let options = ReceiveOptions {
+            subscribe_role: None,
+            subscribe_id: None,
+            subscribe_channel_name: None,
+            subscribe_topic: Some("some/channel/special/fourpart".into()),
+        };
 
-//         let receiver = build_receiver(&options)
-//             .build(&mut tether_agent)
-//             .expect("build failed");
+        let receiver_def = build_receiver(&options, &tether_agent);
 
-//         assert_eq!(receiver.name(), "custom");
-//         assert_eq!(receiver.generated_topic(), "some/channel/special/fourpart");
-//     }
+        assert_eq!(receiver_def.name(), "custom");
+        assert_eq!(
+            receiver_def.generated_topic(),
+            "some/channel/special/fourpart"
+        );
+    }
 
-//     #[test]
-//     fn only_chanel_name() {
-//         let mut tether_agent = TetherAgentOptionsBuilder::new("tester")
-//             .auto_connect(false)
-//             .build()
-//             .unwrap();
+    #[test]
+    fn only_chanel_name() {
+        let tether_agent = TetherAgentBuilder::new("tester")
+            .auto_connect(false)
+            .build()
+            .unwrap();
 
-//         let options = ReceiveOptions {
-//             subscribe_role: None,
-//             subscribe_id: None,
-//             subscribe_channel_name: Some("something".into()),
-//             subscribe_topic: None,
-//         };
+        let options = ReceiveOptions {
+            subscribe_role: None,
+            subscribe_id: None,
+            subscribe_channel_name: Some("something".into()),
+            subscribe_topic: None,
+        };
 
-//         let receiver = build_receiver(&options)
-//             .build(&mut tether_agent)
-//             .expect("build failed");
+        let receiver_def = build_receiver(&options, &tether_agent);
 
-//         assert_eq!(receiver.name(), "something");
-//         assert_eq!(receiver.generated_topic(), "+/something/#");
-//     }
+        assert_eq!(receiver_def.name(), "something");
+        assert_eq!(receiver_def.generated_topic(), "+/something/#");
+    }
 
-//     #[test]
-//     fn only_role() {
-//         let mut tether_agent = TetherAgentOptionsBuilder::new("tester")
-//             .auto_connect(false)
-//             .build()
-//             .unwrap();
+    #[test]
+    fn only_role() {
+        let tether_agent = TetherAgentBuilder::new("tester")
+            .auto_connect(false)
+            .build()
+            .unwrap();
 
-//         let options = ReceiveOptions {
-//             subscribe_role: Some("something".into()),
-//             subscribe_id: None,
-//             subscribe_channel_name: None,
-//             subscribe_topic: None,
-//         };
+        let options = ReceiveOptions {
+            subscribe_role: Some("something".into()),
+            subscribe_id: None,
+            subscribe_channel_name: None,
+            subscribe_topic: None,
+        };
 
-//         let receiver = build_receiver(&options)
-//             .build(&mut tether_agent)
-//             .expect("build failed");
+        let receiver_def = build_receiver(&options, &tether_agent);
 
-//         assert_eq!(receiver.name(), "any");
-//         assert_eq!(receiver.generated_topic(), "something/+/#");
-//     }
+        assert_eq!(receiver_def.name(), "any");
+        assert_eq!(receiver_def.generated_topic(), "something/+/#");
+    }
 
-//     #[test]
-//     fn only_id() {
-//         let mut tether_agent = TetherAgentOptionsBuilder::new("tester")
-//             .auto_connect(false)
-//             .build()
-//             .unwrap();
+    #[test]
+    fn only_id() {
+        let tether_agent = TetherAgentBuilder::new("tester")
+            .auto_connect(false)
+            .build()
+            .unwrap();
 
-//         let options = ReceiveOptions {
-//             subscribe_role: None,
-//             subscribe_id: Some("something".into()),
-//             subscribe_channel_name: None,
-//             subscribe_topic: None,
-//         };
+        let options = ReceiveOptions {
+            subscribe_role: None,
+            subscribe_id: Some("something".into()),
+            subscribe_channel_name: None,
+            subscribe_topic: None,
+        };
 
-//         let receiver = build_receiver(&options)
-//             .build(&mut tether_agent)
-//             .expect("build failed");
+        let receiver_def = build_receiver(&options, &tether_agent);
 
-//         assert_eq!(receiver.name(), "any");
-//         assert_eq!(receiver.generated_topic(), "+/+/something");
-//     }
+        assert_eq!(receiver_def.name(), "any");
+        assert_eq!(receiver_def.generated_topic(), "+/+/something");
+    }
 
-//     #[test]
-//     fn role_and_id() {
-//         let mut tether_agent = TetherAgentOptionsBuilder::new("tester")
-//             .auto_connect(false)
-//             .build()
-//             .unwrap();
+    #[test]
+    fn role_and_id() {
+        let tether_agent = TetherAgentBuilder::new("tester")
+            .auto_connect(false)
+            .build()
+            .unwrap();
 
-//         let options = ReceiveOptions {
-//             subscribe_role: Some("x".into()),
-//             subscribe_id: Some("y".into()),
-//             subscribe_channel_name: None,
-//             subscribe_topic: None,
-//         };
+        let options = ReceiveOptions {
+            subscribe_role: Some("x".into()),
+            subscribe_id: Some("y".into()),
+            subscribe_channel_name: None,
+            subscribe_topic: None,
+        };
 
-//         let receiver = build_receiver(&options)
-//             .build(&mut tether_agent)
-//             .expect("build failed");
+        let receiver_def = build_receiver(&options, &tether_agent);
 
-//         assert_eq!(receiver.name(), "any");
-//         assert_eq!(receiver.generated_topic(), "x/+/y");
-//     }
+        assert_eq!(receiver_def.name(), "any");
+        assert_eq!(receiver_def.generated_topic(), "x/+/y");
+    }
 
-//     #[test]
-//     fn role_and_channel_name() {
-//         let mut tether_agent = TetherAgentOptionsBuilder::new("tester")
-//             .auto_connect(false)
-//             .build()
-//             .unwrap();
+    #[test]
+    fn role_and_channel_name() {
+        let tether_agent = TetherAgentBuilder::new("tester")
+            .auto_connect(false)
+            .build()
+            .unwrap();
 
-//         let options = ReceiveOptions {
-//             subscribe_role: Some("x".into()),
-//             subscribe_id: None,
-//             subscribe_channel_name: Some("z".into()),
-//             subscribe_topic: None,
-//         };
+        let options = ReceiveOptions {
+            subscribe_role: Some("x".into()),
+            subscribe_id: None,
+            subscribe_channel_name: Some("z".into()),
+            subscribe_topic: None,
+        };
 
-//         let receiver = build_receiver(&options)
-//             .build(&mut tether_agent)
-//             .expect("build failed");
+        let receiver_def = build_receiver(&options, &tether_agent);
 
-//         assert_eq!(receiver.name(), "z");
-//         assert_eq!(receiver.generated_topic(), "x/z/#");
-//     }
+        assert_eq!(receiver_def.name(), "z");
+        assert_eq!(receiver_def.generated_topic(), "x/z/#");
+    }
 
-//     #[test]
-//     fn spec_all_three() {
-//         let mut tether_agent = TetherAgentOptionsBuilder::new("tester")
-//             .auto_connect(false)
-//             .build()
-//             .unwrap();
+    #[test]
+    fn spec_all_three() {
+        let tether_agent = TetherAgentBuilder::new("tester")
+            .auto_connect(false)
+            .build()
+            .unwrap();
 
-//         let options = ReceiveOptions {
-//             subscribe_role: Some("x".into()),
-//             subscribe_channel_name: Some("z".into()),
-//             subscribe_id: Some("y".into()),
-//             subscribe_topic: None,
-//         };
+        let options = ReceiveOptions {
+            subscribe_role: Some("x".into()),
+            subscribe_channel_name: Some("z".into()),
+            subscribe_id: Some("y".into()),
+            subscribe_topic: None,
+        };
 
-//         let receiver = build_receiver(&options)
-//             .build(&mut tether_agent)
-//             .expect("build failed");
+        let receiver_def = build_receiver(&options, &tether_agent);
 
-//         assert_eq!(receiver.name(), "z");
-//         assert_eq!(receiver.generated_topic(), "x/z/y");
-//     }
+        assert_eq!(receiver_def.name(), "z");
+        assert_eq!(receiver_def.generated_topic(), "x/z/y");
+    }
 
-//     #[test]
-//     fn redundant_but_valid() {
-//         let mut tether_agent = TetherAgentOptionsBuilder::new("tester")
-//             .auto_connect(false)
-//             .build()
-//             .unwrap();
+    #[test]
+    fn redundant_but_valid() {
+        let tether_agent = TetherAgentBuilder::new("tester")
+            .auto_connect(false)
+            .build()
+            .unwrap();
 
-//         let options = ReceiveOptions {
-//             subscribe_role: None,
-//             subscribe_id: None,
-//             subscribe_channel_name: Some("+".into()),
-//             subscribe_topic: None,
-//         };
+        let options = ReceiveOptions {
+            subscribe_role: None,
+            subscribe_id: None,
+            subscribe_channel_name: Some("+".into()),
+            subscribe_topic: None,
+        };
 
-//         let receiver = build_receiver(&options)
-//             .build(&mut tether_agent)
-//             .expect("build failed");
+        let receiver_def = build_receiver(&options, &tether_agent);
 
-//         assert_eq!(receiver.name(), "any");
-//         assert_eq!(receiver.generated_topic(), "+/+/#");
-//     }
-// }
+        assert_eq!(receiver_def.name(), "any");
+        assert_eq!(receiver_def.generated_topic(), "+/+/#");
+    }
+}

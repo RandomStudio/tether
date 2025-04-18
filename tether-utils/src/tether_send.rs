@@ -1,9 +1,7 @@
 use clap::Args;
 use log::{debug, error, info, warn};
 use serde::Serialize;
-use tether_agent::{
-    ChannelDef, ChannelDefBuilder, ChannelSenderDef, ChannelSenderDefBuilder, TetherAgent,
-};
+use tether_agent::{ChannelDef, ChannelDefBuilder, ChannelSenderDefBuilder, TetherAgent};
 
 #[derive(Args)]
 pub struct SendOptions {
