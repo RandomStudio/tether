@@ -6,6 +6,7 @@ pub mod sender_def_builder;
 pub use receiver_def_builder::ChannelReceiverDefBuilder;
 use rumqttc::QoS;
 pub use sender_def_builder::ChannelSenderDefBuilder;
+use serde::{Deserialize, Serialize};
 
 /**
 A Channel Def(inition) Builder is used for creating a Channel Def(inition).
@@ -33,7 +34,7 @@ pub trait ChannelDef<'a> {
     fn qos(&'a self) -> QoS;
 }
 
-fn number_to_qos(number: u8) -> QoS {
+pub fn number_to_qos(number: u8) -> QoS {
     match number {
         0 => QoS::AtMostOnce,
         1 => QoS::AtLeastOnce,
@@ -42,14 +43,75 @@ fn number_to_qos(number: u8) -> QoS {
     }
 }
 
-#[derive(Clone)]
+pub fn qos_to_number(qos: QoS) -> u8 {
+    match qos {
+        QoS::AtMostOnce => 0,
+        QoS::AtLeastOnce => 1,
+        QoS::ExactlyOnce => 2,
+    }
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(remote = "QoS")]
+#[allow(renamed_and_removed_lints)]
+#[allow(enum_variant_names)]
+enum QosDef {
+    AtMostOnce,
+    AtLeastOnce,
+    ExactlyOnce,
+}
+
+#[derive(Clone, Serialize, Deserialize)]
 pub struct ChannelSenderDef {
     pub name: String,
     pub generated_topic: String,
     pub topic: TetherOrCustomTopic,
+    #[serde(with = "QosDef")]
     pub qos: QoS,
     pub retain: bool,
 }
+
+// impl Serialize for ChannelSenderDef {
+//     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+//     where
+//         S: serde::Serializer,
+//     {
+//         let mut state = serializer.serialize_struct("ChannelSenderDef", 5)?;
+//         state.serialize_field("name", &self.name)?;
+//         state.serialize_field("generated_topic", &self.generated_topic)?;
+//         state.serialize_field("topic", &self.topic)?;
+//         state.serialize_field("qos", &qos_to_number(self.qos))?;
+//         state.serialize_field("retain", &self.retain)?;
+//         state.end()
+//     }
+// }
+
+// impl<'de> Deserialize<'de> for ChannelSenderDef {
+//     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+//     where
+//         D: serde::Deserializer<'de>,
+//     {
+//         let state = deserializer.deserialize_struct("ChannelSenderDef", fields, visitor)
+//     }
+// }
+
+// impl Serialize for QoS {
+//     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+//     where
+//         S: serde::Serializer,
+//     {
+//         todo!()
+//     }
+// }
+
+// impl<'de> Deserialize<'de> for QoS {
+//     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+//     where
+//         D: serde::Deserializer<'de>,
+//     {
+//         todo!()
+//     }
+// }
 
 impl ChannelSenderDef {
     pub fn retain(&self) -> bool {
