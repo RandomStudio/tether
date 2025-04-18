@@ -34,14 +34,7 @@ impl<'a, T: Deserialize<'a>> ChannelReceiver<'a, T> {
         }
 
         if let Some(client) = &tether_agent.client {
-            match client.subscribe(&topic_string, {
-                match definition.qos() {
-                    0 => rumqttc::QoS::AtMostOnce,
-                    1 => rumqttc::QoS::AtLeastOnce,
-                    2 => rumqttc::QoS::ExactlyOnce,
-                    _ => rumqttc::QoS::AtLeastOnce,
-                }
-            }) {
+            match client.subscribe(&topic_string, definition.qos()) {
                 Ok(res) => {
                     debug!("This topic was fine: \"{}\"", &topic_string);
                     debug!("Server respond OK for subscribe: {res:?}");

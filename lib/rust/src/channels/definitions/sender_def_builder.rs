@@ -5,11 +5,11 @@ use crate::{
 
 use log::*;
 
-use super::{ChannelDefBuilder, ChannelSenderDef};
+use super::{number_to_qos, ChannelDefBuilder, ChannelSenderDef};
 
 pub struct ChannelSenderDefBuilder {
     channel_name: String,
-    qos: Option<i32>,
+    qos: Option<u8>,
     override_publish_role: Option<String>,
     override_publish_id: Option<String>,
     override_topic: Option<String>,
@@ -34,7 +34,7 @@ impl ChannelDefBuilder for ChannelSenderDefBuilder {
         }
     }
 
-    fn qos(self, qos: Option<i32>) -> Self {
+    fn qos(self, qos: Option<u8>) -> Self {
         ChannelSenderDefBuilder { qos, ..self }
     }
 
@@ -149,7 +149,7 @@ impl ChannelSenderDefBuilder {
             name: self.channel_name,
             generated_topic: tpt.full_topic_string(),
             topic: tpt,
-            qos: self.qos.unwrap_or(1),
+            qos: number_to_qos(self.qos.unwrap_or(1)),
             retain: self.retain.unwrap_or(false),
         }
     }

@@ -8,11 +8,11 @@ use log::*;
 
 use clap::{Parser, Subcommand};
 
-use tether_agent::TetherAgentOptionsBuilder;
+use tether_agent::TetherAgentBuilder;
 use tether_utils::*;
 
 use std::{
-    io::{stdout, Write},
+    io::{Write, stdout},
     time::{Duration, SystemTime},
 };
 
@@ -71,7 +71,7 @@ fn main() {
 
     debug!("Debugging is enabled; could be verbose");
 
-    let mut tether_agent = TetherAgentOptionsBuilder::new(&cli.tether_role)
+    let mut tether_agent = TetherAgentBuilder::new(&cli.tether_role)
         .id(Some(cli.tether_id).as_deref())
         .protocol(Some(cli.tether_protocol).as_deref())
         .host(Some(cli.tether_host.clone()).as_deref())

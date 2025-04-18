@@ -2,17 +2,17 @@ use std::{thread::spawn, time::SystemTime};
 
 use env_logger::{Builder, Env};
 use log::LevelFilter;
-use tether_agent::TetherAgentOptionsBuilder;
+use tether_agent::TetherAgentBuilder;
 use tether_utils::{
     tether_playback::{PlaybackOptions, TetherPlaybackUtil},
-    tether_receive::{receive, ReceiveOptions},
+    tether_receive::{ReceiveOptions, receive},
     tether_record::{RecordOptions, TetherRecordUtil},
-    tether_send::{send, SendOptions},
-    tether_topics::{insights::Insights, TopicOptions},
+    tether_send::{SendOptions, send},
+    tether_topics::{TopicOptions, insights::Insights},
 };
 
 fn demo_receive() {
-    let mut tether_agent = TetherAgentOptionsBuilder::new("demoReceive")
+    let mut tether_agent = TetherAgentBuilder::new("demoReceive")
         .build()
         .expect("failed to init/connect Tether Agent");
 
@@ -29,7 +29,7 @@ fn demo_receive() {
 }
 
 fn demo_send() {
-    let mut tether_agent = TetherAgentOptionsBuilder::new("demoSend")
+    let mut tether_agent = TetherAgentBuilder::new("demoSend")
         .build()
         .expect("failed to init/connect Tether Agent");
 
@@ -53,7 +53,7 @@ fn demo_send() {
 }
 
 fn demo_topics() {
-    let mut tether_agent = TetherAgentOptionsBuilder::new("demoTopics")
+    let mut tether_agent = TetherAgentBuilder::new("demoTopics")
         .build()
         .expect("failed to init/connect Tether Agent");
 
@@ -85,7 +85,7 @@ fn demo_playback() {
         topic_filters: None,
     };
 
-    let tether_agent = TetherAgentOptionsBuilder::new("demoTopics")
+    let tether_agent = TetherAgentBuilder::new("demoTopics")
         .build()
         .expect("failed to init/connect Tether Agent");
 
@@ -123,7 +123,7 @@ fn demo_playback() {
 }
 
 fn demo_record() {
-    let mut tether_agent = TetherAgentOptionsBuilder::new("demoPlayback")
+    let mut tether_agent = TetherAgentBuilder::new("demoPlayback")
         .build()
         .expect("failed to init/connect Tether Agent");
 
