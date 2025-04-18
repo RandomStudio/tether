@@ -4,12 +4,13 @@ use crate::{
 };
 
 use log::*;
+use rumqttc::QoS;
 
-use super::{number_to_qos, ChannelDefBuilder, ChannelSenderDef};
+use super::{ChannelDefBuilder, ChannelSenderDef};
 
 pub struct ChannelSenderDefBuilder {
     channel_name: String,
-    qos: Option<u8>,
+    qos: Option<QoS>,
     override_publish_role: Option<String>,
     override_publish_id: Option<String>,
     override_topic: Option<String>,
@@ -34,7 +35,7 @@ impl ChannelDefBuilder for ChannelSenderDefBuilder {
         }
     }
 
-    fn qos(self, qos: Option<u8>) -> Self {
+    fn qos(self, qos: Option<QoS>) -> Self {
         ChannelSenderDefBuilder { qos, ..self }
     }
 
@@ -149,7 +150,7 @@ impl ChannelSenderDefBuilder {
             name: self.channel_name,
             generated_topic: tpt.full_topic_string(),
             topic: tpt,
-            qos: number_to_qos(self.qos.unwrap_or(1)),
+            qos: self.qos.unwrap_or(QoS::AtMostOnce),
             retain: self.retain.unwrap_or(false),
         }
     }

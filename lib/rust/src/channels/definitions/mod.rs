@@ -13,7 +13,7 @@ A Channel Def(inition) Builder is used for creating a Channel Def(inition).
 */
 pub trait ChannelDefBuilder {
     fn new(name: &str) -> Self;
-    fn qos(self, qos: Option<u8>) -> Self;
+    fn qos(self, qos: Option<QoS>) -> Self;
     fn role(self, role: Option<&str>) -> Self;
     fn id(self, id: Option<&str>) -> Self;
     fn override_name(self, override_channel_name: Option<&str>) -> Self;
@@ -119,11 +119,12 @@ impl ChannelSenderDef {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Deserialize, Serialize)]
 pub struct ChannelReceiverDef {
     pub name: String,
     pub generated_topic: String,
     pub topic: TetherOrCustomTopic,
+    #[serde(with = "QosDef")]
     pub qos: QoS,
 }
 
