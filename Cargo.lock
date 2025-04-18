@@ -1529,6 +1529,8 @@ dependencies = [
 [[package]]
 name = "tether-agent"
 version = "4.2.0-alpha"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "53c166653e5a1e4161f03f0bfe87b19b079817dd9bd80f6b699710c8da51d648"
 dependencies = [
  "anyhow",
  "env_logger",
@@ -1543,9 +1545,7 @@ dependencies = [
 
 [[package]]
 name = "tether-agent"
-version = "4.2.0-alpha"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "53c166653e5a1e4161f03f0bfe87b19b079817dd9bd80f6b699710c8da51d648"
+version = "4.2.1-alpha"
 dependencies = [
  "anyhow",
  "env_logger",
@@ -1573,7 +1573,7 @@ dependencies = [
  "rmpv",
  "serde",
  "serde_json",
- "tether-agent 4.2.0-alpha (registry+https://github.com/rust-lang/crates.io-index)",
+ "tether-agent 4.2.0-alpha",
 ]
 
 [[package]]
