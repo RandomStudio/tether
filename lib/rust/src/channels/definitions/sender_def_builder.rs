@@ -5,9 +5,9 @@ use crate::{
 
 use log::*;
 
-use super::{ChannelBuilder, ChannelSenderDefinition};
+use super::{ChannelDefBuilder, ChannelSenderDef};
 
-pub struct ChannelSenderBuilder {
+pub struct ChannelSenderDefBuilder {
     channel_name: String,
     qos: Option<i32>,
     override_publish_role: Option<String>,
@@ -16,9 +16,15 @@ pub struct ChannelSenderBuilder {
     retain: Option<bool>,
 }
 
-impl ChannelBuilder for ChannelSenderBuilder {
+impl ChannelDefBuilder for ChannelSenderDefBuilder {
+    /// Use the ChannelSenderDefBuilder for creating a **custom** Definition that can
+    /// be passed to Tether Agent `.create_sender_with_defintion`.
+    ///
+    /// If you don't need a custom Definition, simply use Tether Agent `.create_sender` instead.
+    ///
+    /// First call .new(), finalise with .build() to get the ChannelSenderDefinition.
     fn new(name: &str) -> Self {
-        ChannelSenderBuilder {
+        ChannelSenderDefBuilder {
             channel_name: String::from(name),
             override_publish_id: None,
             override_publish_role: None,
@@ -29,7 +35,7 @@ impl ChannelBuilder for ChannelSenderBuilder {
     }
 
     fn qos(self, qos: Option<i32>) -> Self {
-        ChannelSenderBuilder { qos, ..self }
+        ChannelSenderDefBuilder { qos, ..self }
     }
 
     fn role(self, role: Option<&str>) -> Self {
@@ -38,7 +44,7 @@ impl ChannelBuilder for ChannelSenderBuilder {
             self
         } else {
             let override_publish_role = role.map(|s| s.into());
-            ChannelSenderBuilder {
+            ChannelSenderDefBuilder {
                 override_publish_role,
                 ..self
             }
@@ -51,7 +57,7 @@ impl ChannelBuilder for ChannelSenderBuilder {
             self
         } else {
             let override_publish_id = id.map(|s| s.into());
-            ChannelSenderBuilder {
+            ChannelSenderDefBuilder {
                 override_publish_id,
                 ..self
             }
@@ -64,7 +70,7 @@ impl ChannelBuilder for ChannelSenderBuilder {
             return self;
         }
         match override_channel_name {
-            Some(n) => ChannelSenderBuilder {
+            Some(n) => ChannelSenderDefBuilder {
                 channel_name: n.into(),
                 ..self
             },
@@ -88,12 +94,12 @@ impl ChannelBuilder for ChannelSenderBuilder {
                         t
                     );
                 }
-                ChannelSenderBuilder {
+                ChannelSenderDefBuilder {
                     override_topic: Some(t.into()),
                     ..self
                 }
             }
-            None => ChannelSenderBuilder {
+            None => ChannelSenderDefBuilder {
                 override_topic: None,
                 ..self
             },
@@ -101,15 +107,15 @@ impl ChannelBuilder for ChannelSenderBuilder {
     }
 }
 
-impl ChannelSenderBuilder {
+impl ChannelSenderDefBuilder {
     pub fn retain(self, should_retain: Option<bool>) -> Self {
-        ChannelSenderBuilder {
+        ChannelSenderDefBuilder {
             retain: should_retain,
             ..self
         }
     }
 
-    pub fn build(self, tether_agent: &TetherAgent) -> ChannelSenderDefinition {
+    pub fn build(self, tether_agent: &TetherAgent) -> ChannelSenderDef {
         let tpt: TetherOrCustomTopic = match self.override_topic {
             Some(custom) => {
                 warn!(
@@ -139,7 +145,7 @@ impl ChannelSenderBuilder {
             }
         };
 
-        ChannelSenderDefinition {
+        ChannelSenderDef {
             name: self.channel_name,
             generated_topic: tpt.full_topic_string(),
             topic: tpt,

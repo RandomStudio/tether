@@ -12,7 +12,7 @@ fn main() {
         .build()
         .expect("failed to create Tether Agent");
 
-    let sender_channel_def = ChannelSenderBuilder::new("anOutput")
+    let sender_channel_def = ChannelSenderDefBuilder::new("anOutput")
         .role(Some("pretendingToBeSomethingElse"))
         .qos(Some(2))
         .retain(Some(true))
@@ -20,7 +20,7 @@ fn main() {
 
     let sender_channel = tether_agent.create_sender_with_definition(sender_channel_def);
 
-    let input_wildcard_channel_def = ChannelReceiverBuilder::new("everything")
+    let input_wildcard_channel_def = ChannelReceiverDefBuilder::new("everything")
         .override_topic(Some("#"))
         .build(&tether_agent);
     let input_wildcard_channel = tether_agent

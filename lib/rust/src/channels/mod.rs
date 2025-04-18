@@ -6,8 +6,9 @@ pub mod tether_compliant_topic;
 #[cfg(test)]
 mod tests {
     use crate::{
+        agent::builder::TetherAgentBuilder,
         tether_compliant_topic::{parse_channel_name, TetherCompliantTopic, TetherOrCustomTopic},
-        ChannelDefinition, TetherAgentBuilder,
+        ChannelDef, ChannelDefBuilder, ChannelReceiverDefBuilder,
     };
 
     #[test]
@@ -39,129 +40,161 @@ mod tests {
         )));
     }
 
-    // #[test]
-    // fn receiver_match_tpt_custom_role() {
-    //     let channel_def = ChannelReceiver::new(
-    //         "customChanel",
-    //         TetherOrCustomTopic::Tether(TetherCompliantTopic::new_for_subscribe(
-    //             "customChanel",
-    //             Some("customRole"),
-    //             None,
-    //         )),
-    //         None,
-    //     );
+    #[test]
+    fn receiver_match_tpt_custom_role() {
+        let tether_agent = TetherAgentBuilder::new("tester")
+            .auto_connect(false)
+            .build()
+            .expect("failed to create Agent");
 
-    //     assert_eq!(&channel_def.name, "customChanel");
-    //     assert_eq!(channel_def.generated_topic(), "customRole/customChanel/#");
-    //     assert!(channel_def.matches(&TetherOrCustomTopic::Tether(
-    //         TetherCompliantTopic::new_three("customRole", "customChanel", "#")
-    //     )));
-    //     assert!(channel_def.matches(&TetherOrCustomTopic::Tether(
-    //         TetherCompliantTopic::new_three("customRole", "customChanel", "andAnythingElse")
-    //     )));
-    //     assert!(!channel_def.matches(&TetherOrCustomTopic::Tether(
-    //         TetherCompliantTopic::new_three("customRole", "notMyChannel", "#")
-    //     ))); // wrong incoming Channel Name
-    //     assert!(!channel_def.matches(&TetherOrCustomTopic::Tether(
-    //         TetherCompliantTopic::new_three("someOtherRole", "customChanel", "#")
-    //     ))); // wrong incoming Role
-    // }
+        let channel_def = ChannelReceiverDefBuilder::new("customChannel")
+            .role(Some("customRole"))
+            .build(&tether_agent);
 
-    // #[test]
-    // fn receiver_match_custom_id() {
-    //     let channel_def = ChannelReceiver::new(
-    //         "customChanel",
-    //         TetherOrCustomTopic::Tether(TetherCompliantTopic::new_for_subscribe(
-    //             "customChanel",
-    //             None,
-    //             Some("specificID"),
-    //         )),
-    //         None,
-    //     );
+        let channel = tether_agent
+            .create_receiver_with_definition::<u8>(channel_def)
+            .expect("failed to create Channel");
 
-    //     assert_eq!(&channel_def.name, "customChanel");
-    //     assert_eq!(channel_def.generated_topic(), "+/customChanel/specificID");
-    //     assert!(channel_def.matches(&TetherOrCustomTopic::Tether(
-    //         TetherCompliantTopic::new_three("anyRole", "customChanel", "specificID",)
-    //     )));
-    //     assert!(channel_def.matches(&TetherOrCustomTopic::Tether(
-    //         TetherCompliantTopic::new_three("anotherRole", "customChanel", "specificID",)
-    //     ))); // wrong incoming Role
-    //     assert!(!channel_def.matches(&TetherOrCustomTopic::Tether(
-    //         TetherCompliantTopic::new_three("anyRole", "notMyChannel", "specificID",)
-    //     ))); // wrong incoming Channel Name
-    //     assert!(!channel_def.matches(&TetherOrCustomTopic::Tether(
-    //         TetherCompliantTopic::new_three("anyRole", "customChanel", "anotherID",)
-    //     ))); // wrong incoming ID
-    // }
+        assert_eq!(channel.definition().name, "customChannel");
+        assert_eq!(
+            channel.definition().generated_topic(),
+            "customRole/customChannel/#"
+        );
 
-    // #[test]
-    // fn receiver_match_both() {
-    //     let channel_def = ChannelReceiver::new(
-    //         "customChanel",
-    //         TetherOrCustomTopic::Tether(TetherCompliantTopic::new_for_subscribe(
-    //             "customChanel",
-    //             Some("specificRole"),
-    //             Some("specificID"),
-    //         )),
-    //         None,
-    //     );
+        assert!(channel.matches(&TetherOrCustomTopic::Tether(
+            TetherCompliantTopic::new_three("customRole", "customChannel", "#")
+        )));
+        assert!(channel.matches(&TetherOrCustomTopic::Tether(
+            TetherCompliantTopic::new_three("customRole", "customChannel", "andAnythingElse")
+        )));
+        assert!(!channel.matches(&TetherOrCustomTopic::Tether(
+            TetherCompliantTopic::new_three("customRole", "notMyChannel", "#"),
+        ))); // wrong incoming Channel Name
+        assert!(!channel.matches(&TetherOrCustomTopic::Tether(
+            TetherCompliantTopic::new_three("someOtherRole", "customChannel", "#")
+        ))); // wrong incoming Role
+    }
 
-    //     assert_eq!(&channel_def.name, "customChanel");
-    //     assert_eq!(
-    //         channel_def.generated_topic(),
-    //         "specificRole/customChanel/specificID"
-    //     );
-    //     assert!(channel_def.matches(&TetherOrCustomTopic::Tether(
-    //         TetherCompliantTopic::new_three("specificRole", "customChanel", "specificID",)
-    //     )));
-    //     assert!(!channel_def.matches(&TetherOrCustomTopic::Custom(
-    //         "specificRole/notMyChannel/specificID".into()
-    //     ))); // wrong incoming Channel Name
-    //     assert!(!channel_def.matches(&TetherOrCustomTopic::Custom(
-    //         "specificRole/customChanel/anotherID".into()
-    //     ))); // wrong incoming ID
-    //     assert!(!channel_def.matches(&TetherOrCustomTopic::Custom(
-    //         "anotherRole/customChanel/anotherID".into()
-    //     ))); // wrong incoming Role
-    // }
+    #[test]
+    fn receiver_match_custom_id() {
+        let tether_agent = TetherAgentBuilder::new("tester")
+            .auto_connect(false)
+            .build()
+            .expect("failed to create Agent");
 
-    // #[test]
-    // fn receiver_match_custom_topic() {
-    //     let channel_def = ChannelReceiver::new(
-    //         "customChanel",
-    //         TetherOrCustomTopic::Custom("one/two/three/four/five".into()), // not a standard Tether Three Part Topic
-    //         None,
-    //     );
+        let channel_def = ChannelReceiverDefBuilder::new("customChanel")
+            .id(Some("specificID"))
+            .build(&tether_agent);
 
-    //     assert_eq!(channel_def.name(), "customChanel");
-    //     // it will match on exactly the same topic:
-    //     assert!(channel_def.matches(&TetherOrCustomTopic::Custom(
-    //         "one/two/three/four/five".into()
-    //     )));
+        let channel = tether_agent
+            .create_receiver_with_definition::<u8>(channel_def)
+            .expect("failed to create Channel");
 
-    //     // it will NOT match on anything else:
-    //     assert!(!channel_def.matches(&TetherOrCustomTopic::Custom("one/one/one/one/one".into())));
-    // }
+        assert_eq!(channel.definition().name, "customChanel");
+        assert_eq!(
+            channel.definition().generated_topic(),
+            "+/customChanel/specificID"
+        );
+        assert!(channel.matches(&TetherOrCustomTopic::Tether(
+            TetherCompliantTopic::new_three("anyRole", "customChanel", "specificID",)
+        )));
+        assert!(channel.matches(&TetherOrCustomTopic::Tether(
+            TetherCompliantTopic::new_three("anotherRole", "customChanel", "specificID",)
+        ))); // wrong incoming Role
+        assert!(!channel.matches(&TetherOrCustomTopic::Tether(
+            TetherCompliantTopic::new_three("anyRole", "notMyChannel", "specificID",)
+        ))); // wrong incoming Channel Name
+        assert!(!channel.matches(&TetherOrCustomTopic::Tether(
+            TetherCompliantTopic::new_three("anyRole", "customChanel", "anotherID",)
+        ))); // wrong incoming ID
+    }
 
-    // #[test]
-    // fn receiver_match_wildcard() {
-    //     let channel_def = ChannelReceiver::new(
-    //         "everything",
-    //         TetherOrCustomTopic::Custom("#".into()), // fully legal, but not a standard Three Part Topic
-    //         None,
-    //     );
+    #[test]
+    fn receiver_match_both() {
+        let tether_agent = TetherAgentBuilder::new("tester")
+            .auto_connect(false)
+            .build()
+            .expect("failed to create Agent");
 
-    //     assert_eq!(channel_def.name(), "everything");
+        let channel_def = ChannelReceiverDefBuilder::new("customChanel")
+            .role(Some("specificRole"))
+            .id(Some("specificID"))
+            .build(&tether_agent);
 
-    //     // Standard TPT will match
-    //     assert!(channel_def.matches(&TetherOrCustomTopic::Tether(
-    //         TetherCompliantTopic::new_three("any", "chanelName", "#")
-    //     )));
+        let channel = tether_agent
+            .create_receiver_with_definition::<String>(channel_def)
+            .expect("failed to create Channel");
 
-    //     // Anything will match, even custom incoming
-    //     assert!(channel_def.matches(&TetherOrCustomTopic::Custom(
-    //         "one/two/three/four/five".into()
-    //     )));
-    // }
+        assert_eq!(channel.definition().name, "customChanel");
+        assert_eq!(
+            channel.definition().generated_topic(),
+            "specificRole/customChanel/specificID"
+        );
+        assert!(channel.matches(&TetherOrCustomTopic::Tether(
+            TetherCompliantTopic::new_three("specificRole", "customChanel", "specificID",)
+        )));
+        assert!(!channel.matches(&TetherOrCustomTopic::Custom(
+            "specificRole/notMyChannel/specificID".into()
+        ))); // wrong incoming Channel Name
+        assert!(!channel.matches(&TetherOrCustomTopic::Custom(
+            "specificRole/customChanel/anotherID".into()
+        ))); // wrong incoming ID
+        assert!(!channel.matches(&TetherOrCustomTopic::Custom(
+            "anotherRole/customChanel/anotherID".into()
+        ))); // wrong incoming Role
+    }
+
+    #[test]
+    fn receiver_match_custom_topic() {
+        let tether_agent = TetherAgentBuilder::new("tester")
+            .auto_connect(false)
+            .build()
+            .expect("failed to create Agent");
+
+        // Note alternative way of constructing channel with inline ChannelReceiverDefBuilder:
+        let channel = tether_agent
+            .create_receiver_with_definition::<u8>(
+                ChannelReceiverDefBuilder::new("customChannel")
+                    .override_topic(Some("one/two/three/four/five"))
+                    .build(&tether_agent),
+            )
+            .expect("failed to create Channel");
+
+        assert_eq!(channel.definition().name(), "customChannel");
+        // it will match on exactly the same topic:
+        assert!(channel.matches(&TetherOrCustomTopic::Custom(
+            "one/two/three/four/five".into()
+        )));
+
+        // it will NOT match on anything else:
+        assert!(!channel.matches(&TetherOrCustomTopic::Custom("one/one/one/one/one".into())));
+    }
+
+    #[test]
+    fn receiver_match_wildcard() {
+        let tether_agent = TetherAgentBuilder::new("tester")
+            .auto_connect(false)
+            .build()
+            .expect("failed to create Agent");
+
+        let channel = tether_agent
+            .create_receiver_with_definition::<bool>(
+                ChannelReceiverDefBuilder::new("everything")
+                    .override_topic(Some("#")) // fully legal, but not a standard Three Part Topic)
+                    .build(&tether_agent),
+            )
+            .expect("failed to create Channel");
+
+        assert_eq!(channel.definition().name(), "everything");
+
+        // Standard TPT will match
+        assert!(channel.matches(&TetherOrCustomTopic::Tether(
+            TetherCompliantTopic::new_three("any", "chanelName", "#")
+        )));
+
+        // Anything will match, even custom incoming
+        assert!(channel.matches(&TetherOrCustomTopic::Custom(
+            "one/two/three/four/five".into()
+        )));
+    }
 }

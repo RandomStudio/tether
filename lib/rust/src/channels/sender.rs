@@ -1,10 +1,10 @@
 use crate::TetherAgent;
 use serde::Serialize;
 
-use super::definitions::ChannelSenderDefinition;
+use super::definitions::ChannelSenderDef;
 
 pub struct ChannelSender<'a, T: Serialize> {
-    definition: ChannelSenderDefinition,
+    definition: ChannelSenderDef,
     tether_agent: &'a TetherAgent,
     marker: std::marker::PhantomData<T>,
 }
@@ -12,7 +12,7 @@ pub struct ChannelSender<'a, T: Serialize> {
 impl<'a, T: Serialize> ChannelSender<'a, T> {
     pub fn new(
         tether_agent: &'a TetherAgent,
-        definition: ChannelSenderDefinition,
+        definition: ChannelSenderDef,
     ) -> ChannelSender<'a, T> {
         ChannelSender {
             definition,
@@ -21,7 +21,7 @@ impl<'a, T: Serialize> ChannelSender<'a, T> {
         }
     }
 
-    pub fn definition(&self) -> &ChannelSenderDefinition {
+    pub fn definition(&self) -> &ChannelSenderDef {
         &self.definition
     }
 

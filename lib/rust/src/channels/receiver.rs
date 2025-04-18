@@ -6,19 +6,19 @@ use serde::Deserialize;
 use crate::TetherAgent;
 
 use super::{
-    definitions::{ChannelDefinition, ChannelReceiverDefinition},
+    definitions::{ChannelDef, ChannelReceiverDef},
     tether_compliant_topic::TetherOrCustomTopic,
 };
 
 pub struct ChannelReceiver<'a, T: Deserialize<'a>> {
-    definition: ChannelReceiverDefinition,
+    definition: ChannelReceiverDef,
     marker: std::marker::PhantomData<&'a T>,
 }
 
 impl<'a, T: Deserialize<'a>> ChannelReceiver<'a, T> {
     pub fn new(
         tether_agent: &'a TetherAgent,
-        definition: ChannelReceiverDefinition,
+        definition: ChannelReceiverDef,
     ) -> anyhow::Result<ChannelReceiver<'a, T>> {
         let topic_string = definition.topic().full_topic_string();
 
@@ -54,7 +54,7 @@ impl<'a, T: Deserialize<'a>> ChannelReceiver<'a, T> {
         }
     }
 
-    pub fn definition(&self) -> &ChannelReceiverDefinition {
+    pub fn definition(&self) -> &ChannelReceiverDef {
         &self.definition
     }
 

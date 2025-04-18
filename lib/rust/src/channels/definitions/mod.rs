@@ -1,15 +1,15 @@
 use super::tether_compliant_topic::TetherOrCustomTopic;
 
-pub mod receiver_builder;
-pub mod sender_builder;
+pub mod receiver_def_builder;
+pub mod sender_def_builder;
 
-pub use receiver_builder::ChannelReceiverBuilder;
-pub use sender_builder::ChannelSenderBuilder;
+pub use receiver_def_builder::ChannelReceiverDefBuilder;
+pub use sender_def_builder::ChannelSenderDefBuilder;
 
 /**
-A Channel Builder is used for creating a Channel Definition.
+A Channel Def(inition) Builder is used for creating a Channel Def(inition).
 */
-pub trait ChannelBuilder {
+pub trait ChannelDefBuilder {
     fn new(name: &str) -> Self;
     fn qos(self, qos: Option<i32>) -> Self;
     fn role(self, role: Option<&str>) -> Self;
@@ -19,11 +19,11 @@ pub trait ChannelBuilder {
 }
 
 /**
-A Channel Definition is intended to encapsulate only the essential metadata
+A Channel Def(inition) is intended to encapsulate only the essential metadata
 and configuration needed to describe a Channel. In contrast with a Channel Sender/Receiver,
 it is **not** responsible for actually sending or receiving messages on that Channel.
 */
-pub trait ChannelDefinition<'a> {
+pub trait ChannelDef<'a> {
     fn name(&'a self) -> &'a str;
     /// Return the generated topic string actually used by the Channel
     fn generated_topic(&'a self) -> &'a str;
@@ -33,7 +33,7 @@ pub trait ChannelDefinition<'a> {
 }
 
 #[derive(Clone)]
-pub struct ChannelSenderDefinition {
+pub struct ChannelSenderDef {
     pub name: String,
     pub generated_topic: String,
     pub topic: TetherOrCustomTopic,
@@ -41,21 +41,21 @@ pub struct ChannelSenderDefinition {
     pub retain: bool,
 }
 
-impl ChannelSenderDefinition {
+impl ChannelSenderDef {
     pub fn retain(&self) -> bool {
         self.retain
     }
 }
 
 #[derive(Clone)]
-pub struct ChannelReceiverDefinition {
+pub struct ChannelReceiverDef {
     pub name: String,
     pub generated_topic: String,
     pub topic: TetherOrCustomTopic,
     pub qos: i32,
 }
 
-impl<'a> ChannelDefinition<'a> for ChannelSenderDefinition {
+impl<'a> ChannelDef<'a> for ChannelSenderDef {
     fn name(&'a self) -> &'a str {
         &self.name
     }
@@ -73,7 +73,7 @@ impl<'a> ChannelDefinition<'a> for ChannelSenderDefinition {
     }
 }
 
-impl<'a> ChannelDefinition<'a> for ChannelReceiverDefinition {
+impl<'a> ChannelDef<'a> for ChannelReceiverDef {
     fn name(&'a self) -> &'a str {
         &self.name
     }
@@ -101,8 +101,8 @@ mod tests {
     }
 
     use crate::{
-        ChannelBuilder, ChannelDefinition, ChannelReceiverBuilder, ChannelSenderBuilder,
-        TetherAgentBuilder,
+        builder::TetherAgentBuilder, ChannelDef, ChannelDefBuilder, ChannelReceiverDefBuilder,
+        ChannelSenderDefBuilder,
     };
 
     #[test]
@@ -112,7 +112,7 @@ mod tests {
             .auto_connect(false)
             .build()
             .expect("sorry, these tests require working localhost Broker");
-        let receiver = ChannelReceiverBuilder::new("one").build(&tether_agent);
+        let receiver = ChannelReceiverDefBuilder::new("one").build(&tether_agent);
         assert_eq!(&receiver.name, "one");
         assert_eq!(&receiver.generated_topic, "+/one/#");
     }
@@ -173,7 +173,7 @@ mod tests {
             .build()
             .expect("sorry, these tests require working localhost Broker");
 
-        let receive_role_only = ChannelReceiverBuilder::new("theChannel")
+        let receive_role_only = ChannelReceiverDefBuilder::new("theChannel")
             .role(Some("specificRole"))
             .build(&tether_agent);
         assert_eq!(receive_role_only.name(), "theChannel");
@@ -182,7 +182,7 @@ mod tests {
             "specificRole/theChannel/#"
         );
 
-        let receiver_id_only = ChannelReceiverBuilder::new("theChannel")
+        let receiver_id_only = ChannelReceiverDefBuilder::new("theChannel")
             .id(Some("specificID"))
             .build(&tether_agent);
         assert_eq!(receiver_id_only.name(), "theChannel");
@@ -191,7 +191,7 @@ mod tests {
             "+/theChannel/specificID"
         );
 
-        let receiver_both_custom = ChannelReceiverBuilder::new("theChannel")
+        let receiver_both_custom = ChannelReceiverDefBuilder::new("theChannel")
             .id(Some("specificID"))
             .role(Some("specificRole"))
             .build(&tether_agent);
@@ -213,7 +213,7 @@ mod tests {
             .build()
             .expect("sorry, these tests require working localhost Broker");
 
-        let receiver_role_only = ChannelReceiverBuilder::new("theChannel")
+        let receiver_role_only = ChannelReceiverDefBuilder::new("theChannel")
             .role(Some("specificRole"))
             .build(&tether_agent);
         assert_eq!(receiver_role_only.name(), "theChannel");
@@ -222,7 +222,7 @@ mod tests {
             "specificRole/theChannel/#"
         );
 
-        let receiver_id_only = ChannelReceiverBuilder::new("theChannel")
+        let receiver_id_only = ChannelReceiverDefBuilder::new("theChannel")
             .id(Some("specificID"))
             .build(&tether_agent);
         assert_eq!(receiver_id_only.name(), "theChannel");
@@ -231,7 +231,7 @@ mod tests {
             "+/theChannel/specificID"
         );
 
-        let receiver_both = ChannelReceiverBuilder::new("theChannel")
+        let receiver_both = ChannelReceiverDefBuilder::new("theChannel")
             .id(Some("specificID"))
             .role(Some("specificRole"))
             .build(&tether_agent);
@@ -254,14 +254,14 @@ mod tests {
             .build()
             .expect("sorry, these tests require working localhost Broker");
 
-        let receiver_role_only = ChannelReceiverBuilder::new("theOriginalChannel")
+        let receiver_role_only = ChannelReceiverDefBuilder::new("theOriginalChannel")
             .override_name(Some("+"))
             .role(Some("specificRole"))
             .build(&tether_agent);
         assert_eq!(receiver_role_only.name(), "+");
         assert_eq!(receiver_role_only.generated_topic(), "specificRole/+/#");
 
-        let receiver_id_only = ChannelReceiverBuilder::new("+")
+        let receiver_id_only = ChannelReceiverDefBuilder::new("+")
             // .name(Some("+"))
             .any_channel() // equivalent to Some("+")
             .id(Some("specificID"))
@@ -269,7 +269,7 @@ mod tests {
         assert_eq!(receiver_id_only.name(), "+");
         assert_eq!(receiver_id_only.generated_topic(), "+/+/specificID");
 
-        let receiver_both = ChannelReceiverBuilder::new("+")
+        let receiver_both = ChannelReceiverDefBuilder::new("+")
             .id(Some("specificID"))
             .role(Some("specificRole"))
             .build(&tether_agent);
@@ -285,14 +285,14 @@ mod tests {
             .build()
             .expect("sorry, these tests require working localhost Broker");
 
-        let receiver_any_channel = ChannelReceiverBuilder::new("aTest")
+        let receiver_any_channel = ChannelReceiverDefBuilder::new("aTest")
             .any_channel()
             .build(&tether_agent);
 
         assert_eq!(receiver_any_channel.name(), "+");
         assert_eq!(receiver_any_channel.generated_topic(), "+/+/#");
 
-        let receiver_specify_role = ChannelReceiverBuilder::new("aTest")
+        let receiver_specify_role = ChannelReceiverDefBuilder::new("aTest")
             .any_channel()
             .role(Some("brain"))
             .build(&tether_agent);
@@ -308,7 +308,7 @@ mod tests {
             .build()
             .expect("sorry, these tests require working localhost Broker");
 
-        let sender_custom_role = ChannelSenderBuilder::new("theChannelSender")
+        let sender_custom_role = ChannelSenderDefBuilder::new("theChannelSender")
             .role(Some("customRole"))
             .build(&tether_agent);
         assert_eq!(sender_custom_role.name(), "theChannelSender");
@@ -317,7 +317,7 @@ mod tests {
             "customRole/theChannelSender"
         );
 
-        let sender_custom_id = ChannelSenderBuilder::new("theChannelSender")
+        let sender_custom_id = ChannelSenderDefBuilder::new("theChannelSender")
             .id(Some("customID"))
             .build(&tether_agent);
         assert_eq!(sender_custom_id.name(), "theChannelSender");
@@ -326,7 +326,7 @@ mod tests {
             "tester/theChannelSender/customID"
         );
 
-        let sender_custom_both = ChannelSenderBuilder::new("theChannelSender")
+        let sender_custom_both = ChannelSenderDefBuilder::new("theChannelSender")
             .role(Some("customRole"))
             .id(Some("customID"))
             .build(&tether_agent);
@@ -344,13 +344,13 @@ mod tests {
             .build()
             .expect("sorry, these tests require working localhost Broker");
 
-        let receiver_all = ChannelReceiverBuilder::new("everything")
+        let receiver_all = ChannelReceiverDefBuilder::new("everything")
             .override_topic(Some("#"))
             .build(&tether_agent);
         assert_eq!(receiver_all.name(), "everything");
         assert_eq!(receiver_all.generated_topic(), "#");
 
-        let receiver_nontether = ChannelReceiverBuilder::new("weird")
+        let receiver_nontether = ChannelReceiverDefBuilder::new("weird")
             .override_topic(Some("foo/bar/baz/one/two/three"))
             .build(&tether_agent);
         assert_eq!(receiver_nontether.name(), "weird");

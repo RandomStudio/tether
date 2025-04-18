@@ -5,9 +5,9 @@ use crate::{
 
 use log::*;
 
-use super::{ChannelBuilder, ChannelReceiverDefinition};
+use super::{ChannelDefBuilder, ChannelReceiverDef};
 
-pub struct ChannelReceiverBuilder {
+pub struct ChannelReceiverDefBuilder {
     channel_name: String,
     qos: Option<i32>,
     override_subscribe_role: Option<String>,
@@ -15,9 +15,15 @@ pub struct ChannelReceiverBuilder {
     override_topic: Option<String>,
 }
 
-impl ChannelBuilder for ChannelReceiverBuilder {
+impl ChannelDefBuilder for ChannelReceiverDefBuilder {
+    /// Use the ChannelReceiverDefBuilder for creating a **custom** Definition that can
+    /// be passed to Tether Agent `.create_receiver_with_defintion`.
+    ///
+    /// If you don't need a custom Definition, simply use Tether Agent `.create_receiver` instead.
+    ///
+    /// First call .new(), finalise with .build() to get the ChannelReceiverDefinition.
     fn new(name: &str) -> Self {
-        ChannelReceiverBuilder {
+        ChannelReceiverDefBuilder {
             channel_name: String::from(name),
             override_subscribe_id: None,
             override_subscribe_role: None,
@@ -27,7 +33,7 @@ impl ChannelBuilder for ChannelReceiverBuilder {
     }
 
     fn qos(self, qos: Option<i32>) -> Self {
-        ChannelReceiverBuilder { qos, ..self }
+        ChannelReceiverDefBuilder { qos, ..self }
     }
 
     fn role(self, role: Option<&str>) -> Self {
@@ -36,7 +42,7 @@ impl ChannelBuilder for ChannelReceiverBuilder {
             self
         } else {
             let override_subscribe_role = role.map(|s| s.into());
-            ChannelReceiverBuilder {
+            ChannelReceiverDefBuilder {
                 override_subscribe_role,
                 ..self
             }
@@ -49,7 +55,7 @@ impl ChannelBuilder for ChannelReceiverBuilder {
             self
         } else {
             let override_subscribe_id = id.map(|s| s.into());
-            ChannelReceiverBuilder {
+            ChannelReceiverDefBuilder {
                 override_subscribe_id,
                 ..self
             }
@@ -71,7 +77,7 @@ impl ChannelBuilder for ChannelReceiverBuilder {
                     "Override channel name explicity, use '{:?}' instead of '{}'",
                     override_channel_name, self.channel_name
                 );
-                ChannelReceiverBuilder {
+                ChannelReceiverDefBuilder {
                     channel_name: n.into(),
                     ..self
                 }
@@ -96,12 +102,12 @@ impl ChannelBuilder for ChannelReceiverBuilder {
                         t
                     );
                 }
-                ChannelReceiverBuilder {
+                ChannelReceiverDefBuilder {
                     override_topic: Some(t.into()),
                     ..self
                 }
             }
-            None => ChannelReceiverBuilder {
+            None => ChannelReceiverDefBuilder {
                 override_topic: None,
                 ..self
             },
@@ -109,15 +115,15 @@ impl ChannelBuilder for ChannelReceiverBuilder {
     }
 }
 
-impl ChannelReceiverBuilder {
+impl ChannelReceiverDefBuilder {
     pub fn any_channel(self) -> Self {
-        ChannelReceiverBuilder {
+        ChannelReceiverDefBuilder {
             channel_name: "+".into(),
             ..self
         }
     }
 
-    pub fn build(self, tether_agent: &TetherAgent) -> ChannelReceiverDefinition {
+    pub fn build(self, tether_agent: &TetherAgent) -> ChannelReceiverDef {
         let tpt: TetherOrCustomTopic = match self.override_topic {
             Some(custom) => TetherOrCustomTopic::Custom(custom),
             None => {
@@ -145,7 +151,7 @@ impl ChannelReceiverBuilder {
             }
         };
 
-        ChannelReceiverDefinition {
+        ChannelReceiverDef {
             name: self.channel_name,
             generated_topic: tpt.full_topic_string(),
             topic: tpt,
