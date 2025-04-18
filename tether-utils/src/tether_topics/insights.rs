@@ -1,7 +1,5 @@
 use circular_buffer::CircularBuffer;
-use tether_agent::{
-    tether_compliant_topic::TetherOrCustomTopic, ChannelOptionsBuilder, TetherAgent,
-};
+use tether_agent::{TetherAgent, tether_compliant_topic::TetherOrCustomTopic};
 
 use crate::tether_topics::{agent_tree::AgentTree, sampler::Sampler};
 use std::{
@@ -9,7 +7,7 @@ use std::{
     time::{Duration, SystemTime},
 };
 
-use super::{parse_agent_id, parse_agent_role, parse_channel_name, TopicOptions};
+use super::{TopicOptions, parse_agent_id, parse_agent_role, parse_channel_name};
 pub const MONITOR_LOG_LENGTH: usize = 256;
 
 /// Topic, Payload as JSON
@@ -53,10 +51,19 @@ impl Insights {
         if !tether_agent.is_connected() {
             panic!("Insights utility needs already-connected Tether Agent");
         }
-        let _channel = ChannelOptionsBuilder::create_receiver("monitor")
-            .topic(Some(options.topic.clone()).as_deref())
-            .build(tether_agent)
-            .expect("failed to connect Tether");
+
+        if let Some(client) = tether_agent.client_mut() {
+            client
+                .subscribe(options.topic.clone(), tether_agent::mqtt::QoS::ExactlyOnce)
+                .expect("failed to subscribe");
+        } else {
+            panic!("No client to subscribe to!")
+        }
+
+        // let _channel = ChannelOptionsBuilder::create_receiver("monitor")
+        //     .topic(Some(options.topic.clone()).as_deref())
+        //     .build(tether_agent)
+        //     .expect("failed to connect Tether");
 
         Insights {
             topics: Vec::new(),

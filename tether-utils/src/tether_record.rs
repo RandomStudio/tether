@@ -7,7 +7,7 @@ use std::{
 
 use clap::Args;
 use log::{debug, info, warn};
-use tether_agent::{ChannelOptionsBuilder, TetherAgent};
+use tether_agent::TetherAgent;
 
 use crate::tether_playback::{SimulationMessage, SimulationRow};
 
@@ -94,12 +94,23 @@ impl TetherRecordUtil {
     pub fn start_recording(&self, tether_agent: &mut TetherAgent) {
         info!("Tether Record Utility: start recording");
 
-        // The channel definition is never actually used, since we do no matching from topics to channel!
-        // But we must set it up so that subscription happens.
-        let _channel_def = ChannelOptionsBuilder::create_receiver("all")
-            .topic(Some(self.options.topic.clone()).as_deref()) // TODO: should be possible to build TPT
-            .build(tether_agent)
-            .expect("failed to create Channel Receiver");
+        // // The channel definition is never actually used, since we do no matching from topics to channel!
+        // // But we must set it up so that subscription happens.
+        // let _channel_def = ChannelOptionsBuilder::create_receiver("all")
+        //     .topic(Some(self.options.topic.clone()).as_deref()) // TODO: should be possible to build TPT
+        //     .build(tether_agent)
+        //     .expect("failed to create Channel Receiver");
+
+        if let Some(client) = tether_agent.client_mut() {
+            client
+                .subscribe(
+                    self.options.topic.clone(),
+                    tether_agent::mqtt::QoS::ExactlyOnce,
+                )
+                .expect("failed to subscribe");
+        } else {
+            panic!("No client to subscribe to!")
+        }
 
         let file_path = match &self.options.file_override_path {
             Some(override_path) => String::from(override_path),

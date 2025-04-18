@@ -1,7 +1,9 @@
 use clap::Args;
 use log::{debug, error, info, warn};
 use serde::Serialize;
-use tether_agent::{ChannelOptionsBuilder, TetherAgent};
+use tether_agent::{
+    ChannelDef, ChannelDefBuilder, ChannelSenderDef, ChannelSenderDefBuilder, TetherAgent,
+};
 
 #[derive(Args)]
 pub struct SendOptions {
@@ -49,14 +51,18 @@ pub fn send(options: &SendOptions, tether_agent: &mut TetherAgent) -> anyhow::Re
         .clone()
         .unwrap_or("testMessages".into());
 
-    let channel = ChannelOptionsBuilder::create_sender(&channel_name)
+    let channel_def = ChannelSenderDefBuilder::new(&channel_name)
         .role(options.channel_role.as_deref())
         .id(options.channel_id.as_deref())
-        .topic(options.channel_topic.as_deref())
-        .build(tether_agent)
-        .expect("failed to create Channel Sender");
+        .override_topic(options.channel_topic.as_deref())
+        .build(tether_agent);
 
-    info!("Sending on topic \"{}\" ...", channel.generated_topic());
+    let channel = tether_agent.create_sender_with_def(channel_def.clone());
+
+    info!(
+        "Sending on topic \"{}\" ...",
+        channel.definition().generated_topic()
+    );
 
     if options.use_dummy_data {
         let payload = DummyData {
@@ -78,14 +84,21 @@ pub fn send(options: &SendOptions, tether_agent: &mut TetherAgent) -> anyhow::Re
     match &options.message_payload_json {
         Some(custom_message) => {
             debug!(
-                "Attempting to decode provided custom message \"{}\"",
+                "Attempting to decode provided custom message-as-string \"{}\"",
                 &custom_message
             );
             match serde_json::from_str::<serde_json::Value>(custom_message) {
-                Ok(encoded) => {
+                Ok(json) => {
+                    let msgpack_payload =
+                        rmp_serde::to_vec_named(&json).expect("failed to convert JSON to MsgPack");
                     tether_agent
-                        .send(&channel, &encoded)
+                        .send_raw(&channel_def, Some(&msgpack_payload))
                         .expect("failed to publish");
+                    // encoded.
+                    // channel.send_raw(&encoded).expect("failed to publish");
+                    // tether_agent
+                    //     .send(&channel, &encoded)
+                    //     .expect("failed to publish");
                     info!("Sent message OK");
                     Ok(())
                 }
@@ -97,7 +110,7 @@ pub fn send(options: &SendOptions, tether_agent: &mut TetherAgent) -> anyhow::Re
         }
         None => {
             warn!("Sending empty message");
-            match tether_agent.send_empty(&channel) {
+            match tether_agent.send_empty(&channel_def) {
                 Ok(_) => {
                     info!("Sent empty message OK");
                     Ok(())
