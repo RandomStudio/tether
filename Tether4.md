@@ -34,11 +34,21 @@ Svelte example, please!
 TouchDesigner (Python) and ESP32 (C++) examples should include both sending and receiving examples.
 An example of integration from P5JS would be a good idea. Optionally, Cables.GL as well.
 
-## Versioning
+## Versioning / Semver
 Unfortunately, the JS/TS package had already been bumped to v3 earlier. This means that we are actually on "Tether 2" up till v3.2.x and change to the very-different "Tether 3" from v3.3, supposedly a "minor version".
 Rust and Python packages could both move to a "v3" properly, however, and it seems most meaningful to use the correct MAJOR version when importing the Tether Base Agent in any language.
 
-Should we bump to "Tether 4" instead? (Reminds me of Angular 2->4 transition!)
+We are therefore bumping to "Tether 4" instead. (Reminds me of Angular 2->4 transition!)
+
+We will follow Semantic Versioning for the "lib" (formerly "base agent") as follows:
+- MAJOR versions will represent a change to the underlying "Tether Protocol" (i.e. the conventions around Topics, Messages, etc.)
+- MINOR versions will represent a change to the library API, in whichever language. These could **include breaking changes** in terms of the contract between the end-user application and the library.
+- PATCH versions will represent any non-breaking changes to the API
+
+This is perhaps slightly different to how Semver is strictly applied. The principle that should be observed is:
+- Any two Tether Agents using the same MAJOR version, in any language, should be able to communicate with each other seamlessly, because they are **talking the same version of Tether as a whole**
+- Bumping the MINOR version in the "lib" for a particular language **may entail a breaking change** in the sense that function names, arguments, etc. might be different. That means that the end-user application may need some modifications when "upgrading" a MINOR version, in order to compile and work correctly. However, the implication is that an Agent using lib 4.1.x will still 100% be able to communicate with an Agent using lib 4.2.x in the same or different language; they might just have some differences in how the API is accessed.
+- Bumping the PATCH version should neither break inter-process communication nor require changes to any end-user application for compatibility.
 
 ## JS (TS) changes
 Apart from the terminology changes, the following are important to note:
