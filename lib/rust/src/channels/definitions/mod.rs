@@ -4,6 +4,7 @@ pub mod receiver_def_builder;
 pub mod sender_def_builder;
 
 pub use receiver_def_builder::ChannelReceiverDefBuilder;
+use rumqttc::QoS;
 pub use sender_def_builder::ChannelSenderDefBuilder;
 
 /**
@@ -11,7 +12,7 @@ A Channel Def(inition) Builder is used for creating a Channel Def(inition).
 */
 pub trait ChannelDefBuilder {
     fn new(name: &str) -> Self;
-    fn qos(self, qos: Option<i32>) -> Self;
+    fn qos(self, qos: Option<u8>) -> Self;
     fn role(self, role: Option<&str>) -> Self;
     fn id(self, id: Option<&str>) -> Self;
     fn override_name(self, override_channel_name: Option<&str>) -> Self;
@@ -29,7 +30,16 @@ pub trait ChannelDef<'a> {
     fn generated_topic(&'a self) -> &'a str;
     /// Return the custom or Tether-compliant topic
     fn topic(&'a self) -> &'a TetherOrCustomTopic;
-    fn qos(&'a self) -> i32;
+    fn qos(&'a self) -> QoS;
+}
+
+fn number_to_qos(number: u8) -> QoS {
+    match number {
+        0 => QoS::AtMostOnce,
+        1 => QoS::AtLeastOnce,
+        2 => QoS::ExactlyOnce,
+        _ => QoS::AtMostOnce,
+    }
 }
 
 #[derive(Clone)]
@@ -37,7 +47,7 @@ pub struct ChannelSenderDef {
     pub name: String,
     pub generated_topic: String,
     pub topic: TetherOrCustomTopic,
-    pub qos: i32,
+    pub qos: QoS,
     pub retain: bool,
 }
 
@@ -52,7 +62,7 @@ pub struct ChannelReceiverDef {
     pub name: String,
     pub generated_topic: String,
     pub topic: TetherOrCustomTopic,
-    pub qos: i32,
+    pub qos: QoS,
 }
 
 impl<'a> ChannelDef<'a> for ChannelSenderDef {
@@ -68,7 +78,7 @@ impl<'a> ChannelDef<'a> for ChannelSenderDef {
         &self.topic
     }
 
-    fn qos(&'a self) -> i32 {
+    fn qos(&'a self) -> QoS {
         self.qos
     }
 }
@@ -86,7 +96,7 @@ impl<'a> ChannelDef<'a> for ChannelReceiverDef {
         &self.topic
     }
 
-    fn qos(&'a self) -> i32 {
+    fn qos(&'a self) -> QoS {
         self.qos
     }
 }

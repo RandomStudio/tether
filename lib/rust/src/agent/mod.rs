@@ -125,6 +125,21 @@ impl<'a> TetherAgent {
         )
     }
 
+    /// Get the underlying MQTT Client directly, immutable.
+    /// WARNING: This allows you to do non-Tether-compliant things!
+    pub fn client(&self) -> Option<&Client> {
+        self.client.as_ref()
+    }
+
+    /// Get the underlying MQTT Client directly, mutably.
+    /// WARNING: This allows you to do non-Tether-compliant things!
+    ///
+    /// Can be useful for subscribing to a topic directly, for example,
+    /// without knowing the message type (as would be the case with a Tether Channel).
+    pub fn client_mut(&mut self) -> Option<&mut Client> {
+        self.client.as_mut()
+    }
+
     /// Return the URI (protocol, IP address, port, path) that
     /// was used to connect to the MQTT broker
     pub fn broker_uri(&self) -> String {
@@ -362,12 +377,7 @@ impl<'a> TetherAgent {
         payload: Option<&[u8]>,
     ) -> anyhow::Result<()> {
         let topic = channel_definition.generated_topic();
-        let qos = match channel_definition.qos() {
-            0 => QoS::AtMostOnce,
-            1 => QoS::AtLeastOnce,
-            2 => QoS::ExactlyOnce,
-            _ => QoS::AtMostOnce,
-        };
+        let qos = channel_definition.qos();
 
         if let Some(client) = &self.client {
             let res = client
@@ -417,3 +427,14 @@ impl<'a> TetherAgent {
         }
     }
 }
+
+// impl From<u8> for rumqttc::QoS {
+//     fn from(value: u8) -> Self {
+//         match value {
+//             0 => rumqttc::QoS::AtMostOnce,
+//             1 => rumqttc::QoS::AtLeastOnce,
+//             2 => rumqttc::QoS::ExactlyOnce,
+//             _ => rumqttc::QoS::AtMostOnce,
+//         }
+//     }
+// }
