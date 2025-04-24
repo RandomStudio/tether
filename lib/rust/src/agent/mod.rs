@@ -62,7 +62,7 @@ impl<'a> TetherAgent {
     /// configuration derived from your Tether Agent instance is used to construct
     /// the appropriate publishing topics.
     pub fn create_sender<T: Serialize>(&self, name: &str) -> ChannelSender<T> {
-        ChannelSender::new(self, ChannelSenderDefBuilder::new(name).build(self))
+        ChannelSender::new(ChannelSenderDefBuilder::new(name).build(self))
     }
 
     /// Create a ChannelSender instance using a ChannelSenderDefinition already constructed
@@ -71,7 +71,7 @@ impl<'a> TetherAgent {
         &self,
         definition: ChannelSenderDef,
     ) -> ChannelSender<T> {
-        ChannelSender::new(self, definition)
+        ChannelSender::new(definition)
     }
 
     /// The simplest way to create a Channel Receiver.

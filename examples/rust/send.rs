@@ -33,7 +33,9 @@ fn main() {
     //     name: "something".into(),
     // };
     let payload = rmp_serde::to_vec_named(&101).expect("failed to serialize");
-    sender.send_raw(&payload).expect("failed to send");
+    sender
+        .send_raw(&tether_agent, &payload)
+        .expect("failed to send");
 
     let another_struct = CustomStruct {
         id: 202,
@@ -44,11 +46,15 @@ fn main() {
     // exact same payload (101) is fine, because .send_raw is not type-checked.
     // sender.send(&101).expect("failed to encode+send");
 
-    sender.send(&another_struct).expect("failed to encode+send");
+    sender
+        .send(&tether_agent, &another_struct)
+        .expect("failed to encode+send");
 
     let number_sender = tether_agent.create_sender::<u8>("numbersOnly");
 
-    number_sender.send(&8).expect("failed to send");
+    number_sender
+        .send(&tether_agent, &8)
+        .expect("failed to send");
 
     std::thread::sleep(Duration::from_millis(3000));
 }
