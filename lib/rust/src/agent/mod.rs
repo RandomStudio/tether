@@ -55,14 +55,14 @@ pub struct TetherAgent {
     auto_connect_enabled: bool,
 }
 
-impl<'a> TetherAgent {
+impl<'a, 'de> TetherAgent {
     /// The simplest way to create a ChannelSender.
     ///
     /// You provide only a Channel Name;
     /// configuration derived from your Tether Agent instance is used to construct
     /// the appropriate publishing topics.
     pub fn create_sender<T: Serialize>(&self, name: &str) -> ChannelSender<T> {
-        ChannelSender::new(self, ChannelSenderDefBuilder::new(name).build(self))
+        ChannelSender::new(ChannelSenderDefBuilder::new(name).build(self))
     }
 
     /// Create a ChannelSender instance using a ChannelSenderDefinition already constructed
@@ -71,7 +71,7 @@ impl<'a> TetherAgent {
         &self,
         definition: ChannelSenderDef,
     ) -> ChannelSender<T> {
-        ChannelSender::new(self, definition)
+        ChannelSender::new(definition)
     }
 
     /// The simplest way to create a Channel Receiver.
@@ -81,10 +81,10 @@ impl<'a> TetherAgent {
     /// the appropriate subscribing topics.
     ///
     /// The actual subscription is also initiated automatically.
-    pub fn create_receiver<T: Deserialize<'a>>(
+    pub fn create_receiver<T: Deserialize<'de>>(
         &'a self,
         name: &str,
-    ) -> anyhow::Result<ChannelReceiver<'a, T>> {
+    ) -> anyhow::Result<ChannelReceiver<'de, T>> {
         ChannelReceiver::new(self, ChannelReceiverDefBuilder::new(name).build(self))
     }
 

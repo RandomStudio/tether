@@ -1,7 +1,7 @@
 [package]
 name = "tether-agent"
 description = "Standardised use of MQTT and MessagePack for inter-process communication"
-version = "4.2.1-alpha"
+version = "4.3.1-alpha"
 edition = "2021"
 license = "MIT"
 repository = "https://github.com/RandomStudio/tether"

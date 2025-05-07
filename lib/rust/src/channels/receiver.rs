@@ -10,16 +10,16 @@ use super::{
     tether_compliant_topic::TetherOrCustomTopic,
 };
 
-pub struct ChannelReceiver<'a, T: Deserialize<'a>> {
+pub struct ChannelReceiver<'de, T: Deserialize<'de>> {
     definition: ChannelReceiverDef,
-    marker: std::marker::PhantomData<&'a T>,
+    marker: std::marker::PhantomData<&'de T>,
 }
 
-impl<'a, T: Deserialize<'a>> ChannelReceiver<'a, T> {
+impl<'de, T: Deserialize<'de>> ChannelReceiver<'de, T> {
     pub fn new(
-        tether_agent: &'a TetherAgent,
+        tether_agent: &TetherAgent,
         definition: ChannelReceiverDef,
-    ) -> anyhow::Result<ChannelReceiver<'a, T>> {
+    ) -> anyhow::Result<ChannelReceiver<'de, T>> {
         let topic_string = definition.topic().full_topic_string();
 
         let channel = ChannelReceiver {
@@ -118,7 +118,7 @@ impl<'a, T: Deserialize<'a>> ChannelReceiver<'a, T> {
         }
     }
 
-    pub fn parse(&self, incoming_topic: &TetherOrCustomTopic, payload: &'a [u8]) -> Option<T> {
+    pub fn parse(&self, incoming_topic: &TetherOrCustomTopic, payload: &'de [u8]) -> Option<T> {
         if self.matches(incoming_topic) {
             match from_slice::<T>(payload) {
                 Ok(msg) => Some(msg),

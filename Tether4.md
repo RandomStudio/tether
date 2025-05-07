@@ -45,7 +45,7 @@ We are therefore bumping to "Tether 4" instead. (Reminds me of Angular 2->4 tran
 We will follow Semantic Versioning for the "lib" (formerly "base agent") as follows:
 
 - MAJOR versions will represent a change to the **underlying "Tether Protocol" itself** (i.e. the conventions around Topics, Messages, etc.)
-- MINOR versions will represent a change to the library API, in whichever language. These **could include breaking changes** in terms of the contract between the end-user application and the library.
+- MINOR versions will represent a change to the library API, in whichever language. These **could include breaking changes** in terms of the contract between the end-user application and the library, but never between "Tether" applications sharing the same major version ("the same protocol").
 - PATCH versions will represent any non-breaking changes to the API
 
 ### Meaning of our versioning
@@ -101,6 +101,6 @@ To reiterate: ChannelSenderDefBuilder/ChannelReceiverDefBuilder "builders" do no
 - `tether_agent::create_receiver("someName")`
 
 All that needs to be provided, in the default cases, is the name and the type. For example:
-- `tether_agent.create_sender::<u8>("numbersOnly")` creates a ChannelSender called "numbersOnly" which will automatically expect (require) u8 payloads
+- `tether_agent.create_sender::<f32>("floatingPointNumbersOnly")` creates a ChannelSender called "floatingPointNumbersOnly" which will automatically expect (and exclusively require) f32 payloads.
 
 The TypeScript library is now set up to mirror this "creation via Tether Agent instance" method as well (also, optional!) - in the case of TS it means having to pass fewer arguments (and also allows the TetherAgent to "own" the Channels, which is **not** the case in the Rust library).

@@ -45,8 +45,8 @@ pub struct Cli {
     pub tether_role: String,
 
     /// ID/Group to use for any auto-generated topics on publish
-    #[arg(long = "id", default_value_t=String::from("any"))]
-    pub tether_id: String,
+    #[arg(long = "id")]
+    pub tether_id: Option<String>,
 
     #[arg(long = "loglevel",default_value_t=String::from("info"))]
     pub log_level: String,
@@ -72,7 +72,7 @@ fn main() {
     debug!("Debugging is enabled; could be verbose");
 
     let mut tether_agent = TetherAgentBuilder::new(&cli.tether_role)
-        .id(Some(cli.tether_id).as_deref())
+        .id(cli.tether_id.as_deref())
         .protocol(Some(cli.tether_protocol).as_deref())
         .host(Some(cli.tether_host.clone()).as_deref())
         .port(Some(cli.tether_port))

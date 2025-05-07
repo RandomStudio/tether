@@ -14,7 +14,7 @@ fn main() {
 
     let sender_channel_def = ChannelSenderDefBuilder::new("anOutput")
         .role(Some("pretendingToBeSomethingElse"))
-        .qos(Some(2))
+        .qos(Some(rumqttc::QoS::ExactlyOnce))
         .retain(Some(true))
         .build(&tether_agent);
 
@@ -46,10 +46,14 @@ fn main() {
     //     input_customid_channel_def.generated_topic()
     // );
 
-    let payload =
-        rmp_serde::to_vec::<String>(&String::from("boo")).expect("failed to serialise payload");
-    tether_agent
-        .send(&sender_channel, &payload)
+    // let payload =
+    //     rmp_serde::to_vec::<String>(&String::from("boo")).expect("failed to serialise payload");
+    // tether_agent
+    //     .send(&sender_channel, &payload)
+    //     .expect("failed to publish");
+
+    sender_channel
+        .send(&tether_agent, &String::from("boo"))
         .expect("failed to publish");
 
     std::thread::sleep(Duration::from_millis(4000));
