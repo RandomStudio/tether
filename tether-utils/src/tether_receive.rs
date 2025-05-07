@@ -100,14 +100,8 @@ fn build_receiver(options: &ReceiveOptions, tether_agent: &TetherAgent) -> Chann
             &options.subscribe_id, &options.subscribe_role, &options.subscribe_channel_name
         );
         ChannelReceiverDefBuilder::new(match &options.subscribe_channel_name {
-            Some(provided_name) => {
-                if provided_name.as_str() == "+" {
-                    "any"
-                } else {
-                    provided_name
-                }
-            }
-            None => "any",
+            Some(provided_name) => provided_name,
+            None => "+",
         })
         .role(options.subscribe_role.as_deref())
         .id(options.subscribe_id.as_deref())
@@ -205,7 +199,7 @@ mod tests {
 
         let receiver_def = build_receiver(&options, &tether_agent);
 
-        assert_eq!(receiver_def.name(), "any");
+        assert_eq!(receiver_def.name(), "+");
         assert_eq!(receiver_def.generated_topic(), "something/+/#");
     }
 
@@ -225,7 +219,7 @@ mod tests {
 
         let receiver_def = build_receiver(&options, &tether_agent);
 
-        assert_eq!(receiver_def.name(), "any");
+        assert_eq!(receiver_def.name(), "+");
         assert_eq!(receiver_def.generated_topic(), "+/+/something");
     }
 
@@ -245,7 +239,7 @@ mod tests {
 
         let receiver_def = build_receiver(&options, &tether_agent);
 
-        assert_eq!(receiver_def.name(), "any");
+        assert_eq!(receiver_def.name(), "+");
         assert_eq!(receiver_def.generated_topic(), "x/+/y");
     }
 
@@ -305,7 +299,7 @@ mod tests {
 
         let receiver_def = build_receiver(&options, &tether_agent);
 
-        assert_eq!(receiver_def.name(), "any");
+        assert_eq!(receiver_def.name(), "+");
         assert_eq!(receiver_def.generated_topic(), "+/+/#");
     }
 }
