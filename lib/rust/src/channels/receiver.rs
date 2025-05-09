@@ -28,7 +28,7 @@ impl<'de, T: Deserialize<'de>> ChannelReceiver<'de, T> {
         };
 
         // This is really only useful for testing purposes.
-        if !tether_agent.auto_connect_enabled() {
+        if !tether_agent.config().auto_connect_enabled {
             warn!("Auto-connect is disabled, skipping subscription");
             return Ok(channel);
         }

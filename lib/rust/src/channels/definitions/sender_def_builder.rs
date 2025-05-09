@@ -1,6 +1,6 @@
 use crate::{
     tether_compliant_topic::{TetherCompliantTopic, TetherOrCustomTopic},
-    TetherAgent,
+    AgentConfig,
 };
 
 use log::*;
@@ -116,7 +116,7 @@ impl ChannelSenderDefBuilder {
         }
     }
 
-    pub fn build(self, tether_agent: &TetherAgent) -> ChannelSenderDef {
+    pub fn build(self, agent_config: &AgentConfig) -> ChannelSenderDef {
         let tpt: TetherOrCustomTopic = match self.override_topic {
             Some(custom) => {
                 warn!(
@@ -133,12 +133,12 @@ impl ChannelSenderDefBuilder {
                     }
                     None => {
                         debug!("Publish ID was not overriden at Channel options level. The Agent ID will be used instead, if specified in Agent creation.");
-                        tether_agent.id().map(String::from)
+                        agent_config.id.as_ref().map(String::from)
                     }
                 };
 
                 TetherOrCustomTopic::Tether(TetherCompliantTopic::new_for_publish(
-                    tether_agent,
+                    agent_config,
                     &self.channel_name,
                     self.override_publish_role.as_deref(),
                     optional_id_part.as_deref(),

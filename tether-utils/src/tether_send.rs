@@ -53,7 +53,7 @@ pub fn send(options: &SendOptions, tether_agent: &mut TetherAgent) -> anyhow::Re
         .role(options.channel_role.as_deref())
         .id(options.channel_id.as_deref())
         .override_topic(options.channel_topic.as_deref())
-        .build(tether_agent);
+        .build(tether_agent.config());
 
     let channel = tether_agent.create_sender_with_def(channel_def.clone());
 

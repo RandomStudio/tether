@@ -2,7 +2,7 @@ use anyhow::anyhow;
 use log::*;
 use serde::{Deserialize, Serialize};
 
-use crate::TetherAgent;
+use crate::AgentConfig;
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct TetherCompliantTopic {
@@ -30,12 +30,12 @@ impl TetherOrCustomTopic {
 impl TetherCompliantTopic {
     /// Publish topics fall back to the ID and/or role associated with the agent, if not explicitly provided
     pub fn new_for_publish(
-        agent: &TetherAgent,
+        agent_config: &AgentConfig,
         channel_name: &str,
         role_part_override: Option<&str>,
         id_part_override: Option<&str>,
     ) -> TetherCompliantTopic {
-        let role = role_part_override.unwrap_or(agent.role());
+        let role = role_part_override.unwrap_or(&agent_config.role);
         let full_topic = build_publish_topic(role, channel_name, id_part_override);
         TetherCompliantTopic {
             role: role.into(),
@@ -209,7 +209,7 @@ mod tests {
             .build()
             .expect("failed to construct agent");
         let publishing_chanel_topic =
-            TetherCompliantTopic::new_for_publish(&agent, "testChannel", None, None);
+            TetherCompliantTopic::new_for_publish(agent.config(), "testChannel", None, None);
         assert_eq!(
             &publishing_chanel_topic.full_topic,
             "testingRole/testChannel"

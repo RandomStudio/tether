@@ -6,7 +6,6 @@ use rumqttc::{Client, Event, MqttOptions, Packet, QoS, Transport};
 use serde::{Deserialize, Serialize};
 use std::sync::{Arc, Mutex};
 use std::{sync::mpsc, thread, time::Duration};
-use uuid::Uuid;
 
 pub mod builder;
 
@@ -21,6 +20,20 @@ use crate::sender::ChannelSender;
 use crate::tether_compliant_topic::{TetherCompliantTopic, TetherOrCustomTopic};
 
 const TIMEOUT_SECONDS: u64 = 3;
+
+#[derive(Clone, Debug)]
+pub struct AgentConfig {
+    pub role: String,
+    pub id: Option<String>,
+    pub host: String,
+    pub port: u16,
+    pub protocol: String,
+    pub username: String,
+    pub password: String,
+    pub url_base_path: String,
+    pub mqtt_client_id: String,
+    pub auto_connect_enabled: bool,
+}
 
 /**
 A Tether Agent struct encapsulates everything required to set up a single
@@ -39,20 +52,11 @@ use the provided TetherAgentBuilder to specify any options you might need, and c
 .build to get a well-configured TetherAgent.
 */
 pub struct TetherAgent {
-    role: String,
-    id: Option<String>,
-    host: String,
-    port: u16,
-    protocol: String,
-    username: String,
-    password: String,
-    base_path: String,
-    mqtt_client_id: Option<String>,
+    config: AgentConfig,
     pub(crate) client: Option<Client>,
     message_sender: mpsc::Sender<(TetherOrCustomTopic, Vec<u8>)>,
     pub message_receiver: mpsc::Receiver<(TetherOrCustomTopic, Vec<u8>)>,
     is_connected: Arc<Mutex<bool>>,
-    auto_connect_enabled: bool,
 }
 
 impl<'a, 'de> TetherAgent {
@@ -62,7 +66,7 @@ impl<'a, 'de> TetherAgent {
     /// configuration derived from your Tether Agent instance is used to construct
     /// the appropriate publishing topics.
     pub fn create_sender<T: Serialize>(&self, name: &str) -> ChannelSender<T> {
-        ChannelSender::new(ChannelSenderDefBuilder::new(name).build(self))
+        ChannelSender::new(ChannelSenderDefBuilder::new(name).build(&self.config))
     }
 
     /// Create a ChannelSender instance using a ChannelSenderDefinition already constructed
@@ -85,7 +89,10 @@ impl<'a, 'de> TetherAgent {
         &'a self,
         name: &str,
     ) -> anyhow::Result<ChannelReceiver<'de, T>> {
-        ChannelReceiver::new(self, ChannelReceiverDefBuilder::new(name).build(self))
+        ChannelReceiver::new(
+            self,
+            ChannelReceiverDefBuilder::new(name).build(&self.config),
+        )
     }
 
     /// Create a ChannelReceiver instance using a ChannelReceiverDefinition already constructed
@@ -101,29 +108,33 @@ impl<'a, 'de> TetherAgent {
         self.client.is_some()
     }
 
-    pub fn auto_connect_enabled(&self) -> bool {
-        self.auto_connect_enabled
+    pub fn config(&self) -> &AgentConfig {
+        &self.config
     }
 
-    pub fn role(&self) -> &str {
-        &self.role
-    }
+    // pub fn auto_connect_enabled(&self) -> bool {
+    //     self.auto_connect_enabled
+    // }
 
-    pub fn id(&self) -> Option<&str> {
-        self.id.as_deref()
-    }
+    // pub fn role(&self) -> &str {
+    //     &self.role
+    // }
 
-    /// Returns the Agent Role, ID (group), Broker URI
-    pub fn description(&self) -> (String, String, String) {
-        (
-            String::from(&self.role),
-            match &self.id {
-                Some(id) => String::from(id),
-                None => String::from("any"),
-            },
-            self.broker_uri(),
-        )
-    }
+    // pub fn id(&self) -> Option<&str> {
+    //     self.id.as_deref()
+    // }
+
+    // /// Returns the Agent Role, ID (group), Broker URI
+    // pub fn description(&self) -> (String, String, String) {
+    //     (
+    //         String::from(&self.role),
+    //         match &self.id {
+    //             Some(id) => String::from(id),
+    //             None => String::from("any"),
+    //         },
+    //         self.broker_uri(),
+    //     )
+    // }
 
     /// Get the underlying MQTT Client directly, immutable.
     /// WARNING: This allows you to do non-Tether-compliant things!
@@ -145,21 +156,21 @@ impl<'a, 'de> TetherAgent {
     pub fn broker_uri(&self) -> String {
         format!(
             "{}://{}:{}{}",
-            &self.protocol, self.host, self.port, self.base_path
+            &self.config.protocol, self.config.host, self.config.port, self.config.url_base_path
         )
     }
 
     /// Change the role, even if it was set before. Be careful _when_ you call this,
     /// as it could affect any new Channel Senders/Receivers created after that point.
     pub fn set_role(&mut self, role: &str) {
-        self.role = role.into();
+        self.config.role = role.into();
     }
 
     /// Change the ID, even if it was set (or left empty) before.
     /// Be careful _when_ you call this,
     /// as it could affect any new Channel Senders/Receivers created after that point.
     pub fn set_id(&mut self, id: &str) {
-        self.id = Some(id.into());
+        self.config.id = Some(id.into());
     }
 
     /// Use this function yourself **only if you explicitly disallowed auto connection**.
@@ -171,22 +182,20 @@ impl<'a, 'de> TetherAgent {
     pub fn connect(&mut self) -> anyhow::Result<()> {
         info!(
             "Make new connection to the MQTT server at {}://{}:{}...",
-            self.protocol, self.host, self.port
+            self.config.protocol, self.config.host, self.config.port
         );
 
-        let mqtt_client_id = self
-            .mqtt_client_id
-            .clone()
-            .unwrap_or(Uuid::new_v4().to_string());
+        let mqtt_client_id = self.config.mqtt_client_id.clone();
 
         debug!("Using MQTT Client ID \"{}\"", mqtt_client_id);
 
-        let mut mqtt_options = MqttOptions::new(mqtt_client_id.clone(), &self.host, self.port)
-            .set_credentials(&self.username, &self.password)
-            .set_keep_alive(Duration::from_secs(TIMEOUT_SECONDS))
-            .to_owned();
+        let mut mqtt_options =
+            MqttOptions::new(mqtt_client_id.clone(), &self.config.host, self.config.port)
+                .set_credentials(&self.config.username, &self.config.password)
+                .set_keep_alive(Duration::from_secs(TIMEOUT_SECONDS))
+                .to_owned();
 
-        match self.protocol.as_str() {
+        match self.config.protocol.as_str() {
             "mqtts" => {
                 // Use rustls-native-certs to load root certificates from the operating system.
                 let mut root_cert_store = rumqttc::tokio_rustls::rustls::RootCertStore::empty();
@@ -205,13 +214,20 @@ impl<'a, 'de> TetherAgent {
                 // into the URL!
                 let full_host = format!(
                     "{}://{}:{}{}",
-                    self.protocol, self.host, self.port, self.base_path
+                    self.config.protocol,
+                    self.config.host,
+                    self.config.port,
+                    self.config.url_base_path
                 );
                 debug!("WSS using full host URL: {}", &full_host);
-                mqtt_options = MqttOptions::new(mqtt_client_id.clone(), &full_host, self.port) // here, port is ignored anyway
-                    .set_credentials(&self.username, &self.password)
-                    .set_keep_alive(Duration::from_secs(TIMEOUT_SECONDS))
-                    .to_owned();
+                mqtt_options = MqttOptions::new(
+                    mqtt_client_id.clone(),
+                    &full_host,
+                    self.config.port,
+                ) // here, port is ignored anyway
+                .set_credentials(&self.config.username, &self.config.password)
+                .set_keep_alive(Duration::from_secs(TIMEOUT_SECONDS))
+                .to_owned();
 
                 // Use rustls-native-certs to load root certificates from the operating system.
                 let mut root_cert_store = rumqttc::tokio_rustls::rustls::RootCertStore::empty();
@@ -230,14 +246,21 @@ impl<'a, 'de> TetherAgent {
                 // into the URL!
                 let full_host = format!(
                     "{}://{}:{}{}",
-                    self.protocol, self.host, self.port, self.base_path
+                    self.config.protocol,
+                    self.config.host,
+                    self.config.port,
+                    self.config.url_base_path
                 );
                 debug!("WS using full host URL: {}", &full_host);
 
-                mqtt_options = MqttOptions::new(mqtt_client_id.clone(), &full_host, self.port) // here, port is ignored anyway
-                    .set_credentials(&self.username, &self.password)
-                    .set_keep_alive(Duration::from_secs(TIMEOUT_SECONDS))
-                    .to_owned();
+                mqtt_options = MqttOptions::new(
+                    mqtt_client_id.clone(),
+                    &full_host,
+                    self.config.port,
+                ) // here, port is ignored anyway
+                .set_credentials(&self.config.username, &self.config.password)
+                .set_keep_alive(Duration::from_secs(TIMEOUT_SECONDS))
+                .to_owned();
 
                 mqtt_options.set_transport(Transport::Ws);
             }

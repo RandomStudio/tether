@@ -1,7 +1,7 @@
 [package]
 name = "tether-agent"
 description = "Standardised use of MQTT and MessagePack for inter-process communication"
-version = "4.3.1-alpha"
+version = "4.4.0-alpha"
 edition = "2021"
 license = "MIT"
 repository = "https://github.com/RandomStudio/tether"
@@ -32,9 +32,7 @@ rmp-serde = "1.1.1"
 log = "0.4.17"
 env_logger = "0.7"
 anyhow = "1.0.71"
-# tokio-rustls = "0.26.1"
 rustls-native-certs = "0.8.1"
-# tokio-native-tls = "0.3.1"
 [dependencies.uuid]
 version = "1.7.0"
 features = [

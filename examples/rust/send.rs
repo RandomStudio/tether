@@ -22,10 +22,11 @@ fn main() {
     let tether_agent = TetherAgentBuilder::new("rustExample")
         .build()
         .expect("failed to connect Tether");
-    let (role, id, _) = tether_agent.description();
-    info!("Created agent OK: {}, {}", role, id);
+    let AgentConfig { role, id, .. } = tether_agent.config();
+    info!("Created agent OK: {}, {:?}", role, id.as_deref());
 
-    let sender_definition = ChannelSenderDefBuilder::new("customStructs").build(&tether_agent);
+    let sender_definition =
+        ChannelSenderDefBuilder::new("customStructs").build(tether_agent.config());
     let sender = tether_agent.create_sender_with_def::<CustomStruct>(sender_definition);
 
     // let test_struct = CustomStruct {

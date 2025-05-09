@@ -50,7 +50,7 @@ mod tests {
 
         let channel_def = ChannelReceiverDefBuilder::new("customChannel")
             .role(Some("customRole"))
-            .build(&tether_agent);
+            .build(tether_agent.config());
 
         let channel = tether_agent
             .create_receiver_with_def::<u8>(channel_def)
@@ -85,7 +85,7 @@ mod tests {
 
         let channel_def = ChannelReceiverDefBuilder::new("customChanel")
             .id(Some("specificID"))
-            .build(&tether_agent);
+            .build(tether_agent.config());
 
         let channel = tether_agent
             .create_receiver_with_def::<u8>(channel_def)
@@ -120,7 +120,7 @@ mod tests {
         let channel_def = ChannelReceiverDefBuilder::new("customChanel")
             .role(Some("specificRole"))
             .id(Some("specificID"))
-            .build(&tether_agent);
+            .build(tether_agent.config());
 
         let channel = tether_agent
             .create_receiver_with_def::<String>(channel_def)
@@ -157,7 +157,7 @@ mod tests {
             .create_receiver_with_def::<u8>(
                 ChannelReceiverDefBuilder::new("customChannel")
                     .override_topic(Some("one/two/three/four/five"))
-                    .build(&tether_agent),
+                    .build(tether_agent.config()),
             )
             .expect("failed to create Channel");
 
@@ -192,7 +192,7 @@ mod tests {
             &tether_agent,
             ChannelReceiverDefBuilder::new("everything")
                 .override_topic(Some("#")) // fully legal, but not a standard Three Part Topic)
-                .build(&tether_agent),
+                .build(tether_agent.config()),
         )
         .expect("failed to create Channel");
 

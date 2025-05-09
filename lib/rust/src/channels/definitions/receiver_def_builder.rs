@@ -1,6 +1,6 @@
 use crate::{
     tether_compliant_topic::{TetherCompliantTopic, TetherOrCustomTopic},
-    TetherAgent,
+    AgentConfig,
 };
 
 use log::*;
@@ -124,7 +124,7 @@ impl ChannelReceiverDefBuilder {
         }
     }
 
-    pub fn build(self, tether_agent: &TetherAgent) -> ChannelReceiverDef {
+    pub fn build(self, agent_config: &AgentConfig) -> ChannelReceiverDef {
         let tpt: TetherOrCustomTopic = match self.override_topic {
             Some(custom) => TetherOrCustomTopic::Custom(custom),
             None => {
@@ -140,7 +140,7 @@ impl ChannelReceiverDefBuilder {
                     }
                     None => {
                         debug!("Subscribe ID was not overriden at Channel options level. The Agent ID will be used instead, if specified in Agent creation.");
-                        tether_agent.id().map(String::from)
+                        agent_config.id.clone()
                     }
                 };
 

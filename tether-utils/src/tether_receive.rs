@@ -105,7 +105,7 @@ fn build_receiver(options: &ReceiveOptions, tether_agent: &TetherAgent) -> Chann
         })
         .role(options.subscribe_role.as_deref())
         .id(options.subscribe_id.as_deref())
-        .build(tether_agent)
+        .build(tether_agent.config())
     } else {
         debug!(
             "Using custom override topic \"{:?}\"",
@@ -113,7 +113,7 @@ fn build_receiver(options: &ReceiveOptions, tether_agent: &TetherAgent) -> Chann
         );
         ChannelReceiverDefBuilder::new("custom")
             .override_topic(Some(options.subscribe_topic.as_deref().unwrap_or("#")))
-            .build(tether_agent)
+            .build(tether_agent.config())
     }
 }
 

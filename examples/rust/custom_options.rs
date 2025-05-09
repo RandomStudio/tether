@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use tether_agent::{definitions::*, TetherAgentBuilder};
+use tether_agent::{definitions::*, AgentConfig, TetherAgentBuilder};
 
 fn main() {
     let tether_agent = TetherAgentBuilder::new("example")
@@ -16,13 +16,13 @@ fn main() {
         .role(Some("pretendingToBeSomethingElse"))
         .qos(Some(rumqttc::QoS::ExactlyOnce))
         .retain(Some(true))
-        .build(&tether_agent);
+        .build(tether_agent.config());
 
     let sender_channel = tether_agent.create_sender_with_def(sender_channel_def);
 
     let input_wildcard_channel_def = ChannelReceiverDefBuilder::new("everything")
         .override_topic(Some("#"))
-        .build(&tether_agent);
+        .build(tether_agent.config());
     let input_wildcard_channel = tether_agent
         .create_receiver_with_def::<u8>(input_wildcard_channel_def)
         .expect("failed to create Channel Receiver");
@@ -32,25 +32,15 @@ fn main() {
     //     .id(Some("specificIDonly"))
     //     .build();
 
-    println!("Agent looks like this: {:?}", tether_agent.description());
-    let (role, id, _) = tether_agent.description();
+    println!("Agent looks like this: {:?}", tether_agent.config());
+    let AgentConfig { role, id, .. } = &tether_agent.config();
     assert_eq!(role, "example");
-    assert_eq!(id, "any"); // because we set None
+    assert!(id.is_none()); // because we set None
 
     println!(
         "wildcard input channel: {:?}",
         input_wildcard_channel.definition().generated_topic()
     );
-    // println!(
-    //     "speific ID input channel: {:?}",
-    //     input_customid_channel_def.generated_topic()
-    // );
-
-    // let payload =
-    //     rmp_serde::to_vec::<String>(&String::from("boo")).expect("failed to serialise payload");
-    // tether_agent
-    //     .send(&sender_channel, &payload)
-    //     .expect("failed to publish");
 
     sender_channel
         .send(&tether_agent, &String::from("boo"))

@@ -1,8 +1,9 @@
 use std::sync::{mpsc, Arc, Mutex};
 
 use log::*;
+use uuid::Uuid;
 
-use crate::tether_compliant_topic::TetherOrCustomTopic;
+use crate::{tether_compliant_topic::TetherOrCustomTopic, AgentConfig};
 
 use super::TetherAgent;
 
@@ -120,30 +121,34 @@ impl TetherAgentBuilder {
         let port = self.port.unwrap_or(1883);
         let username = self.username.unwrap_or(DEFAULT_USERNAME.into());
         let password = self.password.unwrap_or(DEFAULT_PASSWORD.into());
-        let base_path = self.base_path.unwrap_or("/".into());
+        let url_base_path = self.base_path.unwrap_or("/".into());
 
         debug!(
             "final build uses options protocol = {}, host = {}, port = {}",
             protocol, host, port
         );
 
-        let (message_sender, message_receiver) = mpsc::channel::<(TetherOrCustomTopic, Vec<u8>)>();
-
-        let mut agent = TetherAgent {
+        let config = AgentConfig {
             role: self.role.clone(),
             id: self.id,
             host,
             port,
+            protocol,
             username,
             password,
-            protocol,
-            base_path,
+            url_base_path,
+            mqtt_client_id: self.mqtt_client_id.unwrap_or(Uuid::new_v4().to_string()),
+            auto_connect_enabled: self.auto_connect,
+        };
+
+        let (message_sender, message_receiver) = mpsc::channel::<(TetherOrCustomTopic, Vec<u8>)>();
+
+        let mut agent = TetherAgent {
+            config,
             client: None,
             message_sender,
             message_receiver,
-            mqtt_client_id: self.mqtt_client_id,
             is_connected: Arc::new(Mutex::new(false)),
-            auto_connect_enabled: self.auto_connect,
         };
 
         if self.auto_connect {
