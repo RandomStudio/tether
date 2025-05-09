@@ -1,23 +1,28 @@
 import { useEffect, useState } from "react";
-import { OutputPlug, TetherAgent } from "tether-agent";
+import { ChannelSender, TetherAgent } from "tether-agent";
 
 interface Props {
   agent: TetherAgent;
 }
 
 export const Sender = (props: Props) => {
+  const { agent } = props;
+
   useEffect(() => {
-    setPlug(new OutputPlug(props.agent, "sender"));
-  }, [props.agent]);
+    console.log("Sender useEffect");
+    setChannel(new ChannelSender(agent, "sender"));
+  }, [agent]);
 
   const [useCustomTopic, setUseCustomTopic] = useState(false);
   const [customTopic, setTCustomTopic] = useState("");
-  const [plug, setPlug] = useState<OutputPlug | null>(null);
+  const [channel, setChannel] = useState<ChannelSender<unknown> | null>(null);
 
   return (
     <div>
-      <h2>Output Plug</h2>
-      <div>{plug && <code>{JSON.stringify(plug.getDefinition())}</code>}</div>
+      <h2>Channel Sender</h2>
+      <div>
+        {channel && <code>{JSON.stringify(channel.getDefinition())}</code>}
+      </div>
       <div>
         {useCustomTopic ? (
           <>
@@ -28,8 +33,8 @@ export const Sender = (props: Props) => {
             ></input>
             <button
               onClick={() =>
-                setPlug(
-                  new OutputPlug(props.agent, "sender", {
+                setChannel(
+                  agent.getSender("sender", {
                     overrideTopic: customTopic,
                   })
                 )
@@ -40,7 +45,7 @@ export const Sender = (props: Props) => {
             <button
               onClick={() => {
                 setUseCustomTopic(false);
-                setPlug(new OutputPlug(props.agent, "sender"));
+                setChannel(agent.getSender("sender"));
               }}
             >
               Back to default
@@ -54,9 +59,22 @@ export const Sender = (props: Props) => {
           </>
         )}
       </div>
-      {plug && (
+      {channel && (
         <div>
-          <button onClick={() => plug.publish()}>Send (empty)</button>
+          <button
+            onClick={async () => {
+              try {
+                await channel.send();
+              } catch (e) {
+                console.error("We got an error when trying to publish:", e);
+                console.log("agent connected?", agent.getIsConnected());
+                console.log("agent state?", agent.getState());
+                console.log("agent client?", agent.getClient());
+              }
+            }}
+          >
+            Send (empty)
+          </button>
         </div>
       )}
     </div>

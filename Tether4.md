@@ -1,0 +1,106 @@
+"Tether Edition 2025, aka Tether 4"
+
+# Breaking changes
+
+The default will be TWO part topics, with THREE part topics optional.
+
+The "ID" part was always optional; now this is put last and does NOT need to be included if unused. No need for inserting a word such as "any" into the topic.
+
+
+For Output Plugs (publishing) NOW CHANNEL SENDERS, the topic will be constructed as follows:
+- agentRole/chanelName
+- agentRole/chanelName/optionalID
+
+For Input Plugs (subscribing) NOW CHANNEL RECEIVERS, the topic will be constructed as follows:
+- agentRole/chanelName/# (matches "no ID" part and "ID part(s) included")
+- agentRole/chanelName/optionalID (will only match when ID part is matched)
+
+The main practical difference between a "topic" and a "Channel" (previously "plug") is simply that a Channel is expected to match ONLY ONE TYPE OF MESSAGE. So, a single MQTT Client may have multiple subscriptions, but we ensure that the correct messages are matched with the correct Channel when received, by applying our additional Tether Complaint Topic (TCT) matching pattern. The libraries (particularly typed languages such as TypeScript and Rust) should try to encourage (if not enforce) this practice.
+
+## Cleaning up
+Unused "utilities" and the "explorer" will be removed.
+
+## Proposed Terminology Changes
+- Rename "ThreePartTopic" to "TetherCompliantTopic" (TCT).
+- Use "Channel" instead of "Plug". This was an old proposal from the beginning of the project, and arguably makes much more sense since it clearly defines the intention to filter everything by the "type" of message expected to be sent or received.
+- Instead of "InputPlug" and "OutputPlug", the word order will be reversed to "ChannelReceiver" and "ChannelSender". This reflects the idea that a "Channel" is a single thing, but may have multiple "ChannelReceivers" and "ChannelSenders" at either end.
+- Instead of "publishing", we can simply talk about "sending", i.e. `channel.send()` rather than `plug.publish()`
+- The term "receiving" will be preferred, but "subscribe" can still be used when actually relevant (especially internally)
+- The folder "base_agent" will be renamed to "lib". There is no class inheritance thing happening in the library, anyway.
+
+## New examples
+Check that the React example works and is up to date!
+Svelte example, please!
+TouchDesigner (Python) and ESP32 (C++) examples should include both sending and receiving examples.
+An example of integration from P5JS would be a good idea. Optionally, Cables.GL as well.
+
+## Versioning / Semver
+Unfortunately, the JS/TS package had already been bumped to v3 earlier. This means that we are actually on "Tether 2" up till v3.2.x and would have to change to the very-different "Tether 3" from v3.3, supposedly a "minor version".
+
+Rust and Python packages could both move to a "v3" properly, however, and it seems most meaningful to use the correct MAJOR version when importing the Tether Base Agent in any language.
+
+We are therefore bumping to "Tether 4" instead. (Reminds me of Angular 2->4 transition!)
+
+### Protocol / Lib versions
+We will follow Semantic Versioning for the "lib" (formerly "base agent") as follows:
+
+- MAJOR versions will represent a change to the **underlying "Tether Protocol" itself** (i.e. the conventions around Topics, Messages, etc.)
+- MINOR versions will represent a change to the library API, in whichever language. These **could include breaking changes** in terms of the contract between the end-user application and the library, but never between "Tether" applications sharing the same major version ("the same protocol").
+- PATCH versions will represent any non-breaking changes to the API
+
+### Meaning of our versioning
+The above is perhaps slightly different to how Semver is strictly applied. The principle that should be observed is:
+
+- Any two Tether Agents using the same MAJOR version, in any language, should be able to communicate with each other seamlessly, because they are **talking the same version of Tether as a whole**
+- Bumping the MINOR version in the "lib" for a particular language **may entail a breaking change** in the sense that function names, arguments, etc. might be different. That means that the end-user application may need some modifications when "upgrading" a MINOR version, in order to compile and work correctly. However, the implication is that an Agent using lib 4.1.x will still 100% be able to communicate with an Agent using lib 4.2.x in the same or different language; they might just have some differences in how the API is accessed.
+- Bumping the PATCH version should neither break inter-process communication nor require changes to any end-user application for compatibility.
+
+## JS (TS) changes
+Apart from the terminology changes, the following are important to note:
+- Encoding and decoding of messages happens AUTOMATICALLY BY DEFAULT now, so there is no need to import and use `encode` and `decode`
+- The `.send` function automatically encodes, and uses generics! No need to encode first (and applications must be careful NOT to encode before sending). `.sendRaw` is provided as an alternative if the end-user prefers to encode themselves
+- The EventEmitter class extension business has been removed, so callbacks for receiving messages are handled manually (internally). From the end-user perspective, everything looks very much the same, with the exception that `.on("message", cb)` will AUTOMATICALLY DECODE first, and tries to use generics! The end-user currently has no direct option to decode messages themselves, any more.
+
+### "Ownership" of Channels
+
+Returning to an older concept (pre-version "3" for TS/JS), the end-user can decide whether to manage Channel Sender/Receivers "themselves" (essentially, keep ownership of the Channel instances) or allow the TetherAgent instance to handle this for them.
+
+Practically, it means that you could create a ChannelReceiver in two ways:
+
+1. `const sender = agent.getReceiver("numberValues")` : Let TetherAgent own the ChannelReceiver
+2. `const sender = await ChannelReceiver.create(agent, "numberValues")` : Let user/application own the ChannelReceiver
+
+In the case of (1.), assigning the "same" receiver (by name) will in fact NOT initiate the creation of a new ChannelReceiver or the subscription to the MQTT Broker. `const sender2 = agent.getReceiver("numberValues")` will return the existing, previously-created, ChannelReceiver object. This is because the TetherAgent keeps track of a list of ChannelReceivers (and, similarly, ChannelSenders) internally.
+
+This type of functionality is quite useful in a web application, particularly in frontend frameworks where the "same channel" could be re-used in various places / UI components. Also, the order of "creating" and "getting" a particular channel might be complicated to manage in many cases; this way, it doesn't matter in which order this happens.
+
+This functionality probably makes little sense for a Rust application, by contrast, where ownership needs to be much more explicit, and the end-user developer should be expected to manage the order of creating/mutating/deleting things more carefully.
+
+## Rust changes
+Apart from the terminology changes, the following are important to note.
+
+### Typed send and receive
+- `agent.send` used to assume an already-encoded payload, while `.encode_and_send` did auto-encoding. Now, `.send` is the auto-encoding version and additional `.send_raw` and `.send_empty` functions are provided. It is VERY important that the new `.send` will actually (incorrectly!) accept already-encoded payloads, because `&[u8]` is ALSO `T: Serialize`! So applications using the new version must be carefully checked to ensure that things are not (double) encoded before sending! It does mean that the end-user application no longer needs to do any explicit encoding/decoding themselves.
+- The end-user application used to have to handle incoming `(Topic, Payload)` where Payload was a `Vec<u8>`, i.e. an encoded MsgPack payload. This had to be decoded first. Now, the Channel Receiver itself provides a method `.parse ` which will not only check incoming messages for matches, but also return an `Option<T>` where `T: Deserialize`, i.e. already-decoded data that matches the type strictly defined on the Channel Receiver itself!
+
+### Terminology for "Builder" patterns
+The term "OptionsBuilder" suffix has now been replaced with the much simpler "Builder", so we have simply:
+- TetherAgentBuilder
+- ChannelSenderDefBuilder
+- ChannelReceiverDefBuilder
+
+### Constructing Definitions and Channels
+Note that there is **no such thing** as "ChannelSenderBuilder" or "ChannelReceiverBuilder". The standard ways to create Channel Receiver/Sender are intended to be the following:
+
+- Create a "standard" (non-customised) Sender/Receiver via the Tether Agent instance `::create_sender` / `::create_receiver`
+- Build a customised Channel Def(inition) first, using `ChannelSenderDefBuilder::new` / `ChannelReceiverDefBuilder::new` (passing a &ref to TetherAgent at the final `.build` step), and then creating the actual Channel Sender/Receiver via the Tether Agent instance using `::create_sender_with_def` / `::create_receiver_with_def`
+
+To reiterate: ChannelSenderDefBuilder/ChannelReceiverDefBuilder "builders" do not **have** to be used in many cases, since both ChannelSender and ChannelReceiver objects can be constructed directly via the Tether Agent object itself with minimal arguments, i.e.
+
+- `tether_agent::create_sender("someName")`
+- `tether_agent::create_receiver("someName")`
+
+All that needs to be provided, in the default cases, is the name and the type. For example:
+- `tether_agent.create_sender::<f32>("floatingPointNumbersOnly")` creates a ChannelSender called "floatingPointNumbersOnly" which will automatically expect (and exclusively require) f32 payloads.
+
+The TypeScript library is now set up to mirror this "creation via Tether Agent instance" method as well (also, optional!) - in the case of TS it means having to pass fewer arguments (and also allows the TetherAgent to "own" the Channels, which is **not** the case in the Rust library).

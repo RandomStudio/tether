@@ -1,0 +1,17 @@
+{
+  "extends": "@tsconfig/node22",
+  "compilerOptions": {
+    "module": "commonjs",
+    "esModuleInterop": true,
+    "target": "es6",
+    "moduleResolution": "node",
+    "sourceMap": true,
+    "outDir": "dist",
+    "declaration": true
+  },
+  "typeAcquisition": { "include": ["jest"] },
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": ["**/*.test.ts"]
+}

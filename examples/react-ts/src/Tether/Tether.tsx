@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { TetherAgent, IClientOptions, BROKER_DEFAULTS } from "tether-agent";
+import { TetherAgent, IClientOptions, BROWSER } from "tether-agent";
 import { Sender } from "./Sender";
 import { Receiver } from "./Receiver";
 
@@ -16,11 +16,12 @@ export const Tether = (props: Props) => {
     console.log("New Tether Agent with host", props.host);
 
     const brokerOptions: IClientOptions = {
-      ...BROKER_DEFAULTS.browser,
+      ...BROWSER,
       host: props.host,
     };
 
-    TetherAgent.create("browserDemo", { brokerOptions })
+    console.log("Connecting...");
+    TetherAgent.create("browserDemo", { brokerOptions, loglevel: "debug" })
       .then((agent) => {
         setAgent(agent);
         console.info("Tether connect OK");

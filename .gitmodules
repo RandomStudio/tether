@@ -1,12 +1,12 @@
-[submodule "base_agent/cpp/libs/paho.mqtt.cpp"]
-	path = base_agent/cpp/libs/paho.mqtt.cpp
+[submodule "lib/cpp/libs/paho.mqtt.cpp"]
+	path = lib/cpp/libs/paho.mqtt.cpp
 	url = https://github.com/eclipse/paho.mqtt.cpp.git
-[submodule "base_agent/cpp/libs/paho.mqtt.c"]
-	path = base_agent/cpp/libs/paho.mqtt.c
+[submodule "lib/cpp/libs/paho.mqtt.c"]
+	path = lib/cpp/libs/paho.mqtt.c
 	url = https://github.com/eclipse/paho.mqtt.c.git
-[submodule "base_agent/cpp/libs/msgpack"]
-	path = base_agent/cpp/libs/msgpack
+[submodule "lib/cpp/libs/msgpack"]
+	path = lib/cpp/libs/msgpack
 	url = https://github.com/msgpack/msgpack-c.git
-[submodule "base_agent/cpp/libs/json"]
-	path = base_agent/cpp/libs/json
+[submodule "lib/cpp/libs/json"]
+	path = lib/cpp/libs/json
 	url = git@github.com:nlohmann/json.git

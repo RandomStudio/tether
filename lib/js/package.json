@@ -1,0 +1,33 @@
+{
+  "name": "tether-agent",
+  "version": "4.0.1-alpha",
+  "description": "",
+  "main": "dist/index.js",
+  "scripts": {
+    "test": "npx jest",
+    "build": "npm run test && npx tsc",
+    "prepare": "npm run build"
+  },
+  "author": "Random Studio",
+  "license": "ISC",
+  "repository": "https://github.com/RandomStudio/tether",
+  "dependencies": {
+    "@msgpack/msgpack": "^3.0.0-beta2",
+    "async-mqtt": "^2.6.2",
+    "buffer": "^6.0.3",
+    "log4js": "^6.9.1"
+  },
+  "devDependencies": {
+    "@tsconfig/node22": "^22.0.1",
+    "@tsconfig/recommended": "^1.0.3",
+    "@tsconfig/vite-react": "^2.0.1",
+    "@types/jest": "^28.1.8",
+    "@types/node": "^15.0.3",
+    "@types/uuid": "^8.3.4",
+    "jest": "^28.1.3",
+    "ts-jest": "^28.0.7",
+    "tslint": "^6.1.3",
+    "tslint-config-prettier": "^1.18.0",
+    "typescript": "^5.2.2"
+  }
+}
