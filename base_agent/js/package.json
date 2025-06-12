@@ -12,7 +12,7 @@
   "license": "ISC",
   "repository": "https://github.com/RandomStudio/tether",
   "dependencies": {
-    "@msgpack/msgpack": "^3.0.0-beta2",
+    "@msgpack/msgpack": "^3.1.2",
     "async-mqtt": "^2.6.2",
     "buffer": "^6.0.3",
     "events": "^3.3.0",
