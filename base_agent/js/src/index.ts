@@ -95,12 +95,18 @@ export class TetherAgent {
     });
     this.state = State.CONNECTING;
 
+    const clientId = `tether-${this.config.role}-${Math.random()
+      .toString(16)
+      .slice(2, 8)}`;
+
+    logger.debug("Using Client ID", clientId);
+
     try {
       const client = await mqtt.connectAsync(
         null,
         {
           ...this.config.brokerOptions,
-          clientId: `tether-${this.config.role}`,
+          clientId,
         },
         false
       );

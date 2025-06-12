@@ -1,6 +1,6 @@
 {
   "name": "tether-agent",
-  "version": "3.2.1",
+  "version": "3.3.0",
   "description": "",
   "main": "dist/index.js",
   "scripts": {
@@ -19,8 +19,7 @@
     "loglevel": "^1.8.0"
   },
   "devDependencies": {
-    "@tsconfig/node18": "^18.2.2",
-    "@tsconfig/node20": "^20.1.2",
+    "@tsconfig/node22": "^22.0.2",
     "@tsconfig/recommended": "^1.0.3",
     "@tsconfig/vite-react": "^2.0.1",
     "@types/jest": "^28.1.8",
