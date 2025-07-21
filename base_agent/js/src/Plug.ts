@@ -122,7 +122,7 @@ export class OutputPlug extends Plug {
         buildOutputPlugTopic(
           name,
           agent.getConfig().role,
-          options ? options.id : agent.getConfig().id
+          options?.id || agent.getConfig().id
         ),
     });
     this.publishOptions = options?.publishOptions || {

@@ -28,6 +28,18 @@ describe("building topic strings", () => {
     agent.disconnect();
   });
 
+  test("Agent with custom ID, Output Plug overriding unrelated config still gets custom ID", async () => {
+    const agent = await TetherAgent.create("tester", { id: "specialGroup" });
+    const output = new OutputPlug(agent, "somePlugName", {
+      publishOptions: { qos: 2 },
+    });
+    expect(output.getDefinition().name).toEqual("somePlugName");
+    expect(output.getDefinition().topic).toEqual(
+      "tester/specialGroup/somePlugName"
+    );
+    agent.disconnect();
+  });
+
   test("Agent with custom ID, Output Plug with custom still overrides", async () => {
     const agent = await TetherAgent.create("tester", {
       id: "originalSpecialGroup",
