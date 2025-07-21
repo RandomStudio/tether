@@ -1,7 +1,7 @@
 {
   "name": "tether-agent",
   "version": "3.3.0",
-  "description": "",
+  "description": "Standardised use of MQTT and MessagePack for inter-process communication",
   "main": "dist/index.js",
   "scripts": {
     "test": "npx jest",
