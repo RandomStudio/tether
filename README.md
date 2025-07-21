@@ -60,8 +60,8 @@ Tether Egui acts as both an Agent that publishes (by default, as "gui") but also
 
 Alternatively, command-line utilities are provided [here](./utilities/tether-utils) (with instructions for installing them)
 
-- `tether send`: by default, publishes messages as the Agent "tether-send"
 - `tether receive`: subscribes to messages on all topics (by default) and tries to decode the MessagePack payload of each one
+- `tether send`: send a dummy message or customise to simulate all kinds of messages
 
 You can use `tether send` in combination with `tether receive` to simulate a minimal Tether system.
 
